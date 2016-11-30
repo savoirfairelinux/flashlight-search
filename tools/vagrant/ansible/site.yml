@@ -1,0 +1,11 @@
+---
+- hosts: flashlight
+  become: yes
+  roles:
+    - role: dev
+    - role: oracle-jdk
+    - role: mariadb-install
+    - role: mariadb-setup
+    - role: liferay-dxp
+  tasks:
+    - include: tasks/patch.yml
