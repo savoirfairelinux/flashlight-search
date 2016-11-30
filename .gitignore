@@ -4,4 +4,5 @@ target/
 .settings
 .tern-project
 site-retry.yaml
+site.retry
 .vagrant

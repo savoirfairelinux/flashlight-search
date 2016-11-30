@@ -2,7 +2,7 @@
 - hosts: flashlight
   become: yes
   roles:
-    - role: dev
+    - role: common
     - role: oracle-jdk
     - role: mariadb-install
     - role: mariadb-setup

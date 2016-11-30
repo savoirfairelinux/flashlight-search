@@ -1,14 +1,14 @@
 ---
-etc_hosts:
-  - ip: 127.0.0.1
-    names:
-      - localhost
-      - localhost.localdomain
-  - ip: 10.0.0.45
-    names:
-      - www.flashlight.vm
-      - flashlight.vm
-      - flashlight
+common_install_terminal_multiplexers: true
+vim_users:
+  - root
+  - vagrant
+common_explicit_timezone: true
+common_timezone: 'America/New_York'
+
+common_hosts:
+  - "127.0.0.1 localhost localhost.localdomain"
+  - "10.0.0.45 www.flashlight.vm flashlight.vm flashlight"
 
 mariadb_bind_address: "10.0.0.45"
 mariadb_root_password: "root"
