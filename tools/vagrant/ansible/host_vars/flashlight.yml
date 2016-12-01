@@ -1,9 +1,11 @@
 ---
-common_install_terminal_multiplexers: true
-vim_users:
+diag_tools_install_terminal_multiplexers: true
+diag_tools_install_advanced_editors: true
+diag_tools_install_monitors: true
+diag_tools_vim_users:
   - root
   - vagrant
-common_explicit_timezone: true
+
 common_timezone: 'America/New_York'
 
 common_hosts:
@@ -41,7 +43,7 @@ liferay7_installers:
 liferay7_datasource:
   name:       "jdbc/LiferayPool"
   driver:     "org.mariadb.jdbc.Driver"
-  url:        "jdbc:mariadb://flashlight.vm:3306/lportal?useUnicode=true&amp;characterEncoding=UTF-8"
+  url:        "jdbc:mariadb://www.flashlight.vm:3306/lportal?useUnicode=true&amp;characterEncoding=UTF-8"
   username:   "lportal"
   password:   "lportal"
 
