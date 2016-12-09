@@ -1,0 +1,23 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-16.04"
+
+    config.vm.define "flashlight" do |flashlight|
+
+        flashlight.vm.hostname = "flashlight.vm"
+        flashlight.vm.network :private_network, ip: "10.0.0.45"
+        flashlight.vm.synced_folder "deploy", "/mnt/deploy-liferay", :mount_options => ["fmode=0666,dmode=0777"]
+
+        flashlight.vm.provider :virtualbox do |v|
+            v.customize ["modifyvm", :id, "--memory", 3072]
+            v.customize ["modifyvm", :id, "--cpus", "2"]
+            v.customize ["modifyvm", :id, "--cableconnected1", "on"]
+            v.name = "flashlight.vm"
+        end
+
+        flashlight.vm.provision :ansible_local do |ansible|
+            ansible.verbose = "v"
+            ansible.playbook = "ansible/site.yml"
+        end
+
+    end
+end

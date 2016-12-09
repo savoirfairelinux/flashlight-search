@@ -1,0 +1,44 @@
+---
+- name: Copying patch files
+  copy:
+    src:        "{{ item.path }}"
+    dest:       "/var/lib/liferay/patches"
+    owner:      tomcat8
+    group:      tomcat8
+    force:      yes
+  with_items:   "{{ patches }}"
+
+- name: Running patching-tool info
+  command:      "patching-tool info"
+  register:     info_result
+  changed_when: "'Currently not installed; Will be installed.' in info_result.stdout"
+
+- name: Shutting down tomcat
+  service:
+    name:   tomcat8
+    state:  stopped
+  when:     "'Currently not installed; Will be installed.' in info_result.stdout"
+
+- name: Running patching-tool install
+  command:      "patching-tool install"
+  register:     installation_result
+  failed_when:  "'The installation was successful' not in installation_result.stdout"
+  when:         "'Currently not installed; Will be installed.' in info_result.stdout"
+
+- name: Putting permissions back in place for Tomcat 8 webapp
+  command: "chown -R tomcat8:tomcat8 /var/lib/tomcat8/webapps/ROOT"
+  when:
+    - installation_result|succeeded
+    - "'Currently not installed; Will be installed.' in info_result.stdout"
+
+- name: Putting permissions back in place for Liferay OSGi modules
+  command: "chown -R tomcat8:tomcat8 /var/lib/liferay/osgi"
+  when:
+    - installation_result|succeeded
+    - "'Currently not installed; Will be installed.' in info_result.stdout"
+
+- name: Starting Tomcat
+  service:
+    name:   tomcat8
+    state:  started
+  when:     installation_result|succeeded

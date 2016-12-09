@@ -1,0 +1,15 @@
+[submodule "tools/vagrant/ansible/roles/common"]
+	path = tools/vagrant/ansible/roles/common
+	url = git@gitlab.savoirfairelinux.com:devops/ansible-common.git
+[submodule "tools/vagrant/ansible/roles/liferay-dxp"]
+	path = tools/vagrant/ansible/roles/liferay-dxp
+	url = git@gitlab.savoirfairelinux.com:devops/ansible-liferay-dxp.git
+[submodule "tools/vagrant/ansible/roles/oracle-jdk"]
+	path = tools/vagrant/ansible/roles/oracle-jdk
+	url = git@gitlab.savoirfairelinux.com:devops/ansible-oracle-jdk.git
+[submodule "tools/vagrant/ansible/roles/mariadb-install"]
+	path = tools/vagrant/ansible/roles/mariadb-install
+	url = https://github.com/hsoft/ansible-mariadb-install
+[submodule "tools/vagrant/ansible/roles/diag-tools"]
+	path = tools/vagrant/ansible/roles/diag-tools
+	url = git@gitlab.savoirfairelinux.com:devops/ansible-diag-tools.git

@@ -1,0 +1,13 @@
+---
+mariadb_bind_address: "127.0.0.1"
+
+mariadb_databases:
+  - name: "lportal"
+    encoding: "utf8"
+    collation: "utf8_general_ci"
+
+mariadb_users:
+  - name: "lportal"
+    host: "127.0.0.1"
+    password: "lportal"
+    priv: "lportal.*:ALL"
