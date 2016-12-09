@@ -1,1 +1,0 @@
-from the edit mode
