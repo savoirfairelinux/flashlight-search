@@ -25,6 +25,7 @@
         <version.liferay.ant.bnd>2.0.28</version.liferay.ant.bnd>
 
         <project.build.finalName>${project.artifactId}</project.build.finalName>
+        <project.build.extension>jar</project.build.extension>
     </properties>
 
     <modules>
@@ -258,6 +259,7 @@
                             <Bundle-Version>${project.version}</Bundle-Version>
                             <!-- The Import-Package instruction is wildly guessed from Liferay's bundles -->
                             <Import-Package>com.liferay.portal.kernel.service;version="1.1.0",javax.portlet,javax.servlet,*</Import-Package>
+                            <Export-Package />
                             <_dsannotations>*</_dsannotations>
                             <_metatype>*</_metatype>
                         </instructions>
@@ -271,4 +273,33 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>local-deploy</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>wagon-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>bundle-deploy</id>
+                                    <phase>install</phase>
+                                    <goals>
+                                        <goal>upload-single</goal>
+                                    </goals>
+                                    <configuration>
+                                        <fromFile>${project.build.directory}/${project.build.finalName}.${project.build.extension}</fromFile>
+                                        <url>file://${project.basedir}/../../tools/vagrant/deploy</url>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 </project>

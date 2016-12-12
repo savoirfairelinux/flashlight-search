@@ -47,5 +47,11 @@ liferay7_datasource:
   username:   "lportal"
   password:   "lportal"
 
+liferay7_linked_deploy_folder: "/mnt/deploy-liferay"
+
+liferay7_gogo:
+  host: "0.0.0.0"
+  port: "11311"
+
 patches:
   - path: "/vagrant/installers/liferay-fix-pack-de-7-7010.zip"

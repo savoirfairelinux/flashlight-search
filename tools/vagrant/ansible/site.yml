@@ -9,4 +9,4 @@
     - role: mariadb-setup
     - role: liferay-dxp
   tasks:
-    - include: tasks/patch.yml
+    - include: roles/liferay-dxp/tasks/patch.yml
