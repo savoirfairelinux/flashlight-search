@@ -258,8 +258,22 @@
                             <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                             <Bundle-Version>${project.version}</Bundle-Version>
                             <!-- The Import-Package instruction is wildly guessed from Liferay's bundles -->
-                            <Import-Package>com.liferay.portal.kernel.service;version="1.1.0",javax.portlet,javax.servlet,*</Import-Package>
+                            <!--
+                                There is a fix here to make util-bridges work correctly (see org.apache.* Import-Package
+                                directive and Embed-Dependency directive)
+                            -->
+                            <Import-Package>
+                                com.liferay.portal.kernel.service;version="1.1.0",
+                                javax.portlet,javax.servlet,
+                                org.apache.bsf;resolution:=optional,
+                                org.apache.portals.bridges.common;resolution:=optional,
+                                org.apache.portals.bridges.struts;resolution:=optional,
+                                *
+                            </Import-Package>
                             <Export-Package />
+                            <Embed-Dependency>groupId=com.liferay.portal;artifactId=com.liferay.util.bridges</Embed-Dependency>
+                            <Embed-StripVersion>true</Embed-StripVersion>
+                            <Embed-Directory>lib</Embed-Directory>
                             <_dsannotations>*</_dsannotations>
                             <_metatype>*</_metatype>
                         </instructions>
