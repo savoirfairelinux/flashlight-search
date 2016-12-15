@@ -316,4 +316,15 @@
             </build>
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
