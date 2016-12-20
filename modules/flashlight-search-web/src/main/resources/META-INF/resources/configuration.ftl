@@ -32,12 +32,13 @@
 		</div>
 	</@>
 	<@aui["fieldset"] label="Assets display">
-	<#list Request.facets as key>
+	<#if Request.facets?? >
+	<#list Request.facets?keys as key>
 	
-	<#assign test = key?index +1 />
+	
 	<div class="display-template">
 
-		
+			<#--  original
 			<@liferay_ddm["template-selector"]
 				className="${key}"
 				displayStyle=Request.displayStyle[key?counter]
@@ -45,8 +46,35 @@
 				refreshURL="${configurationRenderURL}"
 				showEmptyOption=true
 			/>
+			-->
+			
+			<@liferay_ddm["template-selector"]
+				className="com.liferay.journal.model.JournalArticle"
+				displayStyle=Request.displayStyle[key?counter]
+				displayStyleGroupId=Request.displayStyleGroupId[key?counter]
+				refreshURL="${configurationRenderURL}"
+				showEmptyOption=true
+				label="${Request.facets[key]}"
+			/>
 		</div>
 	</#list>
+	</#if>
+	<#if !Request.facets?? >
+	<div class="display-template">
+	<@liferay_ddm["template-selector"]
+				className="com.liferay.journal.model.JournalArticle"
+				displayStyle=Request.displayStyle[1]
+				displayStyleGroupId=Request.displayStyleGroupId[1]
+				refreshURL="${configurationRenderURL}"
+				showEmptyOption=true
+				label="structure label"
+			/>
+	</#if>
+	</div>
+	</@>
+	
+	<@aui["fieldset"] label="facets">
+		
 	</@>
 	
 	

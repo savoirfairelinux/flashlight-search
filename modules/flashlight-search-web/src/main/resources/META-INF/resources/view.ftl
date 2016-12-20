@@ -50,3 +50,14 @@
 	}
 </@>
 </@>
+
+<#-- 
+<div>
+<ul>
+<#list .data_model?keys as key>
+ <li> ${key} </li>
+
+</#list>
+ </ul>
+</div>
+ -->
