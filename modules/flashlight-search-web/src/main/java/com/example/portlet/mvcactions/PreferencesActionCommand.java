@@ -7,10 +7,10 @@ import javax.portlet.ActionResponse;
 
 import org.osgi.service.component.annotations.Component;
 
-import com.example.portlet.SearchPortletKeys;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.savoirfairelinux.portlet.SearchPortletKeys;
 
 @Component(
 	    immediate = true,

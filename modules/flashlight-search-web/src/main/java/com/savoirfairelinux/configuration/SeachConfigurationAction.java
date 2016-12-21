@@ -1,4 +1,4 @@
-package com.example.configuration;
+package com.savoirfairelinux.configuration;
 
 import java.util.Map;
 
@@ -11,9 +11,9 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Modified;
 
-import com.example.portlet.SearchPortletKeys;
 import com.liferay.portal.kernel.portlet.ConfigurationAction;
 import com.liferay.portal.kernel.portlet.DefaultConfigurationAction;
+import com.savoirfairelinux.portlet.SearchPortletKeys;
 
 import aQute.bnd.annotation.metatype.Configurable;
 

@@ -32,7 +32,7 @@
 		</div>
 	</@>
 	<@aui["fieldset"] label="Assets display">
-	<#if Request.facets?? >
+	<#if Request.facets??  && true>
 	<#list Request.facets?keys as key>
 	
 	
@@ -59,25 +59,23 @@
 		</div>
 	</#list>
 	</#if>
-	<#if !Request.facets?? >
-	<div class="display-template">
-	<@liferay_ddm["template-selector"]
-				className="com.liferay.journal.model.JournalArticle"
-				displayStyle=Request.displayStyle[1]
-				displayStyleGroupId=Request.displayStyleGroupId[1]
-				refreshURL="${configurationRenderURL}"
-				showEmptyOption=true
-				label="structure label"
-			/>
-	</#if>
+	
 	</div>
 	</@>
 	
+	<#--  box for facet selection 
+	<#if Request.leftbox??>
 	<@aui["fieldset"] label="facets">
-		
+		<ul>
+			
+		</ul>
 	</@>
 	
+	<@liferay_ui["input-move-boxes"] leftBoxName="All Facets" leftList=Request.leftbox leftTitle="left title" rightBoxName="Rightbox" rightList=Request.rightbox rightTitle="a righteous title"/>
+		
 	
+	</#if>
+	-->
 	
 
 	<@aui["button-row"]>

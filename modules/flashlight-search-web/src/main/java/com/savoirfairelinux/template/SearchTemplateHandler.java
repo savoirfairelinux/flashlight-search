@@ -1,4 +1,4 @@
-package com.example.template;
+package com.savoirfairelinux.template;
 
 import java.util.List;
 import java.util.Locale;
@@ -6,11 +6,11 @@ import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 
-import com.example.portlet.SearchPortletKeys;
 import com.liferay.portal.kernel.portletdisplaytemplate.BasePortletDisplayTemplateHandler;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
+import com.savoirfairelinux.portlet.SearchPortletKeys;
 
 @Component(
 	    immediate = true,

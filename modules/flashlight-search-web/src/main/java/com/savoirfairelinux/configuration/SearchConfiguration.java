@@ -1,4 +1,4 @@
-package com.example.configuration;
+package com.savoirfairelinux.configuration;
 
 import aQute.bnd.annotation.metatype.Meta;
 

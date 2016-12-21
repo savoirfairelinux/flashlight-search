@@ -24,6 +24,8 @@
 
 <@aui["form"] action="${editURL}" name="search_form">
 	<@aui["fieldset"]>
+		<@aui["input"] label="facet field" placeholder="ddmStructureKey" name="ddmStructureKey" />
+		
 			<@aui["input"] class="search-input" label="" name="keywords" placeholder="search"  type="text" size="30" inlineField=true  >
 				<@aui["validator"] name="required" errorMessage="You must enter a search term"/>
 			</@>
@@ -62,6 +64,7 @@ function myfunction(element){
 </@>
 
 
+<#include  "facet/structure.ftl" />
 
 <div class="container">
 
@@ -129,7 +132,7 @@ ${Request.articleDisplay.getContent()}
 			<div class="panel-body">
 				<#list docs as doc >
 					<div class="col-md-4">
-					<h2>${doc.title}</h2>
+					<h2>${doc.title} (default)</h2>
 					<p>${doc.content}</p>
 					</div>
 				</#list>
