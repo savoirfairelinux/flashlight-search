@@ -19,7 +19,7 @@ import aQute.bnd.annotation.metatype.Configurable;
 
 
 @Component(
-	    configurationPid = "com.example.configuration.SearchConfiguration",
+	    configurationPid = "com.savoirfairelinux.configuration.SearchConfiguration",
 	    configurationPolicy = ConfigurationPolicy.OPTIONAL,
 	    immediate = true,
 	    property = {

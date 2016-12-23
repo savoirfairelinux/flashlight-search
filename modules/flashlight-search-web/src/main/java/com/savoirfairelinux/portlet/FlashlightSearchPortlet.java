@@ -21,12 +21,8 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.facet.Facet;
-import com.liferay.portal.kernel.search.facet.collector.FacetCollector;
-import com.liferay.portal.kernel.search.facet.collector.TermCollector;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
@@ -37,7 +33,7 @@ import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 
 import aQute.bnd.annotation.metatype.Configurable;
 
-@Component(configurationPid = "com.example.configuration.SearchConfiguration", immediate = true, property = {
+@Component(configurationPid = "com.savoirfairelinux.configuration.SearchConfiguration", immediate = true, property = {
 		"com.liferay.portlet.display-category=category.sample", "com.liferay.portlet.instanceable=false",
 		"javax.portlet.display-name=Flashlight Portlet", "javax.portlet.init-param.template-path=/",
 		"javax.portlet.init-param.view-template=/view.ftl",
@@ -67,36 +63,16 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 				groupedDocuments = display.customGroupedSearch(renderRequest, keywords, renderRequest.getPreferences(),
 						Field.ENTRY_CLASS_NAME);
 				List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
-				Map<String, TermCollector> facetResults = new HashMap<String, TermCollector>();
-				Map<String, String> f_def = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
 				List<String> enabled_facets= new ArrayList<String>();
 				enabled_facets.add(FreemarkerFileTypeFacet.class.getName());
 				enabled_facets.add(FreemarkerStructureFacet.class.getName());
-				for (SearchFacet sf : searchFacets) {
-					
-					if(enabled_facets.contains(sf.getClassName())){
-						Facet facet = sf.getFacet();
-						System.out.println(sf.getClassName());
-						FacetCollector facetCollector = facet.getFacetCollector();
-	
-						for (TermCollector term : facetCollector.getTermCollectors()) {
-							if (f_def.containsKey(term.getTerm())) {
-								facetResults.put(f_def.get(term.getTerm()), term);
-							}
-						}
-					}
 
-				}
-
-				renderRequest.setAttribute("facetResults", facetResults);
-				
-
+				renderRequest.setAttribute("searchFacets", searchFacets);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
-		
 		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
 		long[] defaulIds = new long[facets.size() + 1];
 		String[] defaults = new String[defaulIds.length];
@@ -114,6 +90,7 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("documents", documents);
 		renderRequest.setAttribute("groupedDocuments", groupedDocuments);
 		renderRequest.setAttribute("facets", facets);
+		renderRequest.setAttribute("keywords", keywords);
 		
 		/*List leftbox = new ArrayList();
 		display.setPortletPreferences(renderRequest.getPreferences());	
