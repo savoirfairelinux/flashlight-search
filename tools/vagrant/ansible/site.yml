@@ -1,12 +1,20 @@
 ---
+- hosts: flashlight-data
+  become: yes
+  roles:
+    - role: common
+    - role: diag-tools
+    - role: mariadb-install
+    - role: mariadb-setup
+    - role: oracle-jdk
+    - role: elasticsearch
+
 - hosts: flashlight
   become: yes
   roles:
     - role: common
     - role: diag-tools
     - role: oracle-jdk
-    - role: mariadb-install
-    - role: mariadb-setup
     - role: liferay-dxp
   tasks:
     - include: roles/liferay-dxp/tasks/patch.yml

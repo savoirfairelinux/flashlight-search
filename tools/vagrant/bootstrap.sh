@@ -6,6 +6,7 @@ MAVEN_HOME="~/.m2"
 MAVEN_SETTINGS="${MAVEN_HOME}/settings.xml"
 
 HOSTS="10.0.0.45 flashlight flashlight.vm www.flashlight.vm"
+HOSTS_DATA="10.0.0.35 flashlight-data flashlight-data.vm"
 
 NAS_LOCATION="nas"
 NAS_LOCATION_QC="192.168.50.5"
@@ -49,18 +50,20 @@ setNas() {
 
 # Make sure that the correct hosts are defined in /etc/hosts
 verifyHosts() {
-    if grep "${HOSTS}" /etc/hosts >> /dev/null; then
+    if grep "${HOSTS}" /etc/hosts >> /dev/null && grep "${HOSTS_DATA}" /etc/hosts >> /dev/null; then
         echo "Hosts okay"
     else
         if grep "flashlight.vm" /etc/hosts >> /dev/null ; then
             echo "You appear to have hosts for the Flashlight machines, but they do not match the project's IPs."
             echo "Please have the following in your /etc/hosts file and remove conflicting information:"
             echo "8<------------"
+            echo ${HOSTS_DATA}
             echo ${HOSTS}
             echo "------------>8"
         else
             echo "Entering hosts data inside /etc/hosts... you may have to provide your password"
             echo "# Vagrant - Flashlight" | sudo tee -a /etc/hosts >> /dev/null
+            echo "${HOSTS_DATA}" | sudo tee -a /etc/hosts >> /dev/null
             echo "${HOSTS}" | sudo tee -a /etc/hosts >> /dev/null
         fi
     fi

@@ -10,24 +10,8 @@ common_timezone: 'America/New_York'
 
 common_hosts:
   - "127.0.0.1 localhost localhost.localdomain"
+  - "10.0.0.35 flashlight-data.vm flashlight-data"
   - "10.0.0.45 www.flashlight.vm flashlight.vm flashlight"
-
-mariadb_bind_address: "10.0.0.45"
-mariadb_root_password: "root"
-
-mariadb_users:
-  - name: "lportal"
-    host: "127.0.0.1"
-    password: "lportal"
-    priv: "lportal.*:ALL"
-  - name: "lportal"
-    host: "10.0.0.45"
-    password: "lportal"
-    priv: "lportal.*:ALL"
-  - name: "lportal"
-    host: "10.0.0.1"
-    password: "lportal"
-    priv: "lportal.*:ALL"
 
 liferay7_version:       "7.0-ga1"
 patching_tool_version:  "2.0.5"
@@ -43,7 +27,7 @@ liferay7_installers:
 liferay7_datasource:
   name:       "jdbc/LiferayPool"
   driver:     "org.mariadb.jdbc.Driver"
-  url:        "jdbc:mariadb://www.flashlight.vm:3306/lportal?useUnicode=true&amp;characterEncoding=UTF-8"
+  url:        "jdbc:mariadb://flashlight-data.vm:3306/lportal?useUnicode=true&amp;characterEncoding=UTF-8"
   username:   "lportal"
   password:   "lportal"
 
@@ -52,6 +36,31 @@ liferay7_linked_deploy_folder: "/mnt/deploy-liferay"
 liferay7_gogo:
   host: "0.0.0.0"
   port: "11311"
+
+liferay7_es:
+  operation_mode: "REMOTE"
+  client_transport_ignore_cluster_name: false
+  index_name_prefix: "liferay-"
+  http_cors_configurations: ""
+  additional_configurations: ""
+  http_cors_allow_origin: ""
+  network_bind_host: ""
+  transport_tcp_port: ""
+  bootstrap_mlock_all: false
+  network_publish_host: ""
+  client_transport_sniff : false
+  additional_index_configurations: ""
+  retry_on_conflict: 5
+  http_cors_enabled: false
+  client_transport_nodes_sampler_interval: "5s"
+  additional_type_mappings: ""
+  log_exceptions_only: true
+  http_enabled: false
+  network_host: ""
+  transport_addresses:
+    - "flashlight-data.vm:9300"
+  discovery_zen_ping_unicast_hosts_port: "9300-9400"
+  cluster_name: "liferay"
 
 patches:
   - path: "/vagrant/installers/liferay-fix-pack-de-7-7010.zip"
