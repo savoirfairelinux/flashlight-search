@@ -15,4 +15,4 @@
 	url = git@gitlab.savoirfairelinux.com:devops/ansible-diag-tools.git
 [submodule "tools/vagrant/ansible/roles/elasticsearch"]
 	path = tools/vagrant/ansible/roles/elasticsearch
-	url = git@github.com:elastic/ansible-elasticsearch.git
+	url = https://github.com/elastic/ansible-elasticsearch
