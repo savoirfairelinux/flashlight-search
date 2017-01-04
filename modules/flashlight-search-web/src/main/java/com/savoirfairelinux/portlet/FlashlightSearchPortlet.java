@@ -26,18 +26,14 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
-import com.savoirfairelinux.configuration.SearchConfiguration;
 import com.savoirfairelinux.facet.FreemarkerFileTypeFacet;
 import com.savoirfairelinux.facet.FreemarkerStructureFacet;
 import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 
-import aQute.bnd.annotation.metatype.Configurable;
-
-@Component(configurationPid = "com.savoirfairelinux.configuration.SearchConfiguration", immediate = true, property = {
+@Component(immediate = true, property = {
 		"com.liferay.portlet.display-category=category.sample", "com.liferay.portlet.instanceable=false",
 		"javax.portlet.display-name=Flashlight Portlet", "javax.portlet.init-param.template-path=/",
 		"javax.portlet.init-param.view-template=/view.ftl",
-		"javax.portlet.init-param.config-template=/configuration.jsp",
 		"javax.portlet.init-param.edit-template=/configuration.ftl", "javax.portlet.portlet-mode=text/html;view,edit",
 		"javax.portlet.resource-bundle=content.Language", "javax.portlet.security-role-ref=power-user,user",
 		"javax.portlet.name=" + SearchPortletKeys.NAME }, service = Portlet.class)
@@ -107,7 +103,6 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 	@Activate
 	@Modified
 	protected void activate(Map<Object, Object> properties) {
-		searchConfiguration = Configurable.createConfigurable(SearchConfiguration.class, properties);
 	}
 
 	/*
@@ -155,5 +150,4 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 	}
 
 	private Map<String, String> _facets;
-	private volatile SearchConfiguration searchConfiguration;
 }
