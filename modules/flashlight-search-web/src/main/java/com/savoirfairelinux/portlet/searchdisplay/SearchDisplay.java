@@ -10,7 +10,9 @@ import javax.portlet.RenderRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.FacetedSearcher;
 import com.liferay.portal.kernel.search.Field;
@@ -34,6 +36,10 @@ import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 
 public class SearchDisplay {
+	
+	public SearchDisplay(PortletPreferences prefs){
+		this._portletPreferences = prefs;
+	}
 
 	public Hits customSearch(RenderRequest renderRequest, String keywords, PortletPreferences portletPreferences) {
 
@@ -191,6 +197,21 @@ public class SearchDisplay {
 				key = "ddmStructureKey";
 			} else if (document.get(Field.ENTRY_CLASS_NAME).equals(DLFileEntry.class.getName())) {
 				key = "fileEntryTypeId";
+				DLFileEntry file =null;
+				try {
+					 file = DLFileEntryLocalServiceUtil.getDLFileEntry(Long.parseLong(document.get(Field.ENTRY_CLASS_PK)));
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PortalException e) {
+					
+					e.printStackTrace();
+				}
+				if(file != null){
+					String imageURL = "http://localhost:8080/documents/"+file.getGroupId()+"/"+file.getFolderId()+"/"+file.getFileName()+"/"+file.getUuid()+"?version"+file.getVersion()+"&amp;documentThumbnail=1";
+				//document.addKeyword("imageURL", "http://localhost:8080/documents/20147/0/web_framework.pdf/dd3f7dfd-84c7-1553-7bf8-ba6893a4ef5f?version=1.0&amp;documentThumbnail=1");
+					document.addKeyword("imageURL", imageURL);
+				}
 			}
 
 			if (!hashMap.containsKey(document.get(key))) {

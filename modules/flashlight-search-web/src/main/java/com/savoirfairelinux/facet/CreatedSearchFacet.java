@@ -12,20 +12,23 @@ import javax.servlet.http.HttpServletResponse;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.facet.MultiValueFacet;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.facet.ModifiedFacet;
 import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.web.facet.BaseSearchFacet;
 import com.liferay.portal.search.web.facet.SearchFacet;
 
 @Component(immediate = true, service = SearchFacet.class)
-public class FreemarkerFileTypeFacet extends BaseSearchFacet {
-	
+public class CreatedSearchFacet extends BaseSearchFacet {
+
 	@Override
 	public FacetConfiguration getDefaultConfiguration(long companyId) {
 		FacetConfiguration facetConfiguration = new FacetConfiguration();
@@ -34,56 +37,74 @@ public class FreemarkerFileTypeFacet extends BaseSearchFacet {
 
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		jsonObject.put("displayStyle", "list");
-		jsonObject.put("frequencyThreshold", 1);
-		jsonObject.put("maxTerms", 10);
-		jsonObject.put("showAssetCount", true);
+		jsonObject.put("frequencyThreshold", 0);
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		for (int i = 0; i < _LABELS.length; i++) {
+			JSONObject range = JSONFactoryUtil.createJSONObject();
+
+			range.put("label", _LABELS[i]);
+			range.put("range", _RANGES[i]);
+
+			jsonArray.put(range);
+		}
+
+		jsonObject.put("ranges", jsonArray);
 
 		facetConfiguration.setDataJSONObject(jsonObject);
-
 		facetConfiguration.setFieldName(getFieldName());
 		facetConfiguration.setLabel(getLabel());
 		facetConfiguration.setOrder(getOrder());
 		facetConfiguration.setStatic(false);
-		facetConfiguration.setWeight(1.3);
+		facetConfiguration.setWeight(1.0);
 
 		return facetConfiguration;
 	}
 
 	@Override
 	public String getFacetClassName() {
-		return MultiValueFacet.class.getName();
+
+		return ModifiedFacet.class.getName();
 	}
 
 	@Override
 	public String getFieldName() {
-		return "fileEntryTypeId";
+		return Field.CREATE_DATE;
 	}
 
 	@Override
 	public JSONObject getJSONData(ActionRequest actionRequest) {
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		String displayStyleFacet = ParamUtil.getString(
-			actionRequest, getClassName() + "displayStyleFacet", "list");
-		int frequencyThreshold = ParamUtil.getInteger(
-			actionRequest, getClassName() + "frequencyThreshold", 1);
-		int maxTerms = ParamUtil.getInteger(
-			actionRequest, getClassName() + "maxTerms", 10);
-		boolean showAssetCount = ParamUtil.getBoolean(
-			actionRequest, getClassName() + "showAssetCount", true);
+		int frequencyThreshold = ParamUtil.getInteger(actionRequest, getClassName() + "frequencyThreshold", 1);
 
-		jsonObject.put("displayStyle", displayStyleFacet);
 		jsonObject.put("frequencyThreshold", frequencyThreshold);
-		jsonObject.put("maxTerms", maxTerms);
-		jsonObject.put("showAssetCount", showAssetCount);
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		String[] rangesIndexes = StringUtil.split(ParamUtil.getString(actionRequest, getClassName() + "rangesIndexes"));
+
+		for (String rangesIndex : rangesIndexes) {
+			JSONObject rangeJSONObject = JSONFactoryUtil.createJSONObject();
+
+			String label = ParamUtil.getString(actionRequest, getClassName() + "label_" + rangesIndex);
+			String range = ParamUtil.getString(actionRequest, getClassName() + "range_" + rangesIndex);
+
+			rangeJSONObject.put("label", label);
+			rangeJSONObject.put("range", range);
+
+			jsonArray.put(rangeJSONObject);
+		}
+
+		jsonObject.put("ranges", jsonArray);
 
 		return jsonObject;
 	}
 
 	@Override
 	public String getLabel() {
-		return "Documents";
+		return "CreatedAt";
 	}
 
 	@Override
@@ -104,7 +125,6 @@ public class FreemarkerFileTypeFacet extends BaseSearchFacet {
 			throw new IOException(
 				"Unable to include " + getConfigurationPath(), se);
 		}
-		
 	}
 
 	@Override
@@ -136,16 +156,18 @@ public class FreemarkerFileTypeFacet extends BaseSearchFacet {
 		return "/facet/config/structure.ftl";
 	}
 	
-	
-	@Reference(
-		target = "(osgi.web.symbolicname=com.savoirfairelinux.liferay.flashlight-search-web)",
-		unbind = "-"
-	)
+
+	@Reference(target = "(osgi.web.symbolicname=com.savoirfairelinux.liferay.flashlight-search-web)", unbind = "-")
 	public void setServletContext(ServletContext servletContext) {
 		_servletContext = servletContext;
 	}
-	
+
 	private ServletContext _servletContext;
-	private static final Log _log = LogFactoryUtil.getLog(
-			FreemarkerStructureFacet.class);
+	private static final Log _log = LogFactoryUtil.getLog(FreemarkerStructureFacet.class);
+	private static final String[] _LABELS = new String[] { "past-hour", "past-24-hours", "past-week", "past-month",
+			"past-year" };
+
+	private static final String[] _RANGES = new String[] { "[past-hour TO *]", "[past-24-hours TO *]",
+			"[past-week TO *]", "[past-month TO *]", "[past-year TO *]" };
+
 }

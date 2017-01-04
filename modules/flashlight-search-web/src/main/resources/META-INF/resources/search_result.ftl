@@ -1,3 +1,4 @@
+
 <#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
 <#assign liferay_portlet_ext = taglibLiferayHash["/META-INF/liferay-portlet-ext.tld"] />
 <#assign liferay_security = taglibLiferayHash["/META-INF/liferay-security.tld"] />
@@ -44,9 +45,12 @@
 					<li><a href="${facetURL}" >All</a></li>
 					<#list Request.searchFacets as facet>
 						<#list facet.facet.facetCollector.termCollectors as term>
-							<#if (Request.groupedDocuments[term.term])?? >
+							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
 								<@liferay_portlet["renderURL"] var="facetURL">
+								<#-- jonathan original 
 									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
+									-->
+									<@liferay_portlet["param"] name="mvcPath" value="/search_details.ftl" />
 									<@liferay_portlet["param"] name="keywords" value=Request.keywords />
 									<@liferay_portlet["param"] name=facet.fieldName value=term.term />
 								</@>
@@ -114,7 +118,7 @@
 				<@liferay_ddm["template-renderer"] 
 					className="com.liferay.journal.model.JournalArticle"
 					displayStyle=Request.displayStyle[key?counter]
-					displayStyleGroupId=20147
+					displayStyleGroupId=Request.displayStyleGroupId[key?counter]
 					entries=docs
 				>
 					<div class="panel panel-default">
@@ -125,7 +129,10 @@
 							<#list docs as doc >
 								<div class="col-md-4">
 								<h2>${doc.title} (default)</h2>
-								<p>${doc.content}</p>
+								<#assign doc_length = doc.content?length />
+								
+									<p>${htmlUtil.escape(doc.content[0..*250])}</p>
+								
 								</div>
 							</#list>
 						</div>
@@ -145,7 +152,7 @@
 								<#list Request.groupedDocuments[key] as document>
 									<div class="col-md-4">
 										<h2><u>${document.get(title)}</u></h2>
-										<p>${document.get(content)} <a href="">read more</a></p>
+										<p>${htmlUtil.escape(doc.content)}<a href="">read more</a></p>
 										
 										<#--
 										<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>

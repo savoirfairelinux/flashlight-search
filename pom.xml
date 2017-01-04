@@ -270,7 +270,9 @@
                                 org.apache.portals.bridges.struts;resolution:=optional,
                                 *
                             </Import-Package>
-                            <Export-Package />
+                            <Export-Package >
+                            	com.savoirfairelinux.facet
+                            </Export-Package>
                             <Embed-Dependency>groupId=com.liferay.portal;artifactId=com.liferay.util.bridges</Embed-Dependency>
                             <Embed-StripVersion>true</Embed-StripVersion>
                             <Embed-Directory>lib</Embed-Directory>

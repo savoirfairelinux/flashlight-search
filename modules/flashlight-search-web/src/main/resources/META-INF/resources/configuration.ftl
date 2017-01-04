@@ -18,6 +18,7 @@
 <@aui["form"] action="${configurationURL}" method="post" name="fm">
 	<@aui["input"] name="cmd" type="hidden" value="update" />
 	
+	<#if true>
 	<@aui["fieldset"] label="ADT">
 		<div class="display-template">
 
@@ -31,6 +32,7 @@
 			/>
 		</div>
 	</@>
+	</#if>
 	<@aui["fieldset"] label="Assets display">
 	<#if Request.facets??  && true>
 	<#list Request.facets?keys as key>
@@ -63,19 +65,20 @@
 	</div>
 	</@>
 	
-	<#--  box for facet selection 
-	<#if Request.leftbox??>
-	<@aui["fieldset"] label="facets">
-		<ul>
-			
-		</ul>
+	<#--  multiple select for facet selection -->
+	<#if true >
+	<#list Request.enabled_facets as sf>
+	<p>${sf}</p>
+	</#list>
+	
+	<@aui["select"] name="selected_facets" multiple=true>
+		<#list Request.searchFacets as facet>
+			<@aui["option"] value="${facet.className}" label="${facet.title}" selected=Request.enabled_facets?seq_contains(facet.className) />
+		</#list>
 	</@>
 	
-	<@liferay_ui["input-move-boxes"] leftBoxName="All Facets" leftList=Request.leftbox leftTitle="left title" rightBoxName="Rightbox" rightList=Request.rightbox rightTitle="a righteous title"/>
-		
-	
 	</#if>
-	-->
+	
 	
 
 	<@aui["button-row"]>

@@ -15,6 +15,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 
+import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
@@ -27,8 +28,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
 import com.savoirfairelinux.configuration.SearchConfiguration;
-import com.savoirfairelinux.facet.FreemarkerFileTypeFacet;
-import com.savoirfairelinux.facet.FreemarkerStructureFacet;
 import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 
 import aQute.bnd.annotation.metatype.Configurable;
@@ -53,25 +52,27 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		long scopeGroupId = themeDisplay.getScopeGroupId();
 		String keywords = renderRequest.getParameter("keywords");
 
-		SearchDisplay display = new SearchDisplay();
+		SearchDisplay display = new SearchDisplay(renderRequest.getPreferences());
 		List<Document> documents = new ArrayList<Document>();
 		Map<String, List<Document>> groupedDocuments = null;
-
+		String[] enabled_facets= renderRequest.getPreferences().getValues("facets", new String[0]);
+		/*enabled_facets.add(FreemarkerFileTypeFacet.class.getName());
+		enabled_facets.add(FreemarkerStructureFacet.class.getName());*/
+		
 		if (keywords != null) {
 			try {
 
 				groupedDocuments = display.customGroupedSearch(renderRequest, keywords, renderRequest.getPreferences(),
 						Field.ENTRY_CLASS_NAME);
-				List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
-				List<String> enabled_facets= new ArrayList<String>();
-				enabled_facets.add(FreemarkerFileTypeFacet.class.getName());
-				enabled_facets.add(FreemarkerStructureFacet.class.getName());
-
-				renderRequest.setAttribute("searchFacets", searchFacets);
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+		List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
+		
+
+		renderRequest.setAttribute("searchFacets", searchFacets);
 
 		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
 		long[] defaulIds = new long[facets.size() + 1];
@@ -91,15 +92,10 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("groupedDocuments", groupedDocuments);
 		renderRequest.setAttribute("facets", facets);
 		renderRequest.setAttribute("keywords", keywords);
+		renderRequest.setAttribute("enabled_facets", enabled_facets);
+		renderRequest.setAttribute("categories", AssetCategoryLocalServiceUtil.getCategories());
 		
-		/*List leftbox = new ArrayList();
-		display.setPortletPreferences(renderRequest.getPreferences());	
-		for(SearchFacet searchfacet : display.getEnabledSearchFacets()){
-			leftbox.add(new KeyValuePair(searchfacet.getClassName(),searchfacet.getTitle()));
-		}
-			
-		renderRequest.setAttribute("leftbox",leftbox);
-		renderRequest.setAttribute("rightbox", new ArrayList());*/
+		
 
 		super.render(renderRequest, renderResponse);
 	}
@@ -126,6 +122,7 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 	 */
 
 	protected Map<String, String> getFacetsDefinitions(long groupid, long companyId) {
+		
 		Map<String, String> facets = new HashMap<String, String>();
 		facets.put("BASIC-WEB-CONTENT", "Basic web content");
 		List<DDMStructure> structures = DDMStructureLocalServiceUtil.getStructures(groupid);
@@ -153,6 +150,7 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
 		return facets;
 	}
+	
 
 	private Map<String, String> _facets;
 	private volatile SearchConfiguration searchConfiguration;

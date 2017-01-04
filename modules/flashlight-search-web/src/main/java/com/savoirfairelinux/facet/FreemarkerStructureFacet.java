@@ -90,7 +90,7 @@ public class FreemarkerStructureFacet extends BaseSearchFacet{
 
 	@Override
 	public String getLabel() {
-		return "Structure facet";
+		return "Structures";
 	}
 
 	@Override
