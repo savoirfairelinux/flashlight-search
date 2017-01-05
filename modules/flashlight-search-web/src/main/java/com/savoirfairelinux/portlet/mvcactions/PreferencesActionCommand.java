@@ -1,4 +1,4 @@
-package com.example.portlet.mvcactions;
+package com.savoirfairelinux.portlet.mvcactions;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -31,17 +31,6 @@ public class PreferencesActionCommand extends BaseMVCActionCommand{
 		actionRequest.getPreferences().setValues("displayStyle", displayStyle);
 		actionRequest.getPreferences().setValues("displayStyleGroupId", displayStyleGroupId);
 		actionRequest.getPreferences().store();
-		/*System.out.println("----------------");
-	       Map<String, String[]> map = actionRequest.getPreferences().getMap();
-			for(String key : map.keySet()){
-				System.out.println("key : "+ key);
-				for(String value : map.get(key) ){
-					System.out.println("values are  : " +value);
-					System.out.println("********");
-				}
-			}
-			System.out.println("----------------");*/
-		
 		
 	}
 

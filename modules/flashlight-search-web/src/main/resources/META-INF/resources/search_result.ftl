@@ -47,7 +47,7 @@
 						<#list facet.facet.facetCollector.termCollectors as term>
 							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
 								<@liferay_portlet["renderURL"] var="facetURL">
-								<#-- jonathan original 
+								<#--  original 
 									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
 									-->
 									<@liferay_portlet["param"] name="mvcPath" value="/search_details.ftl" />
@@ -71,49 +71,57 @@
 				className="${Request.documentClassName}"
 				displayStyle="${Request.displayStyle[0]}"
 				displayStyleGroupId=Request.displayStyleGroupId[0]
-				entries=Request.documents
+				entries=Request.groupedDocuments
 			>
-				<h2 class="h2">All results</h2>
-				<#list Request.documents as doc>
-					<div class="col-md-4">
-						<h2>${doc.get(title)}</h2>
-						<p>${doc.get(content)} </p>
-						<p>asset type:  ${doc.get("entryClassName")}</p>
-						<p>${doc.get(snippet)}</p>
-						<p>tags: </p>
-						<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-					</div>
-				</#list>
-			</@>
-		</div>
-	</#if>
-	<#-- 
-	<div class="container">
-	<h2>Test article display</h2>
-	<div class="abderrahmane">
-	${Request.articleDisplay.getContent()}
-	</div>
-	</div>
-	 -->
-	<h2 class="h2">Grouped results</h2>
-	<#if Request.groupedDocuments?has_content >
+				<h2 class="h2">Default template</h2>
+				<#if Request.groupedDocuments?has_content >
 		
-		 <#--  
-		<#list Request.facets?keys as key>
-		<p>key</p>
-		</#list>
-		--> 
 		<#list Request.facets?keys as key>
 			<#if Request.groupedDocuments[key]??  && true>
 				<#assign docs=Request.groupedDocuments[key][0..*3] />
-				<#-- original 
+			
+				
 				<@liferay_ddm["template-renderer"] 
-					className="${key}"
+					className="com.liferay.journal.model.JournalArticle"
 					displayStyle=Request.displayStyle[key?counter]
 					displayStyleGroupId=Request.displayStyleGroupId[key?counter]
-					entries=Request.groupedDocuments[key]
+					entries=docs
 				>
-				-->
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							${Request.facets[key]}
+						</div>
+						<div class="panel-body">
+							<#list docs as doc >
+								<div class="col-md-4">
+									<p>Insert template here</p>
+									<#-- 
+									<h2>${doc.title} (default)</h2>
+									<p>${htmlUtil.escape(doc.content[0..*250])}</p>
+									 -->
+								</div>
+							</#list>
+						</div>
+					</div>
+				</@>
+			</#if>
+			
+			
+		</#list>
+	</#if>
+			</@>
+		</div>
+	</#if>
+
+
+<#-- old way of templating -->
+	<h2 class="h2">Grouped results</h2>
+	<#if Request.groupedDocuments?has_content >
+		
+		<#list Request.facets?keys as key>
+			<#if Request.groupedDocuments[key]??  && true>
+				<#assign docs=Request.groupedDocuments[key][0..*3] />
+			
 				
 				<@liferay_ddm["template-renderer"] 
 					className="com.liferay.journal.model.JournalArticle"
@@ -140,31 +148,10 @@
 				</@>
 			</#if>
 			
-			<#if Request.groupedDocuments[key]?? && false>
-				<div class="panel panel-primary">
-					<#--  		
-					<div class="panel-heading"><@liferay_ui["message"] key="flashlight-${key}" /> <span class="badge">${Request.groupedDocuments[key]?size}</span></div>
-					-->	
-					
-					<div class="panel-heading">${key} <span class="badge">${Request.groupedDocuments[key]?size}</span></div>
-						<div class="panel-body">
-							<#if true>
-								<#list Request.groupedDocuments[key] as document>
-									<div class="col-md-4">
-										<h2><u>${document.get(title)}</u></h2>
-										<p>${htmlUtil.escape(doc.content)}<a href="">read more</a></p>
-										
-										<#--
-										<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-										-->
-									</div>
-								</#list>
-							</#if>
-					</div>
-				</div>
-			</#if>
+			
 		</#list>
 	</#if>
+
 	<hr/>
 	<div>
 		<a href="${viewURL}" class="btn">Return to search</a>

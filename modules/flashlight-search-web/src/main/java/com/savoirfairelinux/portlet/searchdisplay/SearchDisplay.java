@@ -69,7 +69,7 @@ public class SearchDisplay {
 			try {
 				searchFacet.init(themeDisplay.getCompanyId(), getSearchConfiguration(), searchContext);
 			} catch (Exception e) {
-				System.out.println("cannot init the facet");// e.printStackTrace();
+				System.out.println("cannot init the facet");
 			}
 			Facet facet = searchFacet.getFacet();
 
@@ -81,14 +81,6 @@ public class SearchDisplay {
 
 		}
 
-
-		/*
-		 * Map<String, Serializable> values= new HashMap<>(); String[] val =
-		 * {"31400" , "31404"}; values.put("ddmStructureKey", val);
-		 * searchContext.setAttributes(values);
-		 * System.out.println("number of enabled facets : "+
-		 * searchContext.getFacets().size());
-		 */
 		/*
 		 * actual search
 		 */
@@ -115,74 +107,6 @@ public class SearchDisplay {
 		return hits;
 	}
 
-	public List<Document> search(RenderRequest renderRequest, String keywords, PortletPreferences portletPreferences) {
-		return customSearch(renderRequest, keywords, portletPreferences).toList();
-	}
-
-	public Map<String, List<Document>> groupedsearch(RenderRequest renderRequest, String keywords,
-			PortletPreferences portletPreferences) {
-		HttpServletRequest request = PortalUtil.getHttpServletRequest(renderRequest);
-		ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
-		_portletPreferences = portletPreferences;
-		SearchContext searchContext = SearchContextFactory.getInstance(request);
-		searchContext.setKeywords(keywords);
-
-		/*
-		 * adding the facts
-		 */
-
-		Facet assetEntriesFacet = new AssetEntriesFacet(searchContext);
-
-		assetEntriesFacet.setStatic(true);
-
-		searchContext.addFacet(assetEntriesFacet);
-
-		Facet scopeFacet = new ScopeFacet(searchContext);
-
-		scopeFacet.setStatic(true);
-
-		searchContext.addFacet(scopeFacet);
-		for (SearchFacet searchFacet : getEnabledSearchFacets()) {
-
-			try {
-				searchFacet.init(themeDisplay.getCompanyId(), getSearchConfiguration(), searchContext);
-			} catch (Exception e) {
-				System.out.println("cannot init the facet");// e.printStackTrace();
-			}
-			Facet facet = searchFacet.getFacet();
-
-			if (facet == null) {
-				continue;
-			}
-
-			searchContext.addFacet(facet);
-		}
-		String[] entryClassNames = { "com.liferay.blogs.kernel.model.BlogsEntry",
-				"com.liferay.journal.model.JournalArticle", "com.liferay.bookmarks.model.BookmarksEntry" };
-		searchContext.setEntryClassNames(entryClassNames);
-		GroupBy groupby = new GroupBy(Field.ENTRY_CLASS_NAME);
-		searchContext.setGroupBy(groupby);
-
-		Indexer<?> indexer = FacetedSearcher.getInstance();
-		Map<String, List<Document>> results = new HashMap<String, List<Document>>();
-		try {
-			Hits hits = indexer.search(searchContext);
-			if (hits.hasGroupedHits()) {
-				for (Map.Entry<String, Hits> entry : hits.getGroupedHits().entrySet()) {
-					Hits hit = entry.getValue();
-					System.out.println("hit size : " + hit.getLength());
-					List<Document> documents = hit.toList();
-					System.out.println("title " + documents.get(0).get(Field.ENTRY_CLASS_NAME));
-					results.put(entry.getKey(), documents);
-				}
-
-			}
-		} catch (SearchException e) {
-			e.printStackTrace();
-		}
-		return results;
-	}
-
 	public Map<String, List<Document>> customGroupedSearch(RenderRequest renderRequest, String keywords,
 			PortletPreferences portletPreferences, String groupBy, int maxcount) {
 		int size = maxcount;
@@ -201,10 +125,8 @@ public class SearchDisplay {
 				try {
 					 file = DLFileEntryLocalServiceUtil.getDLFileEntry(Long.parseLong(document.get(Field.ENTRY_CLASS_PK)));
 				} catch (NumberFormatException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (PortalException e) {
-					
 					e.printStackTrace();
 				}
 				if(file != null){
@@ -213,7 +135,7 @@ public class SearchDisplay {
 					document.addKeyword("imageURL", imageURL);
 				}
 			}
-
+			
 			if (!hashMap.containsKey(document.get(key))) {
 				List<Document> list = new ArrayList<Document>();
 				list.add(document);
@@ -271,7 +193,7 @@ public class SearchDisplay {
 		return entryClassNames;
 	}
 
-	public final static String[] entryClassNames = { // "com.liferay.blogs.kernel.model.BlogsEntry",
+	public final static String[] entryClassNames = {  "com.liferay.blogs.kernel.model.BlogsEntry",
 			"com.liferay.document.library.kernel.model.DLFileEntry",
 			// "com.liferay.bookmarks.model.BookmarksEntry",
 			"com.liferay.journal.model.JournalArticle",
