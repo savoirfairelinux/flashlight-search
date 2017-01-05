@@ -34,7 +34,6 @@ import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 				"javax.portlet.display-name=Flashlight Portlet",
 				"javax.portlet.init-param.template-path=/",
 				"javax.portlet.init-param.view-template=/view.ftl",
-				"javax.portlet.init-param.config-template=/configuration.jsp",
 				"javax.portlet.init-param.edit-template=/configuration.ftl", 
 				"javax.portlet.portlet-mode=text/html;view,edit",
 				"javax.portlet.resource-bundle=content.Language",

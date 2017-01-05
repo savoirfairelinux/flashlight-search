@@ -278,6 +278,9 @@
                             <Embed-Directory>lib</Embed-Directory>
                             <_dsannotations>*</_dsannotations>
                             <_metatype>*</_metatype>
+                            <_jsp>*.jsp,*.jspf</_jsp>
+                        	<_plugin.bundle>com.liferay.ant.bnd.resource.bundle.ResourceBundleLoaderAnalyzerPlugin</_plugin.bundle>
+                        	<_plugin.jsp>com.liferay.ant.bnd.jsp.JspAnalyzerPlugin</_plugin.jsp>
                         </instructions>
                     </configuration>
                 </plugin>
