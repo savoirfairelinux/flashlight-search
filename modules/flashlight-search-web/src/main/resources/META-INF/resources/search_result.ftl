@@ -15,13 +15,20 @@
 
 
 
-
 <@liferay_portlet["renderURL"] var="viewURL">
 	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
 </@>
 <@liferay_portlet["renderURL"] varImpl="searchURL"/>
 
 
+			<#assign results=Request.searchResults />
+			<@liferay_ddm["template-renderer"] 
+				className="${Request.documentClassName}"
+				displayStyle="${Request.displayStyle[0]}"
+				displayStyleGroupId=Request.displayStyleGroupId[0]
+				entries=results
+			>
+			
 <@aui["form"] action="${searchURL}" name="search_form" method="get">
 	<@liferay_portlet_ext["renderURLParams"] varImpl="searchURL"/>
 	<@aui["input"] name="mvcPath" type="hidden" value="/search_result.ftl" />
@@ -65,56 +72,46 @@
 </@>	
 
 <div class="container">
-	<#if false>
-		<div class="container">
-			<@liferay_ddm["template-renderer"] 
-				className="${Request.documentClassName}"
-				displayStyle="${Request.displayStyle[0]}"
-				displayStyleGroupId=Request.displayStyleGroupId[0]
-				entries=Request.groupedDocuments
-			>
-				<h2 class="h2">Default template</h2>
-				<#if Request.groupedDocuments?has_content >
+	<#if true>
 		
-		<#list Request.facets?keys as key>
-			<#if Request.groupedDocuments[key]??  && true>
-				<#assign docs=Request.groupedDocuments[key][0..*3] />
 			
-				
-				<@liferay_ddm["template-renderer"] 
-					className="com.liferay.journal.model.JournalArticle"
-					displayStyle=Request.displayStyle[key?counter]
-					displayStyleGroupId=Request.displayStyleGroupId[key?counter]
-					entries=docs
-				>
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							${Request.facets[key]}
+				<h2 class="h2">Default template</h2>
+			
+			 <div class="container">
+				<#if results?has_content >
+					<#list results as group>
+						<#assign key = group.key />
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								${Request.facets[key]}
+							</div>
+							 
+							<div class="panel-body">
+								<#list group.documents[0..*3] as document>
+									<div class="col-md-4"> 
+									<#if document.get("entryClassName") == "com.liferay.journal.model.JournalArticle">
+										<p>Web content</p>
+									</#if>
+									<#if document.get("entryClassName") != "com.liferay.journal.model.JournalArticle">
+										<p>Not a Web content</p>
+									</#if>
+										
+										<p>use template here</p>
+									</div>
+								</#list>
+							</div>
+							
 						</div>
-						<div class="panel-body">
-							<#list docs as doc >
-								<div class="col-md-4">
-									<p>Insert template here</p>
-									<#-- 
-									<h2>${doc.title} (default)</h2>
-									<p>${htmlUtil.escape(doc.content[0..*250])}</p>
-									 -->
-								</div>
-							</#list>
-						</div>
-					</div>
-				</@>
-			</#if>
+					</#list>
+		
+				</#if>
+			</div>
 			
-			
-		</#list>
+		
 	</#if>
-			</@>
-		</div>
-	</#if>
+</@>
 
-
-<#-- old way of templating -->
+<#-- old way of templating 
 	<h2 class="h2">Grouped results</h2>
 	<#if Request.groupedDocuments?has_content >
 		
@@ -151,7 +148,7 @@
 			
 		</#list>
 	</#if>
-
+-->
 	<hr/>
 	<div>
 		<a href="${viewURL}" class="btn">Return to search</a>

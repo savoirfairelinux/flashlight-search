@@ -16,6 +16,13 @@
 <@liferay_portlet["defineObjects"] />
 
 
+<#assign results=Request.searchResults />
+<@liferay_ddm["template-renderer"] 
+				className="${Request.documentClassName}"
+				displayStyle="${Request.displayStyle[0]}"
+				displayStyleGroupId=Request.displayStyleGroupId[0]
+				entries=Request.documents
+			>
 <@liferay_portlet["renderURL"] var="viewURL">
 	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
 </@>
@@ -28,11 +35,6 @@
 	<@liferay_aui["input"] name="ddmStructureKey"  type="hidden" value=params.getParameter("ddmStructureKey")!"" />
 	<@liferay_aui["input"] name="fileEntryTypeId" type="hidden"  value=params.getParameter("fileEntryTypeId")!""/>
 	<@liferay_aui["input"] name="assetCategoryIds" type="hidden"  value=params.getParameter("assetCategoryIds")!""/>
-	 
-	<#-- 
-	<@aui["input"] name="ddmStructureKey"   value="31404" />
-	<@aui["input"] name="ddmStructureKey"   value="31400" />
-	 -->
 	
 	<@liferay_aui["input"] name="createDate" type="hidden"   value=params.getParameter("createDate")!"" />
 	<@liferay_aui["input"] name="mvcPath" type="hidden" value="/search_details.ftl" />
@@ -59,14 +61,14 @@
 						<#list facet.facet.facetCollector.termCollectors as term>
 							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
 								<@liferay_portlet["renderURL"] var="facetURL" varImpl="facetURL">
-								<#-- jonathan original 
+								<#--  original 
 									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
 									-->
 									<@liferay_portlet["param"] name="mvcPath" value="/search_details.ftl" />
 									<@liferay_portlet["param"] name="keywords" value=Request.keywords />
 									<@liferay_portlet["param"] name=facet.fieldName value=term.term />
 								</@>
-								<#-- jonatan code
+								<#-- original code
 								<li><a href="${facetURL}" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></a></li>
 								 -->
 								<li><@liferay_aui["a"] href="#" onClick="facetFilter(['${facet.fieldName}' , '${term.term}'])" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></@></li>
@@ -159,47 +161,55 @@
 </@>	
 
 <div class="container">
-	<#if false>
+	
 		<div class="container">
-			<@liferay_ddm["template-renderer"] 
-				className="${Request.documentClassName}"
-				displayStyle="${Request.displayStyle[0]}"
-				displayStyleGroupId=Request.displayStyleGroupId[0]
-				entries=Request.documents
-			>
-				<h2 class="h2">All results</h2>
-				<#list Request.documents as doc>
-					<div class="col-md-4">
-						<h2>${doc.get(title)}</h2>
-						<p>${doc.get(content)} </p>
-						<p>asset type:  ${doc.get("entryClassName")}</p>
-						<p>${doc.get(snippet)}</p>
-						<p>tags: </p>
-						<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-					</div>
-				</#list>
-			</@>
-		</div>
+			
+<#if true>
+		
+			
+				<h2 class="h2">Default template</h2>
+			
+			 <div class="container">
+				<#if results?has_content >
+					<#list results as group>
+						<#assign key = group.key />
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								${Request.facets[key]}
+							</div>
+							 
+							<div class="panel-body">
+								<#list group.documents as document>
+									<div class="col-md-4"> 
+									<#if document.get("entryClassName") == "com.liferay.journal.model.JournalArticle">
+										<p>Web content</p>
+									</#if>
+									<#if document.get("entryClassName") != "com.liferay.journal.model.JournalArticle">
+										<p>Not a Web content</p>
+									</#if>
+										
+										<p>use template here</p>
+									</div>
+								</#list>
+							</div>
+							
+						</div>
+					</#list>
+		
+				</#if>
+			</div>
+			
+		
 	</#if>
-	<#-- 
-	<div class="container">
-	<h2>Test article display</h2>
-	<div class="abderrahmane">
-	${Request.articleDisplay.getContent()}
-	</div>
-	</div>
-	 -->
+			
+		</div>
+</@>	
+	
 	 
 	<#--  
 	<h2 class="h2">Grouped results</h2>
-	-->
+	
 	<#if Request.groupedDocuments?has_content >
-		
-		 <#--  
-		<#list Request.facets?keys as key>
-		<p>key</p>
-		</#list>
-		--> 
 		<#list Request.facets?keys as key>
 			<#if Request.groupedDocuments[key]??  && true>
 				<#assign docs=Request.groupedDocuments[key] />
@@ -211,7 +221,7 @@
 					entries=Request.groupedDocuments[key]
 				>
 				-->
-				
+				<#-- 
 				<@liferay_ddm["template-renderer"] 
 					className="com.liferay.journal.model.JournalArticle"
 					displayStyle=Request.displayStyle[key?counter]
@@ -230,79 +240,18 @@
 								<#if doc.get("imageURL")??>
 								<p><img src="${doc.get("imageURL")}" /></p>
 								</#if>
-								<#-- 
-								<ul>
-								<#list doc.fields?keys as key>
-									<li>${key} : ${doc.get(key)}</li>
-								</#list>
-								</ul>
-								 -->
+								
 								</div>
 							</#list>
 						</div>
 					</div>
 				</@>
 			</#if>
-			
-			<#if Request.groupedDocuments[key]?? && false>
-				<div class="panel panel-primary">
-					<#--  		
-					<div class="panel-heading"><@liferay_ui["message"] key="flashlight-${key}" /> <span class="badge">${Request.groupedDocuments[key]?size}</span></div>
-					-->	
-					
-					<div class="panel-heading">${key} <span class="badge">${Request.groupedDocuments[key]?size}</span></div>
-						<div class="panel-body">
-							<#if true>
-								<#list Request.groupedDocuments[key] as document>
-									<div class="col-md-4">
-										<h2><u>${document.get(title)}</u></h2>
-										<p>${document.get(content)} <a href="">read more</a></p>
-										
-										<#--
-										<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-										-->
-									</div>
-								</#list>
-							</#if>
-					</div>
-				</div>
-			</#if>
 		</#list>
 	</#if>
+-->
 	<hr/>
 	<div>
 		<a href="${viewURL}" class="btn">Return to search</a>
 	</div>
 </div>
-
-<#-- list of keys of facets
-<div>
-<#list Request.searchFacets as facet>
-<p>${facet.className} :  </p>
-<ul>
-<#list facet.facet.facetCollector.termCollectors as term >
-	<li>${term.term} occurs ${term.frequency} times</li>
-</#list>
-</ul>
-</#list>
-</div>
- -->
-
- <#-- some variables and experiments 
- <div>
- <ul>
- <#list .data_model?keys as key >
- <li>${key}</li>
- </#list>
- </ul>
- </div>
- 
-  <div>
- <ul>
- <#list Request["com.liferay.portal.kernel.servlet.PortletServletRequest"]?keys as key >
- <li>${key}</li>
- </#list>
- <li>${Request["com.liferay.portal.kernel.servlet.PortletServletRequest"].getParameter("test")!"default value"}</li>
- </ul>
- </div>
- -->
