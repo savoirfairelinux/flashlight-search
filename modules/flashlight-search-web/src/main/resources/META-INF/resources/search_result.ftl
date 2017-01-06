@@ -13,7 +13,11 @@
 <#assign snippet = Field.SNIPPET>
 <#assign tags = Field.ASSET_TAG_NAMES />
 
+<#assign journalArticleLocalService = serviceLocator.findService("com.liferay.journal.service.JournalArticleLocalService")>
+<#assign assetEntryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetEntryLocalService")>
 
+<@liferay_theme["defineObjects"] />
+<@portlet["defineObjects"] />
 
 <@liferay_portlet["renderURL"] var="viewURL">
 	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
@@ -89,14 +93,15 @@
 							<div class="panel-body">
 								<#list group.documents[0..*3] as document>
 									<div class="col-md-4"> 
-									<#if document.get("entryClassName") == "com.liferay.journal.model.JournalArticle">
-										<p>Web content</p>
-									</#if>
-									<#if document.get("entryClassName") != "com.liferay.journal.model.JournalArticle">
-										<p>Not a Web content</p>
-									</#if>
-										
-										<p>use template here</p>
+										<#assign assetEntry = assetEntryLocalService.getEntry(document.entryClassName, document.entryClassPK?number)>
+										<#assign entryUrl = Request.assetPublisherHelper.getAssetViewURL(Request.renderRequest, Request.renderResponse, assetEntry, true)>
+										<#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
+											<#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>  
+											<#assign content = journalArticleLocalService.getArticleContent(article, "30345", "VIEW", locale, Request.portletRequest, themeDisplay)>
+											${content?replace("{entryUrl}", entryUrl)}
+										<#else>
+											<p>can't display ${doc.entryClassName}</p>
+										</#if>
 									</div>
 								</#list>
 							</div>
