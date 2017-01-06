@@ -30,6 +30,7 @@
 
     <modules>
         <module>modules/flashlight-search-web</module>
+        <module>modules/flashlight-search-action</module>
     </modules>
 
     <dependencyManagement>
