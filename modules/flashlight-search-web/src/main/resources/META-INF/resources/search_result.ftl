@@ -16,13 +16,10 @@
 <#assign journalArticleLocalService = serviceLocator.findService("com.liferay.journal.service.JournalArticleLocalService")>
 <#assign assetEntryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetEntryLocalService")>
 
+<#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
 <@liferay_theme["defineObjects"] />
 <@portlet["defineObjects"] />
 
-<@liferay_portlet["renderURL"] var="viewURL">
-	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
-</@>
-<@liferay_portlet["renderURL"] varImpl="searchURL"/>
 
 
 			<#assign results=Request.searchResults />
@@ -32,16 +29,28 @@
 				displayStyleGroupId=Request.displayStyleGroupId[0]
 				entries=results
 			>
-			
-<@aui["form"] action="${searchURL}" name="search_form" method="get">
+
+<@liferay_portlet["renderURL"] var="viewURL">
+	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
+</@>
+<@liferay_portlet["renderURL"] varImpl="searchURL"/>
+
+
+<@liferay_aui["form"] action="${searchURL}" name="search_form" method="get">
 	<@liferay_portlet_ext["renderURLParams"] varImpl="searchURL"/>
-	<@aui["input"] name="mvcPath" type="hidden" value="/search_result.ftl" />
-	<@aui["fieldset"]>
-		<@aui["input"] class="search-input" label="" name="keywords" placeholder="search"  type="text" size="30" inlineField=true  >
-			<@aui["validator"] name="required" errorMessage="You must enter a search term"/>
+	 
+	<@liferay_aui["input"] name="ddmStructureKey"  type="hidden" value=params.getParameter("ddmStructureKey")!"" />
+	<@liferay_aui["input"] name="fileEntryTypeId" type="hidden"  value=params.getParameter("fileEntryTypeId")!""/>
+	<@liferay_aui["input"] name="assetCategoryIds" type="hidden"  value=params.getParameter("assetCategoryIds")!""/>
+	
+	<@liferay_aui["input"] name="createDate" type="hidden"   value=params.getParameter("createDate")!"" />
+	<@liferay_aui["input"] name="mvcPath" type="hidden" value="/search_result.ftl" />
+	<@liferay_aui["fieldset"]>
+		<@liferay_aui["input"] class="search-input" label="" name="keywords" placeholder="search"  type="text" size="30" inlineField=true  >
+			<@liferay_aui["validator"] name="required" errorMessage="You must enter a search term"/>
 		</@>
-		<@aui["field-wrapper"]  inlineField=true >
-			<@aui["button"] type="submit"   value="Search" class="icon-monospaced " icon="icon-search"></@>
+		<@liferay_aui["field-wrapper"]  inlineField=true >
+			<@liferay_aui["button"] type="submit"   value="Search" class="icon-monospaced " icon="icon-search"></@>
 		</@>
 	</@>
 
@@ -55,25 +64,111 @@
 					</@>
 					<li><a href="${facetURL}" >All</a></li>
 					<#list Request.searchFacets as facet>
+						
 						<#list facet.facet.facetCollector.termCollectors as term>
 							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
-								<@liferay_portlet["renderURL"] var="facetURL">
+								<@liferay_portlet["renderURL"] var="facetURL" varImpl="facetURL">
 								<#--  original 
 									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
 									-->
-									<@liferay_portlet["param"] name="mvcPath" value="/search_details.ftl" />
+									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
 									<@liferay_portlet["param"] name="keywords" value=Request.keywords />
 									<@liferay_portlet["param"] name=facet.fieldName value=term.term />
 								</@>
-								<li><a href="${facetURL}">${Request.facets[term.term]} <span class="badge">${term.frequency}</span></a></li>
+								<#-- original code
+								<li><a href="${facetURL}" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></a></li>
+								 -->
+								<li><@liferay_aui["a"] href="#" onClick="facetFilter(['${facet.fieldName}' , '${term.term}'])" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></@></li>
 							</#if>
 						</#list>
 					</#list>
 				</ul>
 			</div>
 		</div>
-	</nav>	
-</@>	
+	</nav>
+	<#assign current_year = .now?string.yyyy?number  >	
+	<#assign years = [current_year..2000][0] />
+	
+	<#assign ddmStructureKey=params.getParameter("ddmStructureKey")!"" />
+	<#assign fileEntryTypeId = params.getParameter("fileEntryTypeId")!"" />
+	<#assign showing = ddmStructureKey!="" || fileEntryTypeId!="" />
+	<#if ddmStructureKey!="" || fileEntryTypeId!=""  >
+	<div class="row">
+		<div class="col-md-9"></div>
+		<#if Request.enabled_facets?seq_contains("com.savoirfairelinux.facet.CreatedSearchFacet") >
+			<div class="col-md-1">
+				<@liferay_aui["select"] name="create" onChange="filterByYear(this)" label="Years">
+					<@liferay_aui["option"] value="any" label="any" />
+					<#list years as year >
+						<@liferay_aui["option"] value=year label=year />
+					</#list>
+				</@>
+			</div>
+		</#if>
+	<#--  
+	<div class="col-md-2">
+	<@liferay_aui["select"] name="categories" id="categories" label="Category" onChange="categoryFilter()">
+		<@liferay_aui["option"] label="any" value="any" data={'any' : 'any'} />
+		<#list Request.searchFacets as facet>
+						
+						<#list facet.facet.facetCollector.termCollectors as term>
+							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
+								
+								<@liferay_aui["option"] label="${Request.facets[term.term]}" data={"key": facet.fieldName , "value" : term.term} key="${facet.fieldName}" value="${term.term}"  />
+							</#if>
+						</#list>
+					</#list>
+	</@>
+	</div>
+	-->
+		<#if Request.enabled_facets?seq_contains("com.liferay.portal.search.web.internal.facet.AssetCategoriesSearchFacet") >
+		<div class="col-md-2">
+		<@liferay_aui["select"] name="vocabulary" id="vocabulary" label="Vocabulary" onChange="vocabularyFilter(this)">
+			<@liferay_aui["option"] label="any" value=""  />
+			<#list Request.categories as category>
+				<@liferay_aui["option"] label=category.name value=category.categoryId />
+			</#list>
+		</@>
+		</#if>
+	</div>
+	</#if>
+		<@liferay_aui["script"]>
+		function filterByYear(select){
+			if(select.value != "any"){
+				var range = "["+select.value+"0101000000 TO "+select.value+"1231235959 ]";
+				$("#<@liferay_portlet["namespace"] />createDate").val(range);
+			}
+			else{
+			
+				$("#<@liferay_portlet["namespace"] />createDate").val("");
+			}
+			$("#<@liferay_portlet["namespace"] />search_form").submit();
+			
+		}
+		function facetFilter(facet){
+		//alert(facet[0] + " : " + facet[1]);
+		$("#<@liferay_portlet["namespace"] />"+facet[0]).val(facet[1]);
+		$("#<@liferay_portlet["namespace"] />search_form").submit();
+		}
+		function categoryFilter(){
+			var key = $("#<@liferay_portlet["namespace"] />categories option:selected").attr("data-key");
+			var value = $("#<@liferay_portlet["namespace"] />categories option:selected").attr("data-value");
+			
+			$("#<@liferay_portlet["namespace"] />"+key).val(value);
+			$("#<@liferay_portlet["namespace"] />search_form").submit();
+			//alert(select +"   " + select.dataset.key);
+		}
+		
+		function vocabularyFilter(select){
+			//alert(select.value);
+			$("#<@liferay_portlet["namespace"] />assetCategoryIds").val(select.value);
+			$("#<@liferay_portlet["namespace"] />search_form").submit();
+		}
+	</@>
+	</div>
+	
+
+</@>
 
 <div class="container">
 	<#if true>
@@ -91,7 +186,14 @@
 							</div>
 							 
 							<div class="panel-body">
-								<#list group.documents[0..*3] as document>
+								<#assign groupdocuments = group.documents />
+								<#if ddmStructureKey=="" && fileEntryTypeId=="">
+									<#assign groupdocuments = group.documents[0..*3] />
+								</#if>
+								<#list groupdocuments as document>
+									<#if document?index%3==0 >
+									<div class="row">
+									</#if>
 									<div class="col-md-4"> 
 										<#assign assetEntry = assetEntryLocalService.getEntry(document.entryClassName, document.entryClassPK?number)>
 										<#assign entryUrl = Request.assetPublisherHelper.getAssetViewURL(Request.renderRequest, Request.renderResponse, assetEntry, true)>
@@ -104,7 +206,14 @@
 											<p>can't display ${document.entryClassName}</p>
 										</#if>
 									</div>
+									
+									<#if document?index%3==2 >
+										</div>
+									</#if>
 								</#list>
+								<#if groupdocuments?size%3 !=0>
+								</div>
+								</#if>
 							</div>
 							
 						</div>
@@ -115,6 +224,10 @@
 			
 		
 	</#if>
+	<hr/>
+	<div>
+		<a href="${viewURL}" class="btn">Return to search</a>
+	</div>
 </@>
 
 <#-- old way of templating 
@@ -155,9 +268,6 @@
 		</#list>
 	</#if>
 -->
-	<hr/>
-	<div>
-		<a href="${viewURL}" class="btn">Return to search</a>
-	</div>
+	
 </div>
 
