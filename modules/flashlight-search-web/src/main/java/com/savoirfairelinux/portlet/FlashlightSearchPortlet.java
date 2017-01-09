@@ -14,7 +14,6 @@ import javax.portlet.RenderResponse;
 import org.osgi.service.component.annotations.Component;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
-import com.liferay.asset.publisher.web.util.AssetPublisherHelper;
 import com.liferay.blogs.kernel.model.BlogsEntry;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
@@ -22,6 +21,7 @@ import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUt
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
@@ -106,9 +106,10 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("portletRequest", new PortletRequestModel(renderRequest, renderResponse));
 		renderRequest.setAttribute("renderRequest", renderRequest);
 		renderRequest.setAttribute("renderResponse",  renderResponse);
-		renderRequest.setAttribute("assetPublisherHelper",  new AssetPublisherHelper());
+		renderRequest.setAttribute("flashlightUtil",  new FlashlightUtil());
 		renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
 		renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
+		renderRequest.setAttribute("journalArticleLocalService", JournalArticleLocalServiceUtil.getService());
 		
 		
 		

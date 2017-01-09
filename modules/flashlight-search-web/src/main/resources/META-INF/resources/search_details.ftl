@@ -12,8 +12,7 @@
 <#assign snippet = Field.SNIPPET>
 <#assign tags = Field.ASSET_TAG_NAMES />
 <#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
-<#assign journalArticleLocalService = serviceLocator.findService("com.liferay.journal.service.JournalArticleLocalService")>
-<#assign assetEntryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetEntryLocalService")>
+<#assign journalArticleLocalService = Request.journalArticleLocalService>
 
 <@liferay_theme["defineObjects"] />
 <@portlet["defineObjects"] />
@@ -183,11 +182,11 @@
 							<div class="panel-body">
 								<#list group.documents as document>
 									<div class="col-md-4"> 
-										<#assign assetEntry = assetEntryLocalService.getEntry(document.entryClassName, document.entryClassPK?number)>
-										<#assign entryUrl = Request.assetPublisherHelper.getAssetViewURL(Request.renderRequest, Request.renderResponse, assetEntry, true)>
+										<#assign entryUrl = Request.flashlightUtil.getAssetViewURL(Request.renderRequest, Request.renderResponse, document)>
 										<#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
 											<#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>  
-											<#assign content = journalArticleLocalService.getArticleContent(article, "30345", "VIEW", locale, Request.portletRequest, themeDisplay)>
+											<#assign template = Request.renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get(ddmTemplateKey))>
+											<#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", locale, Request.portletRequest, themeDisplay)>
 											${content?replace("{entryUrl}", entryUrl)}
 										<#else>
 											<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
