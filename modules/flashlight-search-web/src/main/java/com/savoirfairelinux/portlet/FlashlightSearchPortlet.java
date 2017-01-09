@@ -25,12 +25,16 @@ import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
@@ -50,6 +54,9 @@ import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
 				"javax.portlet.name=" + SearchPortletKeys.NAME }, 
 			service = Portlet.class)
 public class FlashlightSearchPortlet extends FreeMarkerPortlet {
+	
+	private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
+	
 	public FlashlightSearchPortlet() {
 
 	}
@@ -123,15 +130,19 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 	}
 	
 	protected List<DDMStructure> getWebContentStructures(long groupid){
-		List<DDMStructure> groupstructures =  DDMStructureLocalServiceUtil.getStructures(groupid);
 		List<DDMStructure> structures= new ArrayList<DDMStructure>();
 		long classNameId = ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class);
-		//DDMStructure basicwebdocument = DDMStructureLocalServiceUtil.getStructure(groupId, classNameId, "BASIC-WEB-CONTENT");
-		//structures.add(basicwebdocument);
-		for(DDMStructure structure : groupstructures){
-			if(structure.getClassNameId() == classNameId){
-				structures.add(structure);
+		try {
+			long[] groupIds = PortalUtil.getCurrentAndAncestorSiteGroupIds(groupid, true);
+		
+			List<DDMStructure> groupstructures =  DDMStructureLocalServiceUtil.getStructures(groupIds);
+			for(DDMStructure structure : groupstructures){
+				if(structure.getClassNameId() == classNameId){
+					structures.add(structure);
+				}
 			}
+		} catch (PortalException e) {
+			LOG.error(e);
 		}
 		return structures;
 	}

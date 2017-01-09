@@ -3,6 +3,10 @@
 <#assign liferay_theme = taglibLiferayHash["/META-INF/liferay-theme.tld"] />
 <#assign aui = taglibLiferayHash["/META-INF/liferay-aui.tld"] />
 <#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
+
+<@liferay_theme["defineObjects"] />
+<@portlet["defineObjects"] />
+
 <div>
 <h1>Some interesting configuration</h1>
 </div>
@@ -97,9 +101,9 @@
 			<div class="panel panel-default">
 				
 				<div class="panel-body ">
-				<@aui["select"] label=structure.getName("en_US") name="ddm-"+structure.structureKey >
+				<@aui["select"] label=structure.getName(locale) name="ddm-"+structure.structureKey >
 					<#list structure["templates"] as template>
-						<@aui["option"] label=template.name value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
+						<@aui["option"] label=template.getName(locale) value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
 					</#list>
 				</@>
 				</div>

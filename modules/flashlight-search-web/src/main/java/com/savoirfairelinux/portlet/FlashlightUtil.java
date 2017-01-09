@@ -27,6 +27,8 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 public class FlashlightUtil {
+	
+	private static final Log LOG = LogFactoryUtil.getLog(FlashlightUtil.class);
 
 	public static String getAssetViewURL(
 			RenderRequest renderRequest, RenderResponse renderResponse, Document document)
@@ -107,7 +109,4 @@ public class FlashlightUtil {
 
 		return viewURL;
 	}
-	
-	private static final Log LOG = LogFactoryUtil.getLog(FlashlightUtil.class);
-
 }
