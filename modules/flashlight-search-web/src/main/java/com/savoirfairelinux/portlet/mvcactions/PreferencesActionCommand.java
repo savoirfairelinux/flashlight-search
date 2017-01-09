@@ -1,5 +1,7 @@
 package com.savoirfairelinux.portlet.mvcactions;
 
+import java.util.Enumeration;
+
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 
@@ -24,12 +26,24 @@ public class PreferencesActionCommand extends BaseMVCActionCommand{
 		String[] displayStyle= actionRequest.getParameterValues("preferences--displayStyle--");
 		String[] displayStyleGroupId = actionRequest.getParameterValues("preferences--displayStyleGroupId--");
 		String[] facets = actionRequest.getParameterValues("selected_facets");
+		String[] selectAssets = actionRequest.getParameterValues("selected_assets_entries");
+		
+		Enumeration<String> e =actionRequest.getParameterNames();
+		while(e.hasMoreElements()){
+			String param = (String) e.nextElement();
+			if(param.startsWith("ddm-")){
+				System.out.println("param is : "+ param+ " and its value is : "+ actionRequest.getParameter(param));
+				actionRequest.getPreferences().setValue(param, actionRequest.getParameter(param));
+			}
+			
+			}
 		if(facets ==null){
 			facets = new String[0];
 		}
 		actionRequest.getPreferences().setValues("facets", facets);
 		actionRequest.getPreferences().setValues("displayStyle", displayStyle);
 		actionRequest.getPreferences().setValues("displayStyleGroupId", displayStyleGroupId);
+		actionRequest.getPreferences().setValues("selectedAssets", selectAssets);
 		actionRequest.getPreferences().store();
 		
 	}

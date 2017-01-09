@@ -190,7 +190,8 @@
 											<#assign content = journalArticleLocalService.getArticleContent(article, "30345", "VIEW", locale, Request.portletRequest, themeDisplay)>
 											${content?replace("{entryUrl}", entryUrl)}
 										<#else>
-											<p>can't display ${doc.entryClassName}</p>
+											<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
+											<p>can't display ${document.entryClassName}</p>
 										</#if>
 									</div>
 								</#list>

@@ -16,7 +16,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.FacetedSearcher;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.GroupBy;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.SearchContext;
@@ -52,7 +51,7 @@ public class SearchDisplay {
 		/*
 		 * adding the facts
 		 */
-
+		
 		Facet assetEntriesFacet = new AssetEntriesFacet(searchContext);
 
 		assetEntriesFacet.setStatic(true);
@@ -84,17 +83,11 @@ public class SearchDisplay {
 		/*
 		 * actual search
 		 */
-		String selected_facet = renderRequest.getParameter("selected_facet");
-		if (selected_facet != null && !selected_facet.equals("")) {
-
-			String[] entries = { selected_facet };
-			searchContext.setEntryClassNames(entries);
-			System.out.println("number of entries : " + searchContext.getEntryClassNames().length);
-		} else {
-			searchContext.setEntryClassNames(getEntryClassNames());
-			System.out.println("number of entries : " + searchContext.getEntryClassNames().length);
+		String[] assetEntries = _portletPreferences.getValues("selectedAssets", null);
+		if(assetEntries != null){
+			searchContext.setEntryClassNames(assetEntries);
+			System.out.println(assetEntries.length);
 		}
-
 		Indexer<?> indexer = FacetedSearcher.getInstance();
 		Hits hits;
 		try {

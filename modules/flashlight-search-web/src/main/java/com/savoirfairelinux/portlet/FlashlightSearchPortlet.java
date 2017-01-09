@@ -12,19 +12,20 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.asset.publisher.web.util.AssetPublisherHelper;
 import com.liferay.blogs.kernel.model.BlogsEntry;
+import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
-import com.liferay.journal.util.JournalContent;
+import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -106,12 +107,27 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("renderRequest", renderRequest);
 		renderRequest.setAttribute("renderResponse",  renderResponse);
 		renderRequest.setAttribute("assetPublisherHelper",  new AssetPublisherHelper());
+		renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
+		renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
 		
 		
 		
 		super.render(renderRequest, renderResponse);
 	}
-
+	
+	protected List<DDMStructure> getWebContentStructures(long groupid){
+		List<DDMStructure> groupstructures =  DDMStructureLocalServiceUtil.getStructures(groupid);
+		List<DDMStructure> structures= new ArrayList<DDMStructure>();
+		long classNameId = ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class);
+		//DDMStructure basicwebdocument = DDMStructureLocalServiceUtil.getStructure(groupId, classNameId, "BASIC-WEB-CONTENT");
+		//structures.add(basicwebdocument);
+		for(DDMStructure structure : groupstructures){
+			if(structure.getClassNameId() == classNameId){
+				structures.add(structure);
+			}
+		}
+		return structures;
+	}
 	protected Map<String, String> getFacetsDefinitions(long groupid, long companyId) {
 
 		Map<String, String> facets = new HashMap<String, String>();
@@ -143,7 +159,15 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
 		return facets;
 	}
-	@Reference
-	private JournalContent journalcontent;
+	
+	protected Map<String,String> getAssetEntries(){
+		Map<String,String> assets = new HashMap<String,String>();
+		
+		assets.put(JournalArticle.class.getName(), "Articles (Web Content)");
+		assets.put(DLFileEntry.class.getName(), "Documents & medias");
+		assets.put(BlogsEntry.class.getName(), "Blogs");
+		return assets;
+	}
+	
 
 }

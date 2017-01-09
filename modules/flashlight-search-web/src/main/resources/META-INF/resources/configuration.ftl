@@ -33,6 +33,8 @@
 		</div>
 	</@>
 	</#if>
+	
+	<#if false>
 	<@aui["fieldset"] label="Assets display">
 	<#if Request.facets??  && true>
 	<#list Request.facets?keys as key>
@@ -60,26 +62,51 @@
 			/>
 		</div>
 	</#list>
+	
 	</#if>
 	
 	</div>
 	</@>
+	</#if>
 	
 	<#--  multiple select for facet selection -->
-	<#if true >
-	<#list Request.enabled_facets as sf>
-	<p>${sf}</p>
-	</#list>
-	
-	<@aui["select"] name="selected_facets" multiple=true>
+	<@aui["fieldset"] label="Facets" > 
+
+	 
+	<@aui["select"] name="selected_facets" multiple=true label="">
 		<#list Request.searchFacets as facet>
 			<@aui["option"] value="${facet.className}" label="${facet.title}" selected=Request.enabled_facets?seq_contains(facet.className) />
 		</#list>
 	</@>
 	
-	</#if>
+	</@>
+	<@aui["fieldset"] label="Asset Entries">
+	<#assign assets= Request.renderRequest.getPreferences().getValues("selectedAssets",[]) />
+		<@aui["select"] name="selected_assets_entries" multiple=true label="">
+		<#list Request.searchAssetEntries?keys as assetEntry>
+			<@aui["option"] value="${assetEntry}" label="${Request.searchAssetEntries[assetEntry]}" selected=assets?seq_contains(assetEntry) />
+		</#list>
+	</@>	
+	</@>
 	
-	
+	<#--  selecting template for webcontent -->
+	<@aui["fieldset"] label="Structures">
+		<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+		<#list Request.structures as structure>
+			<#assign selectdTemplate=Request.renderRequest.getPreferences().getValue("ddm-"+structure.structureKey,"")>
+			<div class="panel panel-default">
+				
+				<div class="panel-body ">
+				<@aui["select"] label=structure.getName("en_US") name="ddm-"+structure.structureKey >
+					<#list structure["templates"] as template>
+						<@aui["option"] label=template.name value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
+					</#list>
+				</@>
+				</div>
+			</div>
+		</#list>
+		</div>
+	</@>
 
 	<@aui["button-row"]>
 		<@aui["button"] type="submit" />
