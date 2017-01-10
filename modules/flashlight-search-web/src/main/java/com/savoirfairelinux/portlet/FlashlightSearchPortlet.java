@@ -12,10 +12,8 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
-import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.blogs.kernel.model.BlogsEntry;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
@@ -23,7 +21,6 @@ import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUt
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -64,12 +61,12 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 	@Override
 	public void render(RenderRequest renderRequest, RenderResponse renderResponse)
 			throws IOException, PortletException {
+		
 		ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
 		long scopeGroupId = themeDisplay.getScopeGroupId();
 		String keywords = renderRequest.getParameter("keywords");
 
 		SearchDisplay display = new SearchDisplay(renderRequest.getPreferences());
-		List<Document> documents = new ArrayList<Document>();
 		Map<String, List<Document>> groupedDocuments = null;
 		List<SearchResultWrapper> results = new ArrayList<SearchResultWrapper>();
 		String[] enabled_facets = renderRequest.getPreferences().getValues("facets", new String[0]);
@@ -92,20 +89,11 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("searchFacets", searchFacets);
 
 		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
-		long[] defaulIds = new long[facets.size() + 1];
-		String[] defaults = new String[defaulIds.length];
-		for (int i = 0; i < defaulIds.length; i++) {
-			defaulIds[i] = scopeGroupId;
-			defaults[i] = "default";
-		}
-		String[] displayStyle = renderRequest.getPreferences().getValues("displayStyle", defaults);
-		long[] displayStyleGroupId = GetterUtil
-				.getLongValues(renderRequest.getPreferences().getValues("displayStyleGroupId", null), defaulIds);
+		long displayStyleGroupId = GetterUtil
+				.getLong(renderRequest.getPreferences().getValue("displayStyleGroupId", ""), scopeGroupId);
 
-		renderRequest.setAttribute("displayStyle", displayStyle);
 		renderRequest.setAttribute("displayStyleGroupId", displayStyleGroupId);
 		renderRequest.setAttribute("documentClassName", Document.class.getName());
-		renderRequest.setAttribute("documents", documents);
 		renderRequest.setAttribute("groupedDocuments", groupedDocuments);
 		renderRequest.setAttribute("facets", facets);
 		renderRequest.setAttribute("keywords", keywords);
@@ -119,9 +107,6 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("flashlightUtil",  new FlashlightUtil());
 		renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
 		renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
-		/*renderRequest.setAttribute("assetEntryLocalService", assetEntryLocalService);
-		renderRequest.setAttribute("journalArticleLocalService", assetEntryLocalService);*/
-		
 		renderRequest.setAttribute("journalArticleLocalService", JournalArticleLocalServiceUtil.getService());
 		
 		

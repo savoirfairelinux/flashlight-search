@@ -1,32 +1,20 @@
 
 <#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
 <#assign liferay_portlet_ext = taglibLiferayHash["/META-INF/liferay-portlet-ext.tld"] />
-<#assign liferay_security = taglibLiferayHash["/META-INF/liferay-security.tld"] />
-<#assign liferay_theme = taglibLiferayHash["/META-INF/liferay-theme.tld"] />
-<#assign aui = taglibLiferayHash["/META-INF/liferay-aui.tld"] />
 <#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
-<#assign liferay_ui = taglibLiferayHash["/META-INF/liferay-ui.tld"] />
 
-<#assign Field = staticUtil["com.liferay.portal.kernel.search.Field"] />
-<#assign content=Field.CONTENT />
-<#assign title = Field.TITLE />
-<#assign snippet = Field.SNIPPET>
-<#assign tags = Field.ASSET_TAG_NAMES />
+
 <#assign journalArticleLocalService = Request.journalArticleLocalService>
-
 <#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
-<@liferay_theme["defineObjects"] />
-<@portlet["defineObjects"] />
+<#assign results=Request.searchResults />
 
 
-
-			<#assign results=Request.searchResults />
-			<@liferay_ddm["template-renderer"] 
-				className="${Request.documentClassName}"
-				displayStyle="${Request.displayStyle[0]}"
-				displayStyleGroupId=Request.displayStyleGroupId[0]
-				entries=results
-			>
+<@liferay_ddm["template-renderer"] 
+	className="${Request.documentClassName}"
+	displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
+	displayStyleGroupId=Request.displayStyleGroupId
+	entries=results
+>
 
 <@liferay_portlet["renderURL"] var="viewURL">
 	<@liferay_portlet["param"] name="mvcPath" value="/view.ftl" />
@@ -40,6 +28,7 @@
 	<@liferay_aui["input"] name="ddmStructureKey"  type="hidden" value=params.getParameter("ddmStructureKey")!"" />
 	<@liferay_aui["input"] name="fileEntryTypeId" type="hidden"  value=params.getParameter("fileEntryTypeId")!""/>
 	<@liferay_aui["input"] name="assetCategoryIds" type="hidden"  value=params.getParameter("assetCategoryIds")!""/>
+	<@liferay_aui["input"] name="entryClassName" type="hidden"  value=params.getParameter("entryClassName")!""/>
 	
 	<@liferay_aui["input"] name="createDate" type="hidden"   value=params.getParameter("createDate")!"" />
 	<@liferay_aui["input"] name="mvcPath" type="hidden" value="/search_result.ftl" />
@@ -62,20 +51,8 @@
 					</@>
 					<li><a href="${facetURL}" >All</a></li>
 					<#list Request.searchFacets as facet>
-						
 						<#list facet.facet.facetCollector.termCollectors as term>
 							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
-								<@liferay_portlet["renderURL"] var="facetURL" varImpl="facetURL">
-								<#--  original 
-									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
-									-->
-									<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
-									<@liferay_portlet["param"] name="keywords" value=Request.keywords />
-									<@liferay_portlet["param"] name=facet.fieldName value=term.term />
-								</@>
-								<#-- original code
-								<li><a href="${facetURL}" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></a></li>
-								 -->
 								<li><@liferay_aui["a"] href="#" onClick="facetFilter(['${facet.fieldName}' , '${term.term}'])" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></@></li>
 							</#if>
 						</#list>
@@ -89,8 +66,9 @@
 	
 	<#assign ddmStructureKey=params.getParameter("ddmStructureKey")!"" />
 	<#assign fileEntryTypeId = params.getParameter("fileEntryTypeId")!"" />
-	<#assign showing = ddmStructureKey!="" || fileEntryTypeId!="" />
-	<#if ddmStructureKey!="" || fileEntryTypeId!=""  >
+	<#assign entryClassName = params.getParameter("entryClassName")!"" />
+	<#assign showing = ddmStructureKey!="" || fileEntryTypeId!="" || entryClassName!=""/>
+	<#if ddmStructureKey!="" || fileEntryTypeId!="" || entryClassName!="" >
 	<div class="row">
 		<div class="col-md-9"></div>
 		<#if Request.enabled_facets?seq_contains("com.savoirfairelinux.facet.CreatedSearchFacet") >
@@ -120,15 +98,15 @@
 	</div>
 	-->
 		<#if Request.enabled_facets?seq_contains("com.liferay.portal.search.web.internal.facet.AssetCategoriesSearchFacet") >
-		<div class="col-md-2">
-		<@liferay_aui["select"] name="vocabulary" id="vocabulary" label="Vocabulary" onChange="vocabularyFilter(this)">
-			<@liferay_aui["option"] label="any" value=""  />
-			<#list Request.categories as category>
-				<@liferay_aui["option"] label=category.name value=category.categoryId />
-			</#list>
-		</@>
+			<div class="col-md-2">
+				<@liferay_aui["select"] name="vocabulary" id="vocabulary" label="Vocabulary" onChange="vocabularyFilter(this)">
+					<@liferay_aui["option"] label="any" value=""  />
+					<#list Request.categories as category>
+						<@liferay_aui["option"] label=category.name value=category.categoryId />
+					</#list>
+				</@>
+			</div>
 		</#if>
-	</div>
 	</#if>
 		<@liferay_aui["script"]>
 		function filterByYear(select){
@@ -164,108 +142,56 @@
 		}
 	</@>
 	</div>
-	
-
 </@>
 
 <div class="container">
-	<#if true>
-		
-			
-				<h2 class="h2">Default template</h2>
-			
-			 <div class="container">
-				<#if results?has_content >
-					<#list results as group>
-						<#assign key = group.key />
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								${Request.facets[key]}
-							</div>
-							 
-							<div class="panel-body">
-								<#assign groupdocuments = group.documents />
-								<#if ddmStructureKey=="" && fileEntryTypeId=="">
-									<#assign groupdocuments = group.documents[0..*3] />
-								</#if>
-								<#list groupdocuments as document>
-									<#if document?index%3==0 >
-									<div class="row">
-									</#if>
-									<div class="col-md-4"> 
-										<#assign entryUrl = Request.flashlightUtil.getAssetViewURL(Request.renderRequest, Request.renderResponse, document)>
-										<#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
-											<#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>
-											<#assign template = Request.renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get(ddmTemplateKey))>
-											<#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", locale, Request.portletRequest, themeDisplay)>
-											${content?replace("{entryUrl}", entryUrl)}
-										<#else>
-										<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
-											<p>can't display ${document.entryClassName}</p>
-										</#if>
-									</div>
-									
-									<#if document?index%3==2 >
-										</div>
-									</#if>
-								</#list>
-								<#if groupdocuments?size%3 !=0>
-								</div>
+	 <h2 class="h2">Default template</h2>
+	 <div class="container">
+		<#if results?has_content >
+			<#list results as group>
+				<#assign key = group.key />
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						${Request.facets[key]} <span class="badge">${group.documents?size}</span>
+					</div>
+					<div class="panel-body">
+						<#assign groupdocuments = group.documents />
+						<#if ddmStructureKey=="" && fileEntryTypeId=="">
+							<#assign groupdocuments = group.documents[0..*3] />
+						</#if>
+						<#list groupdocuments as document>
+							<#if document?index%3==0 >
+							<div class="row">
+							</#if>
+							<div class="col-md-4"> 
+								<#assign entryUrl = Request.flashlightUtil.getAssetViewURL(Request.renderRequest, Request.renderResponse, document)>
+								<#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
+									<#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>
+									<#assign template = Request.renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get(ddmTemplateKey))>
+									<#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", Request.themeDisplay.locale, Request.portletRequest, Request.themeDisplay)>
+									${content?replace("{entryUrl}", entryUrl)}
+								<#else>
+								<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
+									<p>can't display ${document.entryClassName}</p>
 								</#if>
 							</div>
 							
-						</div>
-					</#list>
-		
-				</#if>
-			</div>
-			
-		
-	</#if>
+							<#if document?index%3==2 >
+								</div>
+							</#if>
+						</#list>
+						<#if groupdocuments?size%3 !=0>
+							</div>
+						</#if>
+					</div>	
+				</div>
+			</#list>
+		</#if>
+	</div>
 	<hr/>
 	<div>
 		<a href="${viewURL}" class="btn">Return to search</a>
 	</div>
-</@>
-
-<#-- old way of templating 
-	<h2 class="h2">Grouped results</h2>
-	<#if Request.groupedDocuments?has_content >
-		
-		<#list Request.facets?keys as key>
-			<#if Request.groupedDocuments[key]??  && true>
-				<#assign docs=Request.groupedDocuments[key][0..*3] />
-			
-				
-				<@liferay_ddm["template-renderer"] 
-					className="com.liferay.journal.model.JournalArticle"
-					displayStyle=Request.displayStyle[key?counter]
-					displayStyleGroupId=Request.displayStyleGroupId[key?counter]
-					entries=docs
-				>
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							${Request.facets[key]}
-						</div>
-						<div class="panel-body">
-							<#list docs as doc >
-								<div class="col-md-4">
-								<h2>${doc.title} (default)</h2>
-								<#assign doc_length = doc.content?length />
-								
-									<p>${htmlUtil.escape(doc.content[0..*250])}</p>
-								
-								</div>
-							</#list>
-						</div>
-					</div>
-				</@>
-			</#if>
-			
-			
-		</#list>
-	</#if>
--->
-	
+</@>	
 </div>
 

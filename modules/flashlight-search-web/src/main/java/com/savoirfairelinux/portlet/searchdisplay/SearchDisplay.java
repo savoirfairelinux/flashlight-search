@@ -53,46 +53,36 @@ public class SearchDisplay {
 		 */
 		
 		Facet assetEntriesFacet = new AssetEntriesFacet(searchContext);
-
 		assetEntriesFacet.setStatic(true);
-
 		searchContext.addFacet(assetEntriesFacet);
 
 		Facet scopeFacet = new ScopeFacet(searchContext);
-
 		scopeFacet.setStatic(true);
-
 		searchContext.addFacet(scopeFacet);
+		
 		for (SearchFacet searchFacet : getEnabledSearchFacets()) {
-
 			try {
 				searchFacet.init(themeDisplay.getCompanyId(), getSearchConfiguration(), searchContext);
 			} catch (Exception e) {
 				System.out.println("cannot init the facet");
 			}
 			Facet facet = searchFacet.getFacet();
-
-			if (facet == null) {
-				continue;
+			if (facet != null) {
+				searchContext.addFacet(facet);;
 			}
-
-			searchContext.addFacet(facet);
-
 		}
-
+		
 		/*
 		 * actual search
 		 */
 		String[] assetEntries = _portletPreferences.getValues("selectedAssets", null);
-		if(assetEntries != null){
+		if(assetEntries != null && searchContext.getEntryClassNames().length > 1){
 			searchContext.setEntryClassNames(assetEntries);
-			System.out.println(assetEntries.length);
 		}
 		Indexer<?> indexer = FacetedSearcher.getInstance();
 		Hits hits;
 		try {
 			hits = indexer.search(searchContext);
-
 		} catch (SearchException e) {
 			hits = null;
 			e.printStackTrace();
@@ -104,7 +94,6 @@ public class SearchDisplay {
 			PortletPreferences portletPreferences, String groupBy, int maxcount) {
 		int size = maxcount;
 		Document[] documents = customSearch(renderRequest, keywords, portletPreferences).getDocs();
-		System.out.println("number of Documents: " + documents.length);
 		
 		
 		HashMap<String, List<Document>> hashMap = new HashMap<String, List<Document>>();
@@ -114,34 +103,16 @@ public class SearchDisplay {
 				key = "ddmStructureKey";
 			} else if (document.get(Field.ENTRY_CLASS_NAME).equals(DLFileEntry.class.getName())) {
 				key = "fileEntryTypeId";
-				DLFileEntry file =null;
-				try {
-					 file = DLFileEntryLocalServiceUtil.getDLFileEntry(Long.parseLong(document.get(Field.ENTRY_CLASS_PK)));
-				} catch (NumberFormatException e) {
-					e.printStackTrace();
-				} catch (PortalException e) {
-					e.printStackTrace();
-				}
-				if(file != null){
-					String imageURL = "http://localhost:8080/documents/"+file.getGroupId()+"/"+file.getFolderId()+"/"+file.getFileName()+"/"+file.getUuid()+"?version"+file.getVersion()+"&amp;documentThumbnail=1";
-				//document.addKeyword("imageURL", "http://localhost:8080/documents/20147/0/web_framework.pdf/dd3f7dfd-84c7-1553-7bf8-ba6893a4ef5f?version=1.0&amp;documentThumbnail=1");
-					document.addKeyword("imageURL", imageURL);
-				}
 			}
 			
 			if (!hashMap.containsKey(document.get(key))) {
 				List<Document> list = new ArrayList<Document>();
 				list.add(document);
-
 				hashMap.put(document.get(key), list);
-			} else {
-				if (hashMap.get(document.get(key)).size() < size) {
-					hashMap.get(document.get(key)).add(document);
-				}
+			} else if (hashMap.get(document.get(key)).size() < size) {
+				hashMap.get(document.get(key)).add(document);
 			}
-
 		}
-		System.out.println("size of the grouped docs map : " + hashMap.size());
 		return hashMap;
 	}
 
@@ -157,12 +128,10 @@ public class SearchDisplay {
 
 		_enabledSearchFacets = ListUtil.filter(SearchFacetTracker.getSearchFacets(),
 				new PredicateFilter<SearchFacet>() {
-
 					@Override
 					public boolean filter(SearchFacet searchFacet) {
 						return isDisplayFacet(searchFacet.getClassName());
 					}
-
 				});
 
 		return _enabledSearchFacets;
@@ -182,16 +151,7 @@ public class SearchDisplay {
 		return GetterUtil.getBoolean(_portletPreferences.getValue(className, null), true);
 	}
 
-	public static String[] getEntryClassNames() {
-		return entryClassNames;
-	}
 
-	public final static String[] entryClassNames = {  "com.liferay.blogs.kernel.model.BlogsEntry",
-			"com.liferay.document.library.kernel.model.DLFileEntry",
-			// "com.liferay.bookmarks.model.BookmarksEntry",
-			"com.liferay.journal.model.JournalArticle",
-			// "com.liferay.portal.kernel.model.User"
-	};
 
 	public void setPortletPreferences(PortletPreferences prefs) {
 		_portletPreferences = prefs;

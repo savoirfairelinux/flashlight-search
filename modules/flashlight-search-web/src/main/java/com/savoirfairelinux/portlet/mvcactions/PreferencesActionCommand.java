@@ -32,7 +32,6 @@ public class PreferencesActionCommand extends BaseMVCActionCommand{
 		while(e.hasMoreElements()){
 			String param = (String) e.nextElement();
 			if(param.startsWith("ddm-")){
-				System.out.println("param is : "+ param+ " and its value is : "+ actionRequest.getParameter(param));
 				actionRequest.getPreferences().setValue(param, actionRequest.getParameter(param));
 			}
 			
