@@ -4,18 +4,8 @@
 <#assign aui = taglibLiferayHash["/META-INF/liferay-aui.tld"] />
 <#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
 
-<@liferay_theme["defineObjects"] />
-<@portlet["defineObjects"] />
 
-<div>
-<h1>Some interesting configuration</h1>
-</div>
 
-<#if true>
-
-<#--  
-<@liferay_portlet["actionURL"] name="configurationURL" portletConfiguration=true var="configurationURL" />
--->
 <@liferay_portlet["renderURL"] portletConfiguration=true var="configurationRenderURL" />
  
 <@liferay_portlet["actionURL"] name="configurationURL" var="configurationURL" />
@@ -25,12 +15,10 @@
 	<#if true>
 	<@aui["fieldset"] label="ADT">
 		<div class="display-template">
-
-
 			<@liferay_ddm["template-selector"]
 				className="${Request.documentClassName}"
-				displayStyle="${Request.displayStyle[0]}"
-				displayStyleGroupId=Request.displayStyleGroupId[0]
+				displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
+				displayStyleGroupId=Request.renderRequest.getPreferences().getValue("displayStyleGroupId","0")?number
 				refreshURL="${configurationRenderURL}"
 				showEmptyOption=true
 			/>
@@ -38,40 +26,6 @@
 	</@>
 	</#if>
 	
-	<#if false>
-	<@aui["fieldset"] label="Assets display">
-	<#if Request.facets??  && true>
-	<#list Request.facets?keys as key>
-	
-	
-	<div class="display-template">
-
-			<#--  original
-			<@liferay_ddm["template-selector"]
-				className="${key}"
-				displayStyle=Request.displayStyle[key?counter]
-				displayStyleGroupId=Request.displayStyleGroupId[key?counter]
-				refreshURL="${configurationRenderURL}"
-				showEmptyOption=true
-			/>
-			-->
-			
-			<@liferay_ddm["template-selector"]
-				className="com.liferay.journal.model.JournalArticle"
-				displayStyle=Request.displayStyle[key?counter]
-				displayStyleGroupId=Request.displayStyleGroupId[key?counter]
-				refreshURL="${configurationRenderURL}"
-				showEmptyOption=true
-				label="${Request.facets[key]}"
-			/>
-		</div>
-	</#list>
-	
-	</#if>
-	
-	</div>
-	</@>
-	</#if>
 	
 	<#--  multiple select for facet selection -->
 	<@aui["fieldset"] label="Facets" > 
@@ -96,6 +50,7 @@
 	<#--  selecting template for webcontent -->
 	<@aui["fieldset"] label="Structures">
 		<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+		<#assign locale=Request.themeDisplay.locale />
 		<#list Request.structures as structure>
 			<#assign selectdTemplate=Request.renderRequest.getPreferences().getValue("ddm-"+structure.structureKey,"")>
 			<div class="panel panel-default">
@@ -116,6 +71,5 @@
 		<@aui["button"] type="submit" />
 	</@>
 </@>
-</#if>
 
 

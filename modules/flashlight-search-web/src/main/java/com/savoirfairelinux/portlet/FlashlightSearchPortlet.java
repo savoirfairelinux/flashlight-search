@@ -89,10 +89,7 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("searchFacets", searchFacets);
 
 		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
-		long displayStyleGroupId = GetterUtil
-				.getLong(renderRequest.getPreferences().getValue("displayStyleGroupId", ""), scopeGroupId);
 
-		renderRequest.setAttribute("displayStyleGroupId", displayStyleGroupId);
 		renderRequest.setAttribute("documentClassName", Document.class.getName());
 		renderRequest.setAttribute("groupedDocuments", groupedDocuments);
 		renderRequest.setAttribute("facets", facets);

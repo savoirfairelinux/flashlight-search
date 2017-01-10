@@ -12,7 +12,7 @@
 <@liferay_ddm["template-renderer"] 
 	className="${Request.documentClassName}"
 	displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
-	displayStyleGroupId=Request.displayStyleGroupId
+	displayStyleGroupId=Request.renderRequest.getPreferences().getValue("displayStyleGroupId","0")?number
 	entries=results
 >
 
