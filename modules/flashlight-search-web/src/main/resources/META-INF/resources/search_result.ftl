@@ -1,8 +1,9 @@
-
 <#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
 <#assign liferay_portlet_ext = taglibLiferayHash["/META-INF/liferay-portlet-ext.tld"] />
 <#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
 
+
+<@liferay_theme["defineObjects"] />
 
 <#assign journalArticleLocalService = Request.journalArticleLocalService>
 <#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
@@ -10,7 +11,7 @@
 
 
 <@liferay_ddm["template-renderer"] 
-	className="${Request.documentClassName}"
+	className="com.liferay.portal.kernel.search.Document"
 	displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
 	displayStyleGroupId=Request.renderRequest.getPreferences().getValue("displayStyleGroupId","0")?number
 	entries=results
@@ -34,14 +35,14 @@
 	<@liferay_aui["input"] name="mvcPath" type="hidden" value="/search_result.ftl" />
 	<@liferay_aui["fieldset"]>
 		<@liferay_aui["input"] class="search-input" label="" name="keywords" placeholder="search"  type="text" size="30" inlineField=true  >
-			<@liferay_aui["validator"] name="required" errorMessage="You must enter a search term"/>
+			<@liferay_aui["validator"] name="required" errorMessage="flashlight-validation-message"/>
 		</@>
 		<@liferay_aui["field-wrapper"]  inlineField=true >
-			<@liferay_aui["button"] type="submit"   value="Search" class="icon-monospaced " icon="icon-search"></@>
+			<@liferay_aui["button"] type="submit"   value="flashlight-search-button" class="icon-monospaced " icon="icon-search"></@>
 		</@>
 	</@>
 
-	<nav class="navbar navbar-inverse">
+	<nav class="navbar navbar-default">
 		<div class="container-fluid">
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav">
@@ -49,11 +50,11 @@
 						<@liferay_portlet["param"] name="mvcPath" value="/search_result.ftl" />
 						<@liferay_portlet["param"] name="keywords" value=Request.keywords />
 					</@>
-					<li><a href="${facetURL}" >All</a></li>
+					<li><a href="${facetURL}" ><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
 					<#list Request.searchFacets as facet>
 						<#list facet.facet.facetCollector.termCollectors as term>
 							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
-								<li><@liferay_aui["a"] href="#" onClick="facetFilter(['${facet.fieldName}' , '${term.term}'])" >${Request.facets[term.term]} <span class="badge">${term.frequency}</span></@></li>
+								<li><@liferay_aui["a"] href="#" onClick="facetFilter(['${facet.fieldName}' , '${term.term}'])" >${Request.facets[term.term]!term.term} <span class="badge">${term.frequency}</span></@></li>
 							</#if>
 						</#list>
 					</#list>
@@ -67,40 +68,24 @@
 	<#assign ddmStructureKey=params.getParameter("ddmStructureKey")!"" />
 	<#assign fileEntryTypeId = params.getParameter("fileEntryTypeId")!"" />
 	<#assign entryClassName = params.getParameter("entryClassName")!"" />
-	<#assign showing = ddmStructureKey!="" || fileEntryTypeId!="" || entryClassName!=""/>
-	<#if ddmStructureKey!="" || fileEntryTypeId!="" || entryClassName!="" >
+	<#assign isShowing = ddmStructureKey!="" || fileEntryTypeId!="" || entryClassName!=""/>
+	<#if isShowing >
 	<div class="row">
 		<div class="col-md-9"></div>
 		<#if Request.enabled_facets?seq_contains("com.savoirfairelinux.facet.CreatedSearchFacet") >
 			<div class="col-md-1">
-				<@liferay_aui["select"] name="create" onChange="filterByYear(this)" label="Years">
-					<@liferay_aui["option"] value="any" label="any" />
+				<@liferay_aui["select"] name="create" onChange="filterByYear(this)" label="flashlight-years">
+					<@liferay_aui["option"] value="flashlight-any" label="any" />
 					<#list years as year >
 						<@liferay_aui["option"] value=year label=year />
 					</#list>
 				</@>
 			</div>
 		</#if>
-	<#--  
-	<div class="col-md-2">
-	<@liferay_aui["select"] name="categories" id="categories" label="Category" onChange="categoryFilter()">
-		<@liferay_aui["option"] label="any" value="any" data={'any' : 'any'} />
-		<#list Request.searchFacets as facet>
-						
-						<#list facet.facet.facetCollector.termCollectors as term>
-							<#if (Request.groupedDocuments[term.term])?? && Request.enabled_facets?seq_contains(facet.className) >
-								
-								<@liferay_aui["option"] label="${Request.facets[term.term]}" data={"key": facet.fieldName , "value" : term.term} key="${facet.fieldName}" value="${term.term}"  />
-							</#if>
-						</#list>
-					</#list>
-	</@>
-	</div>
-	-->
 		<#if Request.enabled_facets?seq_contains("com.liferay.portal.search.web.internal.facet.AssetCategoriesSearchFacet") >
 			<div class="col-md-2">
-				<@liferay_aui["select"] name="vocabulary" id="vocabulary" label="Vocabulary" onChange="vocabularyFilter(this)">
-					<@liferay_aui["option"] label="any" value=""  />
+				<@liferay_aui["select"] name="vocabulary" id="vocabulary" label="flashlight-vocabulary" onChange="vocabularyFilter(this)">
+					<@liferay_aui["option"] label="flashlight-any" value=""  />
 					<#list Request.categories as category>
 						<@liferay_aui["option"] label=category.name value=category.categoryId />
 					</#list>
@@ -115,28 +100,18 @@
 				$("#<@liferay_portlet["namespace"] />createDate").val(range);
 			}
 			else{
-			
 				$("#<@liferay_portlet["namespace"] />createDate").val("");
 			}
 			$("#<@liferay_portlet["namespace"] />search_form").submit();
 			
 		}
 		function facetFilter(facet){
-		//alert(facet[0] + " : " + facet[1]);
-		$("#<@liferay_portlet["namespace"] />"+facet[0]).val(facet[1]);
-		$("#<@liferay_portlet["namespace"] />search_form").submit();
-		}
-		function categoryFilter(){
-			var key = $("#<@liferay_portlet["namespace"] />categories option:selected").attr("data-key");
-			var value = $("#<@liferay_portlet["namespace"] />categories option:selected").attr("data-value");
-			
-			$("#<@liferay_portlet["namespace"] />"+key).val(value);
+			$("#<@liferay_portlet["namespace"] />"+facet[0]).val(facet[1]);
 			$("#<@liferay_portlet["namespace"] />search_form").submit();
-			//alert(select +"   " + select.dataset.key);
 		}
+
 		
 		function vocabularyFilter(select){
-			//alert(select.value);
 			$("#<@liferay_portlet["namespace"] />assetCategoryIds").val(select.value);
 			$("#<@liferay_portlet["namespace"] />search_form").submit();
 		}
@@ -145,14 +120,14 @@
 </@>
 
 <div class="container">
-	 <h2 class="h2">Default template</h2>
+	 
 	 <div class="container">
 		<#if results?has_content >
 			<#list results as group>
 				<#assign key = group.key />
 				<div class="panel panel-default">
 					<div class="panel-heading">
-						${Request.facets[key]} <span class="badge">${group.documents?size}</span>
+						${Request.facets[key]!key} <span class="badge">${group.documents?size}</span>
 					</div>
 					<div class="panel-body">
 						<#assign groupdocuments = group.documents />
@@ -168,11 +143,10 @@
 								<#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
 									<#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>
 									<#assign template = Request.renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get(ddmTemplateKey))>
-									<#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", Request.themeDisplay.locale, Request.portletRequest, Request.themeDisplay)>
+									<#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", locale, Request.portletRequest, themeDisplay)>
 									${content?replace("{entryUrl}", entryUrl)}
 								<#else>
-								<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
-									<p>can't display ${document.entryClassName}</p>
+									<h2><a href="${entryUrl}">${document.get("title")}</a></h2>
 								</#if>
 							</div>
 							
@@ -183,15 +157,29 @@
 						<#if groupdocuments?size%3 !=0>
 							</div>
 						</#if>
+						<#if !isShowing>
+							<div class="row">
+								<div class="col-md-12 center-block">
+									<#assign param_name= groupdocuments[0].get("type") />
+				    					<@liferay_aui["button"] type="button" onClick="facetFilter(['${param_name}' , '${key}'])" cssClass="btn btn-default center-block" value="flashlight-show-more"/>
+								</div>
+							</div>
+						</#if>
 					</div>	
 				</div>
 			</#list>
+		<#else>
+			<div class="col-md-12 center-block text-center">
+				<@liferay_ui["message"] key="flashlight-empty-results" />
+			</div>
 		</#if>
+		
 	</div>
 	<hr/>
 	<div>
-		<a href="${viewURL}" class="btn">Return to search</a>
+		<a href="${viewURL}" class="btn"><@liferay_ui["message"] key="flashlight-return-button" /></a>
 	</div>
-</@>	
 </div>
+</@>	
+
 

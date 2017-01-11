@@ -22,21 +22,17 @@ public class SearchTemplateHandler extends BasePortletDisplayTemplateHandler{
 
 	@Override
 	public String getClassName() {
-		
 		return Document.class.getName();
 	}
 
 	@Override
 	public String getName(Locale locale) {
-		
 		return SearchPortletKeys.NAME;
 	}
 
 	@Override
 	public String getResourceName() {
-		
-		return SearchPortletKeys.NAME+"";
-		//return "";
+		return SearchPortletKeys.NAME;
 	}
 	
 	@Override

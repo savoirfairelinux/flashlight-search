@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
@@ -17,6 +19,7 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.blogs.kernel.model.BlogsEntry;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
@@ -25,12 +28,12 @@ import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
@@ -67,36 +70,26 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		String keywords = renderRequest.getParameter("keywords");
 
 		SearchDisplay display = new SearchDisplay(renderRequest.getPreferences());
-		Map<String, List<Document>> groupedDocuments = null;
-		List<SearchResultWrapper> results = new ArrayList<SearchResultWrapper>();
+		Map<String, List<Document>> groupedDocuments = new HashMap<>();
+		List<SearchResultWrapper> searchResults = new ArrayList<>();
 		String[] enabled_facets = renderRequest.getPreferences().getValues("facets", new String[0]);
-
 		if (keywords != null) {
-			try {
-
-				groupedDocuments = display.customGroupedSearch(renderRequest, keywords, renderRequest.getPreferences(),
-						Field.ENTRY_CLASS_NAME);
-				for(String key : groupedDocuments.keySet()){
-					results.add(new SearchResultWrapper(key,groupedDocuments.get(key)));
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			groupedDocuments = display.customGroupedSearch(renderRequest, keywords, 
+					Field.ENTRY_CLASS_NAME);
+			for(Entry<String, List<Document>> document : groupedDocuments.entrySet()){
+				searchResults.add(new SearchResultWrapper(document.getKey(),document.getValue()));
+			}	
 		}
 		List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
+		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getLocale());
 
-		renderRequest.setAttribute("searchFacets", searchFacets);
-
-		Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getCompanyId());
-
-		renderRequest.setAttribute("documentClassName", Document.class.getName());
 		renderRequest.setAttribute("groupedDocuments", groupedDocuments);
 		renderRequest.setAttribute("facets", facets);
+		renderRequest.setAttribute("searchFacets", searchFacets);
 		renderRequest.setAttribute("keywords", keywords);
 		renderRequest.setAttribute("enabled_facets", enabled_facets);
 		renderRequest.setAttribute("categories", AssetCategoryLocalServiceUtil.getCategories());
-		renderRequest.setAttribute("searchResults", results);
+		renderRequest.setAttribute("searchResults", searchResults);
 		renderRequest.setAttribute("themeDisplay", themeDisplay);
 		renderRequest.setAttribute("portletRequest", new PortletRequestModel(renderRequest, renderResponse));
 		renderRequest.setAttribute("renderRequest", renderRequest);
@@ -105,8 +98,6 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
 		renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
 		renderRequest.setAttribute("journalArticleLocalService", JournalArticleLocalServiceUtil.getService());
-		
-		
 		
 		super.render(renderRequest, renderResponse);
 	}
@@ -128,22 +119,14 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		}
 		return structures;
 	}
-	protected Map<String, String> getFacetsDefinitions(long groupid, long companyId) {
+	protected Map<String, String> getFacetsDefinitions(long groupid, Locale locale) {
 
 		Map<String, String> facets = new HashMap<String, String>();
-		facets.put("BASIC-WEB-CONTENT", "Basic web content");
-		List<DDMStructure> structures = DDMStructureLocalServiceUtil.getStructures(groupid);
-
+		List<DDMStructure> structures = getWebContentStructures(groupid);
 		for (DDMStructure structure : structures) {
-			String name = structure.getName("en_US");
+			String name = structure.getName(locale);
 			String key = structure.getStructureKey();
-
-			try {
-				GetterUtil.getLong(key);
-				facets.put(key, name);
-			} catch (Exception e) {
-
-			}
+			facets.put(key, name);
 		}
 
 		List<DLFileEntryType> filetypes = DLFileEntryTypeLocalServiceUtil.getDLFileEntryTypes(0,
@@ -151,11 +134,12 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
 		for (DLFileEntryType filetype : filetypes) {
 			String key = filetype.getFileEntryTypeId() + "";
-			String name = filetype.getName("en_US");
-
+			String name = filetype.getName(locale);
 			facets.put(key, name);
 		}
 		facets.put(BlogsEntry.class.getName(), "Blogs");
+		facets.put(User.class.getName(), "Users");
+		facets.put(DLFolder.class.getName(), "Folders");
 
 		return facets;
 	}
@@ -166,6 +150,9 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 		assets.put(JournalArticle.class.getName(), "Articles (Web Content)");
 		assets.put(DLFileEntry.class.getName(), "Documents & medias");
 		assets.put(BlogsEntry.class.getName(), "Blogs");
+		assets.put(User.class.getName(), "Users");
+		assets.put(DLFolder.class.getName(), "Folders");
+		
 		return assets;
 	}
 	

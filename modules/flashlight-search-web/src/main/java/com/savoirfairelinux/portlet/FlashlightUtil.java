@@ -40,7 +40,6 @@ public class FlashlightUtil {
 			String currentURL = PortalUtil.getCurrentURL(renderRequest);
 			ThemeDisplay themeDisplay =(ThemeDisplay)renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
 			
-//			PortletURL viewContentURL = renderResponse.createRenderURL();
 			PortletURL viewContentURL = PortletURLFactoryUtil.create(renderRequest, "com_liferay_portal_search_web_portlet_SearchPortlet", themeDisplay.getLayout(),
 					PortletRequest.RENDER_PHASE);
 

@@ -1,22 +1,17 @@
 <#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
-<#assign liferay_security = taglibLiferayHash["/META-INF/liferay-security.tld"] />
-<#assign liferay_theme = taglibLiferayHash["/META-INF/liferay-theme.tld"] />
-<#assign aui = taglibLiferayHash["/META-INF/liferay-aui.tld"] />
 <#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
 
+<@liferay_theme["defineObjects"] />
 
 
 <@liferay_portlet["renderURL"] portletConfiguration=true var="configurationRenderURL" />
  
 <@liferay_portlet["actionURL"] name="configurationURL" var="configurationURL" />
-<@aui["form"] action="${configurationURL}" method="post" name="fm">
-	<@aui["input"] name="cmd" type="hidden" value="update" />
-	
-	<#if true>
-	<@aui["fieldset"] label="ADT">
+<@liferay_aui["form"] action="${configurationURL}" method="post" name="fm">
+	<@liferay_aui["fieldset"] label="ADT">
 		<div class="display-template">
 			<@liferay_ddm["template-selector"]
-				className="${Request.documentClassName}"
+				className="com.liferay.portal.kernel.search.Document"
 				displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
 				displayStyleGroupId=Request.renderRequest.getPreferences().getValue("displayStyleGroupId","0")?number
 				refreshURL="${configurationRenderURL}"
@@ -24,41 +19,36 @@
 			/>
 		</div>
 	</@>
-	</#if>
 	
-	
-	<#--  multiple select for facet selection -->
-	<@aui["fieldset"] label="Facets" > 
+	<@liferay_aui["fieldset"] label="Facets" > 
 
 	 
-	<@aui["select"] name="selected_facets" multiple=true label="">
+	<@liferay_aui["select"] name="selected_facets" multiple=true label="">
 		<#list Request.searchFacets as facet>
-			<@aui["option"] value="${facet.className}" label="${facet.title}" selected=Request.enabled_facets?seq_contains(facet.className) />
+			<@liferay_aui["option"] value="${facet.className}" label="${facet.title}" selected=Request.enabled_facets?seq_contains(facet.className) />
 		</#list>
 	</@>
 	
 	</@>
-	<@aui["fieldset"] label="Asset Entries">
+	<@liferay_aui["fieldset"] label="Asset Entries">
 	<#assign assets= Request.renderRequest.getPreferences().getValues("selectedAssets",[]) />
-		<@aui["select"] name="selected_assets_entries" multiple=true label="">
+		<@liferay_aui["select"] name="selected_assets_entries" multiple=true label="">
 		<#list Request.searchAssetEntries?keys as assetEntry>
-			<@aui["option"] value="${assetEntry}" label="${Request.searchAssetEntries[assetEntry]}" selected=assets?seq_contains(assetEntry) />
+			<@liferay_aui["option"] value="${assetEntry}" label="${Request.searchAssetEntries[assetEntry]}" selected=assets?seq_contains(assetEntry) />
 		</#list>
 	</@>	
 	</@>
 	
-	<#--  selecting template for webcontent -->
-	<@aui["fieldset"] label="Structures">
+	<@liferay_aui["fieldset"] label="Structures">
 		<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-		<#assign locale=Request.themeDisplay.locale />
 		<#list Request.structures as structure>
 			<#assign selectdTemplate=Request.renderRequest.getPreferences().getValue("ddm-"+structure.structureKey,"")>
 			<div class="panel panel-default">
 				
 				<div class="panel-body ">
-				<@aui["select"] label=structure.getName(locale) name="ddm-"+structure.structureKey >
+				<@liferay_aui["select"] label=structure.getName(locale) name="ddm-"+structure.structureKey >
 					<#list structure["templates"] as template>
-						<@aui["option"] label=template.getName(locale) value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
+						<@liferay_aui["option"] label=template.getName(locale) value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
 					</#list>
 				</@>
 				</div>
@@ -67,8 +57,8 @@
 		</div>
 	</@>
 
-	<@aui["button-row"]>
-		<@aui["button"] type="submit" />
+	<@liferay_aui["button-row"]>
+		<@liferay_aui["button"] type="submit" />
 	</@>
 </@>
 
