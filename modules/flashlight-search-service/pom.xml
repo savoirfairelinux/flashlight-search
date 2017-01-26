@@ -7,10 +7,19 @@
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../</relativePath>
     </parent>
-    <artifactId>flashlight-search-action</artifactId>
+    <artifactId>flashlight-search-service</artifactId>
     <packaging>bundle</packaging>
 
-    <name>Flashlight Search portlet URL action</name>
+    <name>Flashlight Search service implementation</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>flashlight-search-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -32,4 +41,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

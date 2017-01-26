@@ -7,10 +7,18 @@
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../</relativePath>
     </parent>
-    <artifactId>flashlight-search-action</artifactId>
+    <artifactId>flashlight-search-facets</artifactId>
     <packaging>bundle</packaging>
 
-    <name>Flashlight Search portlet URL action</name>
+    <name>Flashlight Search facets</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.portal.search.web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
