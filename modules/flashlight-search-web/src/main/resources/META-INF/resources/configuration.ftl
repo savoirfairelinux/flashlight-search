@@ -1,8 +1,8 @@
 <#include "init.ftl">
 
 <@liferay_portlet["renderURL"] portletConfiguration=true var="configurationRenderURL" />
+<@liferay_portlet["actionURL"] name="configurePortlet" var="configurationURL" />
 
-<@liferay_portlet["actionURL"] name="configurationURL" var="configurationURL" />
 <@liferay_aui["form"] action="${configurationURL}" method="post" name="fm">
     <@liferay_aui["fieldset"] label="ADT">
         <div class="display-template">

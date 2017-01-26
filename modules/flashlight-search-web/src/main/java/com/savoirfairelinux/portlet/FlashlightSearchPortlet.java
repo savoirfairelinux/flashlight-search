@@ -2,14 +2,18 @@ package com.savoirfairelinux.portlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
+import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -41,25 +45,25 @@ import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
 import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
 
-@Component(immediate = true, property = {
-                "com.liferay.portlet.display-category=category.tools",
-                "com.liferay.portlet.instanceable=false",
-                "javax.portlet.display-name=Flashlight Search",
-                "javax.portlet.init-param.template-path=/",
-                "javax.portlet.init-param.view-template=/view.ftl",
-                "javax.portlet.init-param.edit-template=/configuration.ftl",
-                "javax.portlet.portlet-mode=text/html;view,edit",
-                "javax.portlet.resource-bundle=content.Language",
-                "javax.portlet.security-role-ref=power-user,user",
-                "javax.portlet.name=" + SearchPortletKeys.NAME },
-            service = Portlet.class)
+@Component(
+    immediate = true,
+    service = Portlet.class,
+    property = {
+        "com.liferay.portlet.display-category=category.tools",
+        "com.liferay.portlet.instanceable=false",
+        "javax.portlet.display-name=Flashlight Search",
+        "javax.portlet.init-param.template-path=/",
+        "javax.portlet.init-param.view-template=/view.ftl",
+        "javax.portlet.init-param.edit-template=/configuration.ftl",
+        "javax.portlet.portlet-mode=text/html;view,edit",
+        "javax.portlet.resource-bundle=content.Language",
+        "javax.portlet.security-role-ref=power-user,user",
+        "javax.portlet.name=" + SearchPortletKeys.NAME
+    }
+)
 public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
-
-    public FlashlightSearchPortlet() {
-
-    }
 
     @Override
     public void render(RenderRequest renderRequest, RenderResponse renderResponse)
@@ -100,6 +104,32 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         renderRequest.setAttribute("journalArticleLocalService", JournalArticleLocalServiceUtil.getService());
 
         super.render(renderRequest, renderResponse);
+    }
+
+    @ProcessAction(name = "configurePortlet")
+    public void configurePortletAction(ActionRequest actionRequest, ActionResponse actionResponse) throws IOException, PortletException {
+        String[] displayStyle = actionRequest.getParameterValues("preferences--displayStyle--");
+        String[] displayStyleGroupId = actionRequest.getParameterValues("preferences--displayStyleGroupId--");
+        String[] facets = actionRequest.getParameterValues("selected_facets");
+        String[] selectAssets = actionRequest.getParameterValues("selected_assets_entries");
+
+        Enumeration<String> e = actionRequest.getParameterNames();
+        while (e.hasMoreElements()) {
+            String param = (String) e.nextElement();
+            if (param.startsWith("ddm-")) {
+                actionRequest.getPreferences().setValue(param, actionRequest.getParameter(param));
+            }
+
+        }
+        if (facets == null) {
+            facets = new String[0];
+        }
+        actionRequest.getPreferences().setValues("facets", facets);
+        actionRequest.getPreferences().setValues("displayStyle", displayStyle);
+        actionRequest.getPreferences().setValues("displayStyleGroupId", displayStyleGroupId);
+        actionRequest.getPreferences().setValues("selectedAssets", selectAssets);
+        actionRequest.getPreferences().store();
+
     }
 
     protected List<DDMStructure> getWebContentStructures(long groupid){
