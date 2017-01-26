@@ -18,80 +18,78 @@ import com.liferay.portal.search.web.facet.BaseSearchFacet;
 import com.liferay.portal.search.web.facet.SearchFacet;
 
 @Component(immediate = true, service = SearchFacet.class)
-public class FreemarkerStructureFacet extends BaseSearchFacet{
-	
-	public FreemarkerStructureFacet(SearchContext searchContext){
-		
-	}
-	public FreemarkerStructureFacet(){
-		
-	}
-	@Override
-	public FacetConfiguration getDefaultConfiguration(long companyId) {
-		FacetConfiguration facetConfiguration = new FacetConfiguration();
+public class FreemarkerStructureFacet extends BaseSearchFacet {
 
-		facetConfiguration.setClassName(getFacetClassName());
+    public FreemarkerStructureFacet(SearchContext searchContext) {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+    }
 
-		jsonObject.put("displayStyle", "list");
-		jsonObject.put("frequencyThreshold", 1);
-		jsonObject.put("maxTerms", 10);
-		jsonObject.put("showAssetCount", true);
+    public FreemarkerStructureFacet() {
 
-		facetConfiguration.setDataJSONObject(jsonObject);
+    }
 
-		facetConfiguration.setFieldName(getFieldName());
-		facetConfiguration.setLabel(getLabel());
-		facetConfiguration.setOrder(getOrder());
-		facetConfiguration.setStatic(false);
-		facetConfiguration.setWeight(1.3);
+    @Override
+    public FacetConfiguration getDefaultConfiguration(long companyId) {
+        FacetConfiguration facetConfiguration = new FacetConfiguration();
 
-		return facetConfiguration;
-	}
+        facetConfiguration.setClassName(getFacetClassName());
 
-	@Override
-	public String getFacetClassName() {
-		return MultiValueFacet.class.getName();
-	}
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-	@Override
-	public String getFieldName() {
-		return "ddmStructureKey";
-	}
+        jsonObject.put("displayStyle", "list");
+        jsonObject.put("frequencyThreshold", 1);
+        jsonObject.put("maxTerms", 10);
+        jsonObject.put("showAssetCount", true);
 
-	@Override
-	public JSONObject getJSONData(ActionRequest actionRequest) {
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        facetConfiguration.setDataJSONObject(jsonObject);
 
-		String displayStyleFacet = ParamUtil.getString(
-			actionRequest, getClassName() + "displayStyleFacet", "list");
-		int frequencyThreshold = ParamUtil.getInteger(
-			actionRequest, getClassName() + "frequencyThreshold", 1);
-		int maxTerms = ParamUtil.getInteger(
-			actionRequest, getClassName() + "maxTerms", 10);
-		boolean showAssetCount = ParamUtil.getBoolean(
-			actionRequest, getClassName() + "showAssetCount", true);
+        facetConfiguration.setFieldName(getFieldName());
+        facetConfiguration.setLabel(getLabel());
+        facetConfiguration.setOrder(getOrder());
+        facetConfiguration.setStatic(false);
+        facetConfiguration.setWeight(1.3);
 
-		jsonObject.put("displayStyle", displayStyleFacet);
-		jsonObject.put("frequencyThreshold", frequencyThreshold);
-		jsonObject.put("maxTerms", maxTerms);
-		jsonObject.put("showAssetCount", showAssetCount);
+        return facetConfiguration;
+    }
 
-		return jsonObject;
-	}
+    @Override
+    public String getFacetClassName() {
+        return MultiValueFacet.class.getName();
+    }
 
-	@Override
-	public String getLabel() {
-		return "Structures";
-	}
+    @Override
+    public String getFieldName() {
+        return "ddmStructureKey";
+    }
 
-	@Override
-	public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	}
+    @Override
+    public JSONObject getJSONData(ActionRequest actionRequest) {
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-	@Override
-	public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	}
+        String displayStyleFacet = ParamUtil.getString(actionRequest, getClassName() + "displayStyleFacet", "list");
+        int frequencyThreshold = ParamUtil.getInteger(actionRequest, getClassName() + "frequencyThreshold", 1);
+        int maxTerms = ParamUtil.getInteger(actionRequest, getClassName() + "maxTerms", 10);
+        boolean showAssetCount = ParamUtil.getBoolean(actionRequest, getClassName() + "showAssetCount", true);
+
+        jsonObject.put("displayStyle", displayStyleFacet);
+        jsonObject.put("frequencyThreshold", frequencyThreshold);
+        jsonObject.put("maxTerms", maxTerms);
+        jsonObject.put("showAssetCount", showAssetCount);
+
+        return jsonObject;
+    }
+
+    @Override
+    public String getLabel() {
+        return "Structures";
+    }
+
+    @Override
+    public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    }
+
+    @Override
+    public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    }
 
 }

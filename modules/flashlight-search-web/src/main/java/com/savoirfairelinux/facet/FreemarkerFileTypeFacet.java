@@ -18,75 +18,69 @@ import com.liferay.portal.search.web.facet.SearchFacet;
 
 @Component(immediate = true, service = SearchFacet.class)
 public class FreemarkerFileTypeFacet extends BaseSearchFacet {
-	
-	@Override
-	public FacetConfiguration getDefaultConfiguration(long companyId) {
-		FacetConfiguration facetConfiguration = new FacetConfiguration();
 
-		facetConfiguration.setClassName(getFacetClassName());
+    @Override
+    public FacetConfiguration getDefaultConfiguration(long companyId) {
+        FacetConfiguration facetConfiguration = new FacetConfiguration();
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        facetConfiguration.setClassName(getFacetClassName());
 
-		jsonObject.put("displayStyle", "list");
-		jsonObject.put("frequencyThreshold", 1);
-		jsonObject.put("maxTerms", 10);
-		jsonObject.put("showAssetCount", true);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		facetConfiguration.setDataJSONObject(jsonObject);
+        jsonObject.put("displayStyle", "list");
+        jsonObject.put("frequencyThreshold", 1);
+        jsonObject.put("maxTerms", 10);
+        jsonObject.put("showAssetCount", true);
 
-		facetConfiguration.setFieldName(getFieldName());
-		facetConfiguration.setLabel(getLabel());
-		facetConfiguration.setOrder(getOrder());
-		facetConfiguration.setStatic(false);
-		facetConfiguration.setWeight(1.3);
+        facetConfiguration.setDataJSONObject(jsonObject);
 
-		return facetConfiguration;
-	}
+        facetConfiguration.setFieldName(getFieldName());
+        facetConfiguration.setLabel(getLabel());
+        facetConfiguration.setOrder(getOrder());
+        facetConfiguration.setStatic(false);
+        facetConfiguration.setWeight(1.3);
 
-	@Override
-	public String getFacetClassName() {
-		return MultiValueFacet.class.getName();
-	}
+        return facetConfiguration;
+    }
 
-	@Override
-	public String getFieldName() {
-		return "fileEntryTypeId";
-	}
+    @Override
+    public String getFacetClassName() {
+        return MultiValueFacet.class.getName();
+    }
 
-	@Override
-	public JSONObject getJSONData(ActionRequest actionRequest) {
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+    @Override
+    public String getFieldName() {
+        return "fileEntryTypeId";
+    }
 
-		String displayStyleFacet = ParamUtil.getString(
-			actionRequest, getClassName() + "displayStyleFacet", "list");
-		int frequencyThreshold = ParamUtil.getInteger(
-			actionRequest, getClassName() + "frequencyThreshold", 1);
-		int maxTerms = ParamUtil.getInteger(
-			actionRequest, getClassName() + "maxTerms", 10);
-		boolean showAssetCount = ParamUtil.getBoolean(
-			actionRequest, getClassName() + "showAssetCount", true);
+    @Override
+    public JSONObject getJSONData(ActionRequest actionRequest) {
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		jsonObject.put("displayStyle", displayStyleFacet);
-		jsonObject.put("frequencyThreshold", frequencyThreshold);
-		jsonObject.put("maxTerms", maxTerms);
-		jsonObject.put("showAssetCount", showAssetCount);
+        String displayStyleFacet = ParamUtil.getString(actionRequest, getClassName() + "displayStyleFacet", "list");
+        int frequencyThreshold = ParamUtil.getInteger(actionRequest, getClassName() + "frequencyThreshold", 1);
+        int maxTerms = ParamUtil.getInteger(actionRequest, getClassName() + "maxTerms", 10);
+        boolean showAssetCount = ParamUtil.getBoolean(actionRequest, getClassName() + "showAssetCount", true);
 
-		return jsonObject;
-	}
+        jsonObject.put("displayStyle", displayStyleFacet);
+        jsonObject.put("frequencyThreshold", frequencyThreshold);
+        jsonObject.put("maxTerms", maxTerms);
+        jsonObject.put("showAssetCount", showAssetCount);
 
-	@Override
-	public String getLabel() {
-		return "Documents";
-	}
+        return jsonObject;
+    }
 
-	@Override
-	public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	}
+    @Override
+    public String getLabel() {
+        return "Documents";
+    }
 
-	@Override
-	public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	}
-	
+    @Override
+    public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    }
 
+    @Override
+    public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    }
 
 }

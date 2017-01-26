@@ -21,95 +21,95 @@ import com.liferay.portal.search.web.facet.SearchFacet;
 
 @Component(immediate = true, service = SearchFacet.class)
 public class CreatedSearchFacet extends BaseSearchFacet {
-	private static final String[] _LABELS = new String[] { "past-hour", "past-24-hours", "past-week", "past-month",
-	"past-year" };
-	private static final String[] _RANGES = new String[] { "[past-hour TO *]", "[past-24-hours TO *]",
-	"[past-week TO *]", "[past-month TO *]", "[past-year TO *]" };
-	
-	@Override
-	public FacetConfiguration getDefaultConfiguration(long companyId) {
-		FacetConfiguration facetConfiguration = new FacetConfiguration();
+    private static final String[] _LABELS = new String[] { "past-hour", "past-24-hours", "past-week", "past-month",
+            "past-year" };
+    private static final String[] _RANGES = new String[] { "[past-hour TO *]", "[past-24-hours TO *]",
+            "[past-week TO *]", "[past-month TO *]", "[past-year TO *]" };
 
-		facetConfiguration.setClassName(getFacetClassName());
+    @Override
+    public FacetConfiguration getDefaultConfiguration(long companyId) {
+        FacetConfiguration facetConfiguration = new FacetConfiguration();
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        facetConfiguration.setClassName(getFacetClassName());
 
-		jsonObject.put("frequencyThreshold", 0);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+        jsonObject.put("frequencyThreshold", 0);
 
-		for (int i = 0; i < _LABELS.length; i++) {
-			JSONObject range = JSONFactoryUtil.createJSONObject();
+        JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
-			range.put("label", _LABELS[i]);
-			range.put("range", _RANGES[i]);
+        for (int i = 0; i < _LABELS.length; i++) {
+            JSONObject range = JSONFactoryUtil.createJSONObject();
 
-			jsonArray.put(range);
-		}
+            range.put("label", _LABELS[i]);
+            range.put("range", _RANGES[i]);
 
-		jsonObject.put("ranges", jsonArray);
+            jsonArray.put(range);
+        }
 
-		facetConfiguration.setDataJSONObject(jsonObject);
-		facetConfiguration.setFieldName(getFieldName());
-		facetConfiguration.setLabel(getLabel());
-		facetConfiguration.setOrder(getOrder());
-		facetConfiguration.setStatic(false);
-		facetConfiguration.setWeight(1.0);
+        jsonObject.put("ranges", jsonArray);
 
-		return facetConfiguration;
-	}
+        facetConfiguration.setDataJSONObject(jsonObject);
+        facetConfiguration.setFieldName(getFieldName());
+        facetConfiguration.setLabel(getLabel());
+        facetConfiguration.setOrder(getOrder());
+        facetConfiguration.setStatic(false);
+        facetConfiguration.setWeight(1.0);
 
-	@Override
-	public String getFacetClassName() {
-		return ModifiedFacet.class.getName();
-	}
+        return facetConfiguration;
+    }
 
-	@Override
-	public String getFieldName() {
-		return Field.CREATE_DATE;
-	}
+    @Override
+    public String getFacetClassName() {
+        return ModifiedFacet.class.getName();
+    }
 
-	@Override
-	public JSONObject getJSONData(ActionRequest actionRequest) {
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+    @Override
+    public String getFieldName() {
+        return Field.CREATE_DATE;
+    }
 
-		int frequencyThreshold = ParamUtil.getInteger(actionRequest, getClassName() + "frequencyThreshold", 1);
+    @Override
+    public JSONObject getJSONData(ActionRequest actionRequest) {
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-		jsonObject.put("frequencyThreshold", frequencyThreshold);
+        int frequencyThreshold = ParamUtil.getInteger(actionRequest, getClassName() + "frequencyThreshold", 1);
 
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+        jsonObject.put("frequencyThreshold", frequencyThreshold);
 
-		String[] rangesIndexes = StringUtil.split(ParamUtil.getString(actionRequest, getClassName() + "rangesIndexes"));
+        JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
-		for (String rangesIndex : rangesIndexes) {
-			JSONObject rangeJSONObject = JSONFactoryUtil.createJSONObject();
+        String[] rangesIndexes = StringUtil.split(ParamUtil.getString(actionRequest, getClassName() + "rangesIndexes"));
 
-			String label = ParamUtil.getString(actionRequest, getClassName() + "label_" + rangesIndex);
-			String range = ParamUtil.getString(actionRequest, getClassName() + "range_" + rangesIndex);
+        for (String rangesIndex : rangesIndexes) {
+            JSONObject rangeJSONObject = JSONFactoryUtil.createJSONObject();
 
-			rangeJSONObject.put("label", label);
-			rangeJSONObject.put("range", range);
+            String label = ParamUtil.getString(actionRequest, getClassName() + "label_" + rangesIndex);
+            String range = ParamUtil.getString(actionRequest, getClassName() + "range_" + rangesIndex);
 
-			jsonArray.put(rangeJSONObject);
-		}
+            rangeJSONObject.put("label", label);
+            rangeJSONObject.put("range", range);
 
-		jsonObject.put("ranges", jsonArray);
+            jsonArray.put(rangeJSONObject);
+        }
 
-		return jsonObject;
-	}
+        jsonObject.put("ranges", jsonArray);
 
-	@Override
-	public String getLabel() {
-		return "CreatedAt";
-	}
+        return jsonObject;
+    }
 
-	@Override
-	public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		
-	}
+    @Override
+    public String getLabel() {
+        return "CreatedAt";
+    }
 
-	@Override
-	public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	}
+    @Override
+    public void includeConfiguration(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+    }
+
+    @Override
+    public void includeView(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    }
 
 }

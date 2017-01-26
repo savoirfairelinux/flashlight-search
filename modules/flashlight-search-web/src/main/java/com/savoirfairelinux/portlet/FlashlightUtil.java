@@ -27,85 +27,76 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 public class FlashlightUtil {
-	
-	private static final Log LOG = LogFactoryUtil.getLog(FlashlightUtil.class);
 
-	public static String getAssetViewURL(
-			RenderRequest renderRequest, RenderResponse renderResponse, Document document)
-		throws Exception {
+    private static final Log LOG = LogFactoryUtil.getLog(FlashlightUtil.class);
 
-		String className = document.get("entryClassName");
-		int classPK = GetterUtil.getInteger(document.get("entryClassPK"));
-		try {
-			String currentURL = PortalUtil.getCurrentURL(renderRequest);
-			ThemeDisplay themeDisplay =(ThemeDisplay)renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
-			
-			PortletURL viewContentURL = PortletURLFactoryUtil.create(renderRequest, "com_liferay_portal_search_web_portlet_SearchPortlet", themeDisplay.getLayout(),
-					PortletRequest.RENDER_PHASE);
+    public static String getAssetViewURL(RenderRequest renderRequest, RenderResponse renderResponse, Document document)
+            throws Exception {
 
-			viewContentURL.setParameter("mvcPath", "/view_content.jsp");
-			viewContentURL.setParameter("redirect", currentURL);
-			viewContentURL.setPortletMode(PortletMode.VIEW);
-			viewContentURL.setWindowState(WindowState.MAXIMIZED);
+        String className = document.get("entryClassName");
+        int classPK = GetterUtil.getInteger(document.get("entryClassPK"));
+        try {
+            String currentURL = PortalUtil.getCurrentURL(renderRequest);
+            ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
 
-			if (Validator.isNull(className) || (classPK <= 0)) {
-				return viewContentURL.toString();
-			}
+            PortletURL viewContentURL = PortletURLFactoryUtil.create(renderRequest,
+                    "com_liferay_portal_search_web_portlet_SearchPortlet", themeDisplay.getLayout(),
+                    PortletRequest.RENDER_PHASE);
 
-			AssetEntry assetEntry = AssetEntryLocalServiceUtil.getEntry(className, classPK);
+            viewContentURL.setParameter("mvcPath", "/view_content.jsp");
+            viewContentURL.setParameter("redirect", currentURL);
+            viewContentURL.setPortletMode(PortletMode.VIEW);
+            viewContentURL.setWindowState(WindowState.MAXIMIZED);
 
-			AssetRendererFactory<?> assetRendererFactory = 
-					AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(className);
+            if (Validator.isNull(className) || (classPK <= 0)) {
+                return viewContentURL.toString();
+            }
 
-			if (assetRendererFactory == null) {
-				return viewContentURL.toString();
-			}
+            AssetEntry assetEntry = AssetEntryLocalServiceUtil.getEntry(className, classPK);
 
-			viewContentURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
-			viewContentURL.setParameter("type", assetRendererFactory.getType());
+            AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil
+                    .getAssetRendererFactoryByClassName(className);
 
-			AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(classPK);
+            if (assetRendererFactory == null) {
+                return viewContentURL.toString();
+            }
 
-			String viewURL = assetRenderer.getURLViewInContext(
-				(LiferayPortletRequest)renderRequest,
-				(LiferayPortletResponse)renderResponse,
-				viewContentURL.toString());
+            viewContentURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
+            viewContentURL.setParameter("type", assetRendererFactory.getType());
 
+            AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(classPK);
 
-			return checkViewURL(assetEntry, true, viewURL, currentURL, themeDisplay);
-		}
-		catch (Exception e) {
-			LOG.error(
-				"Unable to get search result  view URL for class " + className +
-					" with primary key " + classPK, e);
+            String viewURL = assetRenderer.getURLViewInContext((LiferayPortletRequest) renderRequest,
+                    (LiferayPortletResponse) renderResponse, viewContentURL.toString());
 
-			return "";
-		}
-	}
+            return checkViewURL(assetEntry, true, viewURL, currentURL, themeDisplay);
+        } catch (Exception e) {
+            LOG.error("Unable to get search result  view URL for class " + className + " with primary key " + classPK,
+                    e);
 
+            return "";
+        }
+    }
 
-	public static String checkViewURL(
-		AssetEntry assetEntry, boolean viewInContext, String viewURL,
-		String currentURL, ThemeDisplay themeDisplay) {
+    public static String checkViewURL(AssetEntry assetEntry, boolean viewInContext, String viewURL, String currentURL,
+            ThemeDisplay themeDisplay) {
 
-		if (Validator.isNull(viewURL)) {
-			return viewURL;
-		}
+        if (Validator.isNull(viewURL)) {
+            return viewURL;
+        }
 
-		viewURL = HttpUtil.setParameter(
-			viewURL, "inheritRedirect", viewInContext);
+        viewURL = HttpUtil.setParameter(viewURL, "inheritRedirect", viewInContext);
 
-		Layout layout = themeDisplay.getLayout();
+        Layout layout = themeDisplay.getLayout();
 
-		String assetEntryLayoutUuid = assetEntry.getLayoutUuid();
+        String assetEntryLayoutUuid = assetEntry.getLayoutUuid();
 
-		if (!viewInContext ||
-			(Validator.isNotNull(assetEntryLayoutUuid) &&
-			 !assetEntryLayoutUuid.equals(layout.getUuid()))) {
+        if (!viewInContext
+                || (Validator.isNotNull(assetEntryLayoutUuid) && !assetEntryLayoutUuid.equals(layout.getUuid()))) {
 
-			viewURL = HttpUtil.setParameter(viewURL, "redirect", currentURL);
-		}
+            viewURL = HttpUtil.setParameter(viewURL, "redirect", currentURL);
+        }
 
-		return viewURL;
-	}
+        return viewURL;
+    }
 }
