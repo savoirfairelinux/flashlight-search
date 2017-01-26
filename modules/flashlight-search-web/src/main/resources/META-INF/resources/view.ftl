@@ -1,4 +1,4 @@
-<#assign liferay_portlet_ext = taglibLiferayHash["/META-INF/liferay-portlet-ext.tld"] />
+<#include "init.ftl">
 
 <@liferay_portlet["renderURL"] varImpl="searchURL"/>
 

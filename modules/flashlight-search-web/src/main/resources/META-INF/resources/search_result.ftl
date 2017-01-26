@@ -1,16 +1,11 @@
-<#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
-<#assign liferay_portlet_ext = taglibLiferayHash["/META-INF/liferay-portlet-ext.tld"] />
-<#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
-
-
-<@liferay_theme["defineObjects"] />
+<#include "init.ftl">
 
 <#assign journalArticleLocalService = Request.journalArticleLocalService>
 <#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
 <#assign results=Request.searchResults />
 
 
-<@liferay_ddm["template-renderer"] 
+<@liferay_ddm["template-renderer"]
     className="com.liferay.portal.kernel.search.Document"
     displayStyle=Request.renderRequest.getPreferences().getValue("displayStyle","")
     displayStyleGroupId=Request.renderRequest.getPreferences().getValue("displayStyleGroupId","0")?number
@@ -25,7 +20,7 @@
 
 <@liferay_aui["form"] action="${searchURL}" name="search_form" method="get">
     <@liferay_portlet_ext["renderURLParams"] varImpl="searchURL"/>
- 
+
     <@liferay_aui["input"] name="ddmStructureKey"  type="hidden" value=params.getParameter("ddmStructureKey")!"" />
     <@liferay_aui["input"] name="fileEntryTypeId" type="hidden"  value=params.getParameter("fileEntryTypeId")!""/>
     <@liferay_aui["input"] name="assetCategoryIds" type="hidden"  value=params.getParameter("assetCategoryIds")!""/>
@@ -62,7 +57,7 @@
             </div>
         </div>
     </nav>
-    <#assign current_year = .now?string.yyyy?number  >	
+    <#assign current_year = .now?string.yyyy?number  >
     <#assign years = [current_year..2000][0] />
 
     <#assign ddmStructureKey=params.getParameter("ddmStructureKey")!"" />
@@ -115,7 +110,7 @@
             $("#<@liferay_portlet["namespace"] />assetCategoryIds").val(select.value);
             $("#<@liferay_portlet["namespace"] />search_form").submit();
         }
-	</@>
+    </@>
 </@>
 
 <div class="container">
@@ -135,7 +130,7 @@
                         <#if document?index%3==0 >
                             <div class="row">
                         </#if>
-                        <div class="col-md-4"> 
+                        <div class="col-md-4">
                             <#assign entryUrl = Request.flashlightUtil.getAssetViewURL(Request.renderRequest, Request.renderResponse, document)>
                             <#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
                                 <#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>
@@ -162,7 +157,7 @@
                             </div>
                         </div>
                     </#if>
-                </div>	
+                </div>
             </div>
         </#list>
     <#else>
@@ -175,4 +170,4 @@
         <a href="${viewURL}" class="btn"><@liferay_ui["message"] key="flashlight-return-button" /></a>
     </div>
 </div>
-</@>	
+</@>

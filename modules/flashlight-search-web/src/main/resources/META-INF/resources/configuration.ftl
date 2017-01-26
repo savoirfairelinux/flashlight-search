@@ -1,11 +1,7 @@
-<#assign liferay_portlet = taglibLiferayHash["/META-INF/liferay-portlet.tld"] />
-<#assign liferay_ddm = taglibLiferayHash["/META-INF/resources/liferay-ddm.tld"] />
-
-<@liferay_theme["defineObjects"] />
-
+<#include "init.ftl">
 
 <@liferay_portlet["renderURL"] portletConfiguration=true var="configurationRenderURL" />
- 
+
 <@liferay_portlet["actionURL"] name="configurationURL" var="configurationURL" />
 <@liferay_aui["form"] action="${configurationURL}" method="post" name="fm">
     <@liferay_aui["fieldset"] label="ADT">
@@ -20,7 +16,7 @@
         </div>
     </@>
 
-    <@liferay_aui["fieldset"] label="Facets" > 
+    <@liferay_aui["fieldset"] label="Facets" >
         <@liferay_aui["select"] name="selected_facets" multiple=true label="">
             <#list Request.searchFacets as facet>
                 <@liferay_aui["option"] value="${facet.className}" label="${facet.title}" selected=Request.enabled_facets?seq_contains(facet.className) />
