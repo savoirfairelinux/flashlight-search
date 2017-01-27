@@ -1,6 +1,5 @@
 <#include "init.ftl">
 
-<#assign journalArticleLocalService = Request.journalArticleLocalService>
 <#assign params = Request["com.liferay.portal.kernel.servlet.PortletServletRequest"] />
 <#assign results=Request.searchResults />
 
@@ -133,10 +132,7 @@
                         <div class="col-md-4">
                             <#assign entryUrl = Request.flashlightUtil.getAssetViewURL(Request.renderRequest, Request.renderResponse, document)>
                             <#if document.entryClassName == "com.liferay.journal.model.JournalArticle">
-                                <#assign article = journalArticleLocalService.fetchArticle(document.groupId?number, document.articleId)>
-                                <#assign template = Request.renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get(ddmTemplateKey))>
-                                <#assign content = journalArticleLocalService.getArticleContent(article, template, "VIEW", locale, Request.portletRequest, themeDisplay)>
-                                ${content?replace("{entryUrl}", entryUrl)}
+                                ${document.get("journalContent")?replace("{entryUrl}", entryUrl)}
                             <#else>
                                 <h2><a href="${entryUrl}">${document.get("title")}</a></h2>
                             </#if>

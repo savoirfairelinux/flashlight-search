@@ -7,12 +7,16 @@ import java.util.Map;
 
 import javax.portlet.PortletPreferences;
 import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.service.JournalArticleLocalService;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
@@ -41,9 +45,11 @@ public class SearchDisplay {
     private List<SearchFacet> _enabledSearchFacets;
     private PortletPreferences _portletPreferences;
     private static final Log LOG = LogFactoryUtil.getLog(SearchDisplay.class);
+    private JournalArticleLocalService _journalArticleLocalService;
 
-    public SearchDisplay(PortletPreferences prefs) {
+    public SearchDisplay(PortletPreferences prefs , JournalArticleLocalService journalArticleLocalService) {
         this._portletPreferences = prefs;
+        this._journalArticleLocalService = journalArticleLocalService;
     }
 
     public Hits customSearch(RenderRequest renderRequest, String keywords) {
@@ -99,7 +105,7 @@ public class SearchDisplay {
         return hits;
     }
 
-    public Map<String, List<Document>> customGroupedSearch(RenderRequest renderRequest, String keywords, String groupBy,
+    public Map<String, List<Document>> customGroupedSearch(RenderRequest renderRequest,RenderResponse renderResponse, String keywords, String groupBy,
             int maxcount) {
         int size = maxcount;
         Hits hits = customSearch(renderRequest, keywords);
@@ -113,6 +119,15 @@ public class SearchDisplay {
                 String key = groupBy;
                 if (document.get(Field.ENTRY_CLASS_NAME).equals(JournalArticle.class.getName())) {
                     key = "ddmStructureKey";
+                    JournalArticle journalArticle = _journalArticleLocalService.fetchArticle(GetterUtil.getLong(document.get("groupId")), document.get("articleId"));
+                    String templateKey = renderRequest.getPreferences().getValue("ddm-"+document.get("ddmStructureKey"), document.get("ddmTemplateKey"));
+                    ThemeDisplay themeDisplay  = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
+                    try {
+                        String content  = _journalArticleLocalService.getArticleContent(journalArticle, templateKey, "VIEW",themeDisplay.getLanguageId() ,new PortletRequestModel(renderRequest,renderResponse), themeDisplay);
+                        document.addKeyword("journalContent", content);
+                    } catch (PortalException e) {
+                        LOG.error("Cannot retrieve article content",e);
+                    }
                 } else if (document.get(Field.ENTRY_CLASS_NAME).equals(DLFileEntry.class.getName())) {
                     key = "fileEntryTypeId";
                 }
@@ -131,9 +146,9 @@ public class SearchDisplay {
         }
     }
 
-    public Map<String, List<Document>> customGroupedSearch(RenderRequest renderRequest, String keywords,
+    public Map<String, List<Document>> customGroupedSearch(RenderRequest renderRequest, RenderResponse renderResponse,String keywords,
             String groupBy) {
-        return customGroupedSearch(renderRequest, keywords, groupBy, 800);
+        return customGroupedSearch(renderRequest,renderResponse, keywords, groupBy, 800);
     }
 
     public List<SearchFacet> getEnabledSearchFacets() {

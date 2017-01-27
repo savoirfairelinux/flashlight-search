@@ -18,17 +18,18 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
-import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.blogs.kernel.model.BlogsEntry;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.model.DLFolder;
-import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
+import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
-import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.service.JournalArticleLocalServiceUtil;
+import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -36,7 +37,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -64,6 +65,12 @@ import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
 public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
+    
+    private AssetCategoryLocalService assetCategoryLocalService;
+    private DDMStructureLocalService DDMStructureLocalService;
+    private DLFileEntryTypeLocalService DLFileEntryTypeLocalService;
+    private JournalArticleLocalService journalArticleLocalService;
+    private ClassNameLocalService classNameLocalService;
 
     @Override
     public void render(RenderRequest renderRequest, RenderResponse renderResponse)
@@ -73,12 +80,12 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         long scopeGroupId = themeDisplay.getScopeGroupId();
         String keywords = renderRequest.getParameter("keywords");
 
-        SearchDisplay display = new SearchDisplay(renderRequest.getPreferences());
+        SearchDisplay display = new SearchDisplay(renderRequest.getPreferences(), journalArticleLocalService);
         Map<String, List<Document>> groupedDocuments = new HashMap<>();
         List<SearchResultWrapper> searchResults = new ArrayList<>();
         String[] enabled_facets = renderRequest.getPreferences().getValues("facets", new String[0]);
         if (keywords != null) {
-            groupedDocuments = display.customGroupedSearch(renderRequest, keywords,
+            groupedDocuments = display.customGroupedSearch(renderRequest,renderResponse, keywords,
                     Field.ENTRY_CLASS_NAME);
             for(Entry<String, List<Document>> document : groupedDocuments.entrySet()){
                 searchResults.add(new SearchResultWrapper(document.getKey(),document.getValue()));
@@ -92,7 +99,7 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         renderRequest.setAttribute("searchFacets", searchFacets);
         renderRequest.setAttribute("keywords", keywords);
         renderRequest.setAttribute("enabled_facets", enabled_facets);
-        renderRequest.setAttribute("categories", AssetCategoryLocalServiceUtil.getCategories());
+        renderRequest.setAttribute("categories", assetCategoryLocalService.getCategories());
         renderRequest.setAttribute("searchResults", searchResults);
         renderRequest.setAttribute("themeDisplay", themeDisplay);
         renderRequest.setAttribute("portletRequest", new PortletRequestModel(renderRequest, renderResponse));
@@ -101,7 +108,6 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         renderRequest.setAttribute("flashlightUtil",  new FlashlightUtil());
         renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
         renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
-        renderRequest.setAttribute("journalArticleLocalService", JournalArticleLocalServiceUtil.getService());
 
         super.render(renderRequest, renderResponse);
     }
@@ -134,11 +140,11 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
     protected List<DDMStructure> getWebContentStructures(long groupid){
         List<DDMStructure> structures= new ArrayList<DDMStructure>();
-        long classNameId = ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class);
+        long classNameId = classNameLocalService.getClassNameId(JournalArticle.class);
         try {
             long[] groupIds = PortalUtil.getCurrentAndAncestorSiteGroupIds(groupid, true);
 
-            List<DDMStructure> groupstructures =  DDMStructureLocalServiceUtil.getStructures(groupIds);
+            List<DDMStructure> groupstructures =  DDMStructureLocalService.getStructures(groupIds);
             for(DDMStructure structure : groupstructures){
                 if(structure.getClassNameId() == classNameId){
                     structures.add(structure);
@@ -159,8 +165,8 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
             facets.put(key, name);
         }
 
-        List<DLFileEntryType> filetypes = DLFileEntryTypeLocalServiceUtil.getDLFileEntryTypes(0,
-                DLFileEntryTypeLocalServiceUtil.getDLFileEntryTypesCount());
+        List<DLFileEntryType> filetypes = DLFileEntryTypeLocalService.getDLFileEntryTypes(0,
+                DLFileEntryTypeLocalService.getDLFileEntryTypesCount());
 
         for (DLFileEntryType filetype : filetypes) {
             String key = filetype.getFileEntryTypeId() + "";
@@ -184,6 +190,30 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         assets.put(DLFolder.class.getName(), "Folders");
 
         return assets;
+    }
+    
+    @Reference(unbind = "-")
+    public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
+        this.assetCategoryLocalService  = assetCategoryLocalService;
+    }
+    
+    @Reference(unbind = "-")
+    public void setDDMStructureLocalService(DDMStructureLocalService DDMStructureLocalService){
+        this.DDMStructureLocalService  = DDMStructureLocalService;
+    }
+    @Reference(unbind = "-")
+    public void setDLFileEntryTypeLocalService(DLFileEntryTypeLocalService dLFileEntryTypeLocalService){
+        this.DLFileEntryTypeLocalService  = dLFileEntryTypeLocalService;
+    }
+
+    @Reference(unbind = "-")
+    public void setJournalArticleLocalService(JournalArticleLocalService journalArticleLocalService){
+        this.journalArticleLocalService  = journalArticleLocalService;
+    }
+    
+    @Reference(unbind = "-")
+    public void setClassNameLocalService(ClassNameLocalService classNameLocalService){
+        this.classNameLocalService  = classNameLocalService;
     }
 
 
