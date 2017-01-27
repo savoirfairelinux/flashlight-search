@@ -34,58 +34,62 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.template.TemplateConstants;
+import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
-import com.liferay.util.bridges.freemarker.FreeMarkerPortlet;
+import com.savoirfairelinux.portlet.framework.TemplatedPortlet;
 import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
 import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
 
 @Component(
-    immediate = true,
     service = Portlet.class,
+    immediate = true,
     property = {
-        "com.liferay.portlet.display-category=category.tools",
         "com.liferay.portlet.instanceable=false",
+        "com.liferay.portlet.display-category=category.tools",
+
+        "javax.portlet.name=" + SearchPortletKeys.NAME,
         "javax.portlet.display-name=Flashlight Search",
-        "javax.portlet.init-param.template-path=/",
-        "javax.portlet.init-param.view-template=/view.ftl",
-        "javax.portlet.init-param.edit-template=/configuration.ftl",
-        "javax.portlet.portlet-mode=text/html;view,edit",
         "javax.portlet.resource-bundle=content.Language",
+        "javax.portlet.init-param.templates-path=/",
+        "javax.portlet.supports.mime-type=text/html",
+        "javax.portlet.portlet-mode=text/html;view,edit",
         "javax.portlet.security-role-ref=power-user,user",
-        "javax.portlet.name=" + SearchPortletKeys.NAME
     }
 )
-public class FlashlightSearchPortlet extends FreeMarkerPortlet {
+public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
-    
+
     private AssetCategoryLocalService assetCategoryLocalService;
     private DDMStructureLocalService DDMStructureLocalService;
     private DLFileEntryTypeLocalService DLFileEntryTypeLocalService;
     private JournalArticleLocalService journalArticleLocalService;
     private ClassNameLocalService classNameLocalService;
 
+    private Portal portal;
+    private TemplateManager templateManager;
+
     @Override
-    public void render(RenderRequest renderRequest, RenderResponse renderResponse)
-            throws IOException, PortletException {
+    protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
 
-        ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
+        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         long scopeGroupId = themeDisplay.getScopeGroupId();
-        String keywords = renderRequest.getParameter("keywords");
+        String keywords = request.getParameter("keywords");
 
-        SearchDisplay display = new SearchDisplay(renderRequest.getPreferences(), journalArticleLocalService);
+        SearchDisplay display = new SearchDisplay(request.getPreferences(), journalArticleLocalService);
         Map<String, List<Document>> groupedDocuments = new HashMap<>();
         List<SearchResultWrapper> searchResults = new ArrayList<>();
-        String[] enabled_facets = renderRequest.getPreferences().getValues("facets", new String[0]);
+        String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
         if (keywords != null) {
-            groupedDocuments = display.customGroupedSearch(renderRequest,renderResponse, keywords,
+            groupedDocuments = display.customGroupedSearch(request,response, keywords,
                     Field.ENTRY_CLASS_NAME);
             for(Entry<String, List<Document>> document : groupedDocuments.entrySet()){
                 searchResults.add(new SearchResultWrapper(document.getKey(),document.getValue()));
@@ -94,22 +98,32 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
         List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
         Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getLocale());
 
-        renderRequest.setAttribute("groupedDocuments", groupedDocuments);
-        renderRequest.setAttribute("facets", facets);
-        renderRequest.setAttribute("searchFacets", searchFacets);
-        renderRequest.setAttribute("keywords", keywords);
-        renderRequest.setAttribute("enabled_facets", enabled_facets);
-        renderRequest.setAttribute("categories", assetCategoryLocalService.getCategories());
-        renderRequest.setAttribute("searchResults", searchResults);
-        renderRequest.setAttribute("themeDisplay", themeDisplay);
-        renderRequest.setAttribute("portletRequest", new PortletRequestModel(renderRequest, renderResponse));
-        renderRequest.setAttribute("renderRequest", renderRequest);
-        renderRequest.setAttribute("renderResponse",  renderResponse);
-        renderRequest.setAttribute("flashlightUtil",  new FlashlightUtil());
-        renderRequest.setAttribute("structures", getWebContentStructures(scopeGroupId));
-        renderRequest.setAttribute("searchAssetEntries", getAssetEntries());
+        HashMap<String, Object> templateCtx = new HashMap<>();
+        templateCtx.put("groupedDocuments", groupedDocuments);
+        templateCtx.put("facets", facets);
+        templateCtx.put("searchFacets", searchFacets);
+        templateCtx.put("keywords", keywords);
+        templateCtx.put("enabled_facets", enabled_facets);
+        templateCtx.put("categories", assetCategoryLocalService.getCategories());
+        templateCtx.put("searchResults", searchResults);
+        templateCtx.put("flashlightUtil",  new FlashlightUtil());
+        this.renderTemplate(request, response, templateCtx, "view.ftl");
+    }
 
-        super.render(renderRequest, renderResponse);
+    @Override
+    protected void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
+        HashMap<String, Object> templateCtx = new HashMap<>();
+        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        long scopeGroupId = themeDisplay.getScopeGroupId();
+        SearchDisplay display = new SearchDisplay(request.getPreferences(), journalArticleLocalService);
+        List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
+        String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
+
+        templateCtx.put("enabled_facets", enabled_facets);
+        templateCtx.put("searchAssetEntries", getAssetEntries());
+        templateCtx.put("searchFacets", searchFacets);
+        templateCtx.put("structures", getWebContentStructures(scopeGroupId));
+        this.renderTemplate(request, response, templateCtx, "configuration.ftl");
     }
 
     @ProcessAction(name = "configurePortlet")
@@ -191,12 +205,12 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
 
         return assets;
     }
-    
+
     @Reference(unbind = "-")
     public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
         this.assetCategoryLocalService  = assetCategoryLocalService;
     }
-    
+
     @Reference(unbind = "-")
     public void setDDMStructureLocalService(DDMStructureLocalService DDMStructureLocalService){
         this.DDMStructureLocalService  = DDMStructureLocalService;
@@ -210,11 +224,30 @@ public class FlashlightSearchPortlet extends FreeMarkerPortlet {
     public void setJournalArticleLocalService(JournalArticleLocalService journalArticleLocalService){
         this.journalArticleLocalService  = journalArticleLocalService;
     }
-    
+
     @Reference(unbind = "-")
     public void setClassNameLocalService(ClassNameLocalService classNameLocalService){
         this.classNameLocalService  = classNameLocalService;
     }
 
+    @Reference
+    public void setPortal(Portal portal) {
+        this.portal = portal;
+    }
+
+    @Override
+    protected Portal getPortal() {
+        return this.portal;
+    }
+
+    @Reference(target = "(language.type=" + TemplateConstants.LANG_TYPE_FTL + ")")
+    public void setTemplateManager(TemplateManager templateManager) {
+        this.templateManager = templateManager;
+    }
+
+    @Override
+    protected TemplateManager getTemplateManager() {
+        return this.templateManager;
+    }
 
 }
