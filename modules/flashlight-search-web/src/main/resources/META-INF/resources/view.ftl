@@ -94,17 +94,17 @@
                     else{
                         $("#<@liferay_portlet["namespace"] />createDate").val("");
                     }
-                    $("#<@liferay_portlet["namespace"] />search_form").submit();
+                    $("#<@liferay_portlet["namespace"] />fm").submit();
                 }
 
                 function facetFilter(facet){
                     $("#<@liferay_portlet["namespace"] />"+facet[0]).val(facet[1]);
-                    $("#<@liferay_portlet["namespace"] />search_form").submit();
+                    $("#<@liferay_portlet["namespace"] />fm").submit();
                 }
 
                 function vocabularyFilter(select){
                     $("#<@liferay_portlet["namespace"] />assetCategoryIds").val(select.value);
-                    $("#<@liferay_portlet["namespace"] />search_form").submit();
+                    $("#<@liferay_portlet["namespace"] />fm").submit();
                 }
             </@>
         </@>
