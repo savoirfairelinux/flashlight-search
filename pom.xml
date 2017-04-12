@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>com.savoirfairelinux.liferay</groupId>
     <artifactId>flashlight</artifactId>
-    <packaging>pom</packaging>
     <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Flashlight Search project</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,7 +28,16 @@
         <version.liferay.ant.bnd>2.0.28</version.liferay.ant.bnd>
 
         <project.build.finalName>${project.artifactId}</project.build.finalName>
+        <project.build.extension>jar</project.build.extension>
     </properties>
+
+    <modules>
+        <module>modules/flashlight-search-api</module>
+        <module>modules/flashlight-search-service</module>
+        <module>modules/flashlight-search-facets</module>
+        <module>modules/flashlight-search-web</module>
+        <module>modules/flashlight-search-action</module>
+    </modules>
 
     <dependencyManagement>
 
@@ -253,8 +265,29 @@
                             <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                             <Bundle-Version>${project.version}</Bundle-Version>
                             <!-- The Import-Package instruction is wildly guessed from Liferay's bundles -->
-                            <Import-Package>com.liferay.portal.kernel.service;version="1.1.0",javax.portlet,javax.servlet,*</Import-Package>
+                            <!--
+                                There is a fix here to make util-bridges work correctly (see org.apache.* Import-Package
+                                directive and Embed-Dependency directive)
+                            -->
+                            <Import-Package>
+                                com.liferay.portal.kernel.service;version="1.1.0",
+                                javax.portlet,javax.servlet,
+                                org.apache.bsf;resolution:=optional,
+                                org.apache.portals.bridges.common;resolution:=optional,
+                                org.apache.portals.bridges.struts;resolution:=optional,
+                                *
+                            </Import-Package>
+                            <Export-Package >
+                                com.savoirfairelinux.facet
+                            </Export-Package>
+                            <Embed-Dependency>groupId=com.liferay.portal;artifactId=com.liferay.util.bridges</Embed-Dependency>
+                            <Embed-StripVersion>true</Embed-StripVersion>
+                            <Embed-Directory>lib</Embed-Directory>
                             <_dsannotations>*</_dsannotations>
+                            <_metatype>*</_metatype>
+                            <_jsp>*.jsp,*.jspf</_jsp>
+                            <_plugin.bundle>com.liferay.ant.bnd.resource.bundle.ResourceBundleLoaderAnalyzerPlugin</_plugin.bundle>
+                            <_plugin.jsp>com.liferay.ant.bnd.jsp.JspAnalyzerPlugin</_plugin.jsp>
                         </instructions>
                     </configuration>
                 </plugin>
@@ -266,4 +299,44 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>local-deploy</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>wagon-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>bundle-deploy</id>
+                                    <phase>install</phase>
+                                    <goals>
+                                        <goal>upload-single</goal>
+                                    </goals>
+                                    <configuration>
+                                        <fromFile>${project.build.directory}/${project.build.finalName}.${project.build.extension}</fromFile>
+                                        <url>file://${project.basedir}/../../tools/vagrant/deploy</url>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

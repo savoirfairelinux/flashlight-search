@@ -1,3 +1,6 @@
+.gradle/
+build/
+bin/
 target/
 .classpath
 .project
@@ -8,3 +11,7 @@ site.retry
 .vagrant
 *.iml
 .idea
+*.orig
+rebel.xml
+rebel-remote.xml
+tools/vagrant/jrebel
