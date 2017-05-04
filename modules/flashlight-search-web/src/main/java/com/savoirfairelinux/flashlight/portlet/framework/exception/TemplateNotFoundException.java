@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet.framework.exception;
+package com.savoirfairelinux.flashlight.portlet.framework.exception;
 
 import javax.portlet.PortletException;
 

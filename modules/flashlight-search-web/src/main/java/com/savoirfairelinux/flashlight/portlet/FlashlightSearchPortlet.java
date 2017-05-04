@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet;
+package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,9 +13,11 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
+import javax.portlet.PortletPreferences;
 import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -29,13 +31,14 @@ import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
@@ -44,9 +47,9 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
-import com.savoirfairelinux.portlet.framework.TemplatedPortlet;
-import com.savoirfairelinux.portlet.searchdisplay.SearchDisplay;
-import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
+import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
+import com.savoirfairelinux.flashlight.service.SearchService;
+import com.savoirfairelinux.flashlight.service.model.SearchResultWrapper;
 
 @Component(
     service = Portlet.class,
@@ -54,8 +57,7 @@ import com.savoirfairelinux.portlet.searchdisplay.SearchResultWrapper;
     property = {
         "com.liferay.portlet.instanceable=false",
         "com.liferay.portlet.display-category=category.tools",
-
-        "javax.portlet.name=" + SearchPortletKeys.NAME,
+        "javax.portlet.name=" + SearchService.PORTLET_NAME,
         "javax.portlet.display-name=Flashlight Search",
         "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.templates-path=/",
@@ -71,31 +73,34 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private AssetCategoryLocalService assetCategoryLocalService;
     private DDMStructureLocalService DDMStructureLocalService;
     private DLFileEntryTypeLocalService DLFileEntryTypeLocalService;
-    private JournalArticleLocalService journalArticleLocalService;
     private ClassNameLocalService classNameLocalService;
+    private SearchService searchService;
 
     private Portal portal;
     private TemplateManager templateManager;
 
     @Override
     protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-
+        PortletPreferences preferences = request.getPreferences();
+        HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         long scopeGroupId = themeDisplay.getScopeGroupId();
         String keywords = request.getParameter("keywords");
 
-        SearchDisplay display = new SearchDisplay(request.getPreferences(), journalArticleLocalService);
         Map<String, List<Document>> groupedDocuments = new HashMap<>();
         List<SearchResultWrapper> searchResults = new ArrayList<>();
         String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
         if (keywords != null) {
-            groupedDocuments = display.customGroupedSearch(request,response, keywords,
-                    Field.ENTRY_CLASS_NAME);
+
+            SearchContext searchContext = SearchContextFactory.getInstance(servletRequest);
+            searchContext.setKeywords(keywords);
+
+            groupedDocuments = this.searchService.customGroupedSearch(searchContext, request.getPreferences(), Field.ENTRY_CLASS_NAME, 800);
             for(Entry<String, List<Document>> document : groupedDocuments.entrySet()){
                 searchResults.add(new SearchResultWrapper(document.getKey(),document.getValue()));
             }
         }
-        List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
+        List<SearchFacet> searchFacets = this.searchService.getEnabledSearchFacets(preferences);
         Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getLocale());
 
         HashMap<String, Object> templateCtx = new HashMap<>();
@@ -115,8 +120,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         HashMap<String, Object> templateCtx = new HashMap<>();
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         long scopeGroupId = themeDisplay.getScopeGroupId();
-        SearchDisplay display = new SearchDisplay(request.getPreferences(), journalArticleLocalService);
-        List<SearchFacet> searchFacets = display.getEnabledSearchFacets();
+        PortletPreferences preferences = request.getPreferences();
+
+        List<SearchFacet> searchFacets = this.searchService.getEnabledSearchFacets(preferences);
         String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
 
         templateCtx.put("enabled_facets", enabled_facets);
@@ -221,13 +227,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     }
 
     @Reference(unbind = "-")
-    public void setJournalArticleLocalService(JournalArticleLocalService journalArticleLocalService){
-        this.journalArticleLocalService  = journalArticleLocalService;
+    public void setClassNameLocalService(ClassNameLocalService classNameLocalService){
+        this.classNameLocalService  = classNameLocalService;
     }
 
     @Reference(unbind = "-")
-    public void setClassNameLocalService(ClassNameLocalService classNameLocalService){
-        this.classNameLocalService  = classNameLocalService;
+    public void setSearchService(SearchService service) {
+        this.searchService = service;
     }
 
     @Reference

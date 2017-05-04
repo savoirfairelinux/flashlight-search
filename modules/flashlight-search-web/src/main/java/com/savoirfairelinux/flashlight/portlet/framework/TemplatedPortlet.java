@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet.framework;
+package com.savoirfairelinux.flashlight.portlet.framework;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -24,7 +24,7 @@ import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.savoirfairelinux.portlet.framework.exception.TemplateNotFoundException;
+import com.savoirfairelinux.flashlight.portlet.framework.exception.TemplateNotFoundException;
 
 /**
  * This type of portlets is used when the templating engine is something other than JSPs (for example, FreeMarker or

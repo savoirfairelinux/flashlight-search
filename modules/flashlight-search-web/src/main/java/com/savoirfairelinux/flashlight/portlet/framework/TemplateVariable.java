@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet.framework;
+package com.savoirfairelinux.flashlight.portlet.framework;
 
 /**
  * List of variables available from the FreeMarker templates

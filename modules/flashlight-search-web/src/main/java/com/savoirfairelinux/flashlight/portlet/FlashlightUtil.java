@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet;
+package com.savoirfairelinux.flashlight.portlet;
 
 import javax.portlet.PortletMode;
 import javax.portlet.PortletRequest;

@@ -1,4 +1,4 @@
-package com.savoirfairelinux.portlet.searchdisplay;
+package com.savoirfairelinux.flashlight.service.model;
 
 import java.util.List;
 
