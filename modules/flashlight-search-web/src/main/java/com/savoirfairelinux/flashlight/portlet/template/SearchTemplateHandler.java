@@ -10,12 +10,12 @@ import com.liferay.portal.kernel.portletdisplaytemplate.BasePortletDisplayTempla
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
-import com.savoirfairelinux.flashlight.service.SearchService;
+import com.savoirfairelinux.flashlight.portlet.FlashlightPortletKeys;
 
 @Component(
 	    immediate = true,
 	    property = {
-	        "javax.portlet.name="+SearchService.PORTLET_NAME
+	        "javax.portlet.name="+FlashlightPortletKeys.PORTLET_NAME
 	    },
 	    service = TemplateHandler.class)
 public class SearchTemplateHandler extends BasePortletDisplayTemplateHandler{
@@ -27,12 +27,12 @@ public class SearchTemplateHandler extends BasePortletDisplayTemplateHandler{
 
 	@Override
 	public String getName(Locale locale) {
-		return SearchService.PORTLET_NAME;
+		return FlashlightPortletKeys.PORTLET_NAME;
 	}
 
 	@Override
 	public String getResourceName() {
-		return SearchService.PORTLET_NAME;
+		return FlashlightPortletKeys.PORTLET_NAME;
 	}
 	
 	@Override

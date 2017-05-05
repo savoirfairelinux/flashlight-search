@@ -1,4 +1,4 @@
-package com.savoirfairelinux.facet;
+package com.savoirfairelinux.flashlight.service.impl.facet;
 
 import java.io.IOException;
 

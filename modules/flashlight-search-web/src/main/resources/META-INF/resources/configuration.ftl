@@ -1,56 +1,70 @@
 <#include "init.ftl">
 
-<@liferay_portlet["renderURL"] portletMode="edit" var="configurationRenderURL" />
-<@liferay_portlet["actionURL"] name="configurePortlet" var="configurationURL" />
-
-<@liferay_aui["form"] action="${configurationURL}" method="post" name="fm">
+<form action="${configureURL}" method="POST" name="${ns}preferences-form">
     <@liferay_aui["fieldset"] label="ADT">
         <div class="display-template">
             <@liferay_ddm["template-selector"]
                 className="com.liferay.portal.kernel.search.Document"
                 displayStyle=request.getPreferences().getValue("displayStyle","")
                 displayStyleGroupId=request.getPreferences().getValue("displayStyleGroupId","0")?number
-                refreshURL="${configurationRenderURL}"
+                refreshURL="${editRenderURL}"
                 showEmptyOption=true
             />
         </div>
     </@>
 
-    <@liferay_aui["fieldset"] label="Facets" >
-        <@liferay_aui["select"] name="selected_facets" multiple=true label="">
-            <#list searchFacets as facet>
-                <@liferay_aui["option"] value="${facet.className}" label="${facet.title}" selected=enabled_facets?seq_contains(facet.className) />
-            </#list>
-        </@>
-    </@>
+    <fieldset class="fieldset">
+        <legend><@liferay_ui["message"] key="General options" /></legend>
 
-    <@liferay_aui["fieldset"] label="Asset Entries">
-        <#assign assets= request.getPreferences().getValues("selectedAssets",[]) />
-        <@liferay_aui["select"] name="selected_assets_entries" multiple=true label="">
-            <#list searchAssetEntries?keys as assetEntry>
-                <@liferay_aui["option"] value="${assetEntry}" label="${searchAssetEntries[assetEntry]}" selected=assets?seq_contains(assetEntry) />
-            </#list>
-        </@>
-    </@>
-
-    <@liferay_aui["fieldset"] label="Structures">
-        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-            <#list structures as structure>
-                <#assign selectdTemplate=request.getPreferences().getValue("ddm-"+structure.structureKey,"")>
-                <div class="panel panel-default">
-                    <div class="panel-body ">
-                        <@liferay_aui["select"] label=structure.getName(locale) name="ddm-"+structure.structureKey >
-                            <#list structure["templates"] as template>
-                                <@liferay_aui["option"] label=template.getName(locale) value=template.templateKey  selected=(selectdTemplate==template.templateKey)/>
-                            </#list>
-                        </@>
-                    </div>
-                </div>
-            </#list>
+        <div class="form-group input-select-wrapper">
+            <label class="control-label" for="${ns}selected-facets"><@liferay_ui["message"] key="Facets" /></label>
+            <select class="form-control" id="${ns}selected-facets"name="${ns}selected-facets" multiple="multiple">
+                <#list searchFacets as facet>
+                    <#if selectedFacets?seq_contains(facet.className)>
+                        <option value="${facet.className}" selected="selected">${facet.title}</option>
+                    <#else>
+                        <option value="${facet.className}">${facet.title}</option>
+                    </#if>
+                </#list>
+            </select>
         </div>
-    </@>
 
-    <@liferay_aui["button-row"]>
-        <@liferay_aui["button"] type="submit" />
-    </@>
-</@>
+        <div class="form-group input-select-wrapper">
+            <label class="control-label"><@liferay_ui["message"] key="Asset types" /></label>
+            <select class="form-control" id="${ns}selected-asset-types" name="${ns}selected-asset-types" multiple="multiple">
+                <#list supportedAssetTypes as assetType>
+                    <#if selectedAssetTypes?seq_contains(assetType.name)>
+                        <option value="${assetType.name}" selected="selected">${assetType.name}</option>
+                    <#else>
+                        <option value="${assetType.name}" />${assetType.name}</option>
+                    </#if>
+                </#list>
+            </select>
+        </div>
+    </fieldset>
+
+    <fieldset class="fieldet">
+        <legend><@liferay_ui["message"] key="Structures" /></legend>
+        <#list structures as structure>
+            <div class="form-group input-select-wrapper">
+            <#assign selectdTemplate=request.getPreferences().getValue("ddm-"+structure.structureKey,"")>
+            <label class="control-label" for="${ns}ddm-${structure.uuid}">${structure.getName(locale)}</label>
+            <select class="form-control" id="${ns}ddm-${structure.uuid}" name="${ns}ddm-${structure.uuid}">
+                <#list structure["templates"] as template>
+                    <#if selectdTemplate == template.uuid>
+                    <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
+                    <#else>
+                    <option value="${template.uuid}">${template.getName(locale)}</option>
+                    </#if>
+                </#list>
+            </select>
+
+            </div>
+        </#list>
+    </fieldset>
+
+    <div class="form-group">
+        <input class="btn btn-default" type="submit" value="<@liferay_ui['message'] key='Submit' />" />
+    </div>
+
+</form>

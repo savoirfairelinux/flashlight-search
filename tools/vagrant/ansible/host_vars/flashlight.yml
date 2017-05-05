@@ -16,6 +16,7 @@ common_hosts:
 liferay7_virtual_hostname: "www.flashlight.vm"
 liferay7_version:       "7.0-ga1"
 patching_tool_version:  "2.0.6"
+liferay7_enable_debugger: true
 
 liferay7_installers:
   path:             "/vagrant/installers"

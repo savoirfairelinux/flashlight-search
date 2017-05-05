@@ -2,18 +2,21 @@ package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
-import javax.portlet.PortletPreferences;
+import javax.portlet.PortletMode;
+import javax.portlet.PortletURL;
 import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
@@ -23,33 +26,29 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
-import com.liferay.blogs.kernel.model.BlogsEntry;
-import com.liferay.document.library.kernel.model.DLFileEntry;
-import com.liferay.document.library.kernel.model.DLFileEntryType;
-import com.liferay.document.library.kernel.model.DLFolder;
-import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
+import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.search.web.facet.SearchFacet;
+import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
+import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
-import com.savoirfairelinux.flashlight.service.SearchService;
-import com.savoirfairelinux.flashlight.service.model.SearchResultWrapper;
+import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 
 @Component(
     service = Portlet.class,
@@ -57,7 +56,8 @@ import com.savoirfairelinux.flashlight.service.model.SearchResultWrapper;
     property = {
         "com.liferay.portlet.instanceable=false",
         "com.liferay.portlet.display-category=category.tools",
-        "javax.portlet.name=" + SearchService.PORTLET_NAME,
+        "com.liferay.portlet.requires-namespaced-parameters=true",
+        "javax.portlet.name=" + FlashlightPortletKeys.PORTLET_NAME,
         "javax.portlet.display-name=Flashlight Search",
         "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.templates-path=/",
@@ -70,101 +70,183 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
 
+    private static final String ACTION_NAME_SAVE_CONFIGURATION = "saveConfiguration";
+
+    private static final String FORM_FIELD_SELECTED_FACETS = "selected-facets";
+    private static final String FORM_FIELD_SELECTED_ASSET_TYPES = "selected-asset-types";
+    private static final String FORM_FIELD_ADT_GROUP_UUID = "adt-group-uuid";
+    private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
+    private static final Pattern FORM_FIELD_STRUCTURE_UUID_PATTERN = Pattern.compile("^ddm-([a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12})$");
+
+    private static final Pattern PATTERN_UUID = Pattern.compile("^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$");
+    private static final Pattern PATTERN_CLASS_NAME = Pattern.compile("^[a-zA-Z0-9_\\-](\\.[a-zA-Z0-9_\\-])*$");
+
+    private static final String[] EMPTY_ARRAY = new String[0];
+
     private AssetCategoryLocalService assetCategoryLocalService;
-    private DDMStructureLocalService DDMStructureLocalService;
-    private DLFileEntryTypeLocalService DLFileEntryTypeLocalService;
+    private DDMStructureLocalService ddmStructureLocalService;
     private ClassNameLocalService classNameLocalService;
-    private SearchService searchService;
+    private FlashlightSearchService searchService;
 
     private Portal portal;
     private TemplateManager templateManager;
 
     @Override
-    protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        PortletPreferences preferences = request.getPreferences();
+    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+        FlashlightConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        long scopeGroupId = themeDisplay.getScopeGroupId();
-        String keywords = request.getParameter("keywords");
+        String keywords = ParamUtil.get(request, "keywords", StringPool.BLANK);
 
-        Map<String, List<Document>> groupedDocuments = new HashMap<>();
-        List<SearchResultWrapper> searchResults = new ArrayList<>();
-        String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
-        if (keywords != null) {
+        Map<String, List<Document>> groupedDocuments;
 
+        if (!keywords.isEmpty()) {
             SearchContext searchContext = SearchContextFactory.getInstance(servletRequest);
             searchContext.setKeywords(keywords);
-
-            groupedDocuments = this.searchService.customGroupedSearch(searchContext, request.getPreferences(), Field.ENTRY_CLASS_NAME, 800);
-            for(Entry<String, List<Document>> document : groupedDocuments.entrySet()){
-                searchResults.add(new SearchResultWrapper(document.getKey(),document.getValue()));
+            try {
+                groupedDocuments = this.searchService.customGroupedSearch(searchContext, request.getPreferences(), Field.ENTRY_CLASS_NAME, 800);
+            } catch (SearchException e) {
+                throw new PortletException(e);
             }
+        } else {
+            groupedDocuments = Collections.emptyMap();
         }
-        List<SearchFacet> searchFacets = this.searchService.getEnabledSearchFacets(preferences);
-        Map<String, String> facets = getFacetsDefinitions(scopeGroupId, themeDisplay.getLocale());
 
-        HashMap<String, Object> templateCtx = new HashMap<>();
+        List<String> selectedFacets = config.getSelectedFacets();
+        List<String> searchFacets = SearchFacetTracker.getSearchFacets()
+            .stream()
+            .filter(facet -> selectedFacets.contains(facet.getClassName()))
+            .map(facet -> facet.getClassName())
+            .collect(Collectors.toList());
+
+        Map<String, Object> templateCtx = this.createTemplateContext();
+        // General objects
+        templateCtx.put("ns", response.getNamespace());
+
+        // Search objects
+        PortletURL keywordUrl = response.createRenderURL();
+        keywordUrl.setParameter("keywords", keywords);
+
+        templateCtx.put("keywordUrl", keywordUrl.toString());
         templateCtx.put("groupedDocuments", groupedDocuments);
-        templateCtx.put("facets", facets);
         templateCtx.put("searchFacets", searchFacets);
         templateCtx.put("keywords", keywords);
-        templateCtx.put("enabled_facets", enabled_facets);
-        templateCtx.put("categories", assetCategoryLocalService.getCategories());
-        templateCtx.put("searchResults", searchResults);
+        templateCtx.put("categories", this.assetCategoryLocalService.getCategories());
         templateCtx.put("flashlightUtil",  new FlashlightUtil());
         this.renderTemplate(request, response, templateCtx, "view.ftl");
     }
 
     @Override
-    protected void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
-        HashMap<String, Object> templateCtx = new HashMap<>();
+    public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         long scopeGroupId = themeDisplay.getScopeGroupId();
-        PortletPreferences preferences = request.getPreferences();
+        FlashlightConfiguration config = this.searchService.readConfiguration(request.getPreferences());
+        List<String> selectedFacets = config.getSelectedFacets();
 
-        List<SearchFacet> searchFacets = this.searchService.getEnabledSearchFacets(preferences);
-        String[] enabled_facets = request.getPreferences().getValues("facets", new String[0]);
 
-        templateCtx.put("enabled_facets", enabled_facets);
-        templateCtx.put("searchAssetEntries", getAssetEntries());
-        templateCtx.put("searchFacets", searchFacets);
+        PortletURL renderURL = response.createRenderURL();
+        renderURL.setPortletMode(PortletMode.EDIT);
+
+        PortletURL configureURL = response.createActionURL();
+        configureURL.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_CONFIGURATION);
+
+        Map<String, Object> templateCtx = this.createTemplateContext();
+        // Base template data
+        templateCtx.put("ns", response.getNamespace());
+        templateCtx.put("editRenderURL", renderURL.toString());
+        templateCtx.put("configureURL", configureURL.toString());
+
+        // Configuration data
+        templateCtx.put("supportedAssetTypes", FlashlightSearchService.SUPPORTED_ASSET_TYPES);
+        templateCtx.put("selectedFacets", selectedFacets);
+        templateCtx.put("selectedAssetTypes", config.getSelectedAssetTypes());
+        templateCtx.put("searchFacets", SearchFacetTracker.getSearchFacets());
         templateCtx.put("structures", getWebContentStructures(scopeGroupId));
         this.renderTemplate(request, response, templateCtx, "configuration.ftl");
     }
 
-    @ProcessAction(name = "configurePortlet")
-    public void configurePortletAction(ActionRequest actionRequest, ActionResponse actionResponse) throws IOException, PortletException {
-        String[] displayStyle = actionRequest.getParameterValues("preferences--displayStyle--");
-        String[] displayStyleGroupId = actionRequest.getParameterValues("preferences--displayStyleGroupId--");
-        String[] facets = actionRequest.getParameterValues("selected_facets");
-        String[] selectAssets = actionRequest.getParameterValues("selected_assets_entries");
+    /**
+     * Saves Flashlight Search's configuration as portlet preferences.
+     *
+     * The save action performs very basic validation - it checks for format validity, but it will not check whether
+     * objects referenced by the parameters exist. We are not holding the user's hands on this one - the form consists
+     * of select fields generated by Liferay data. If the user tampers with such data in a way that breaks the format,
+     * such data will not be saved. No error will be displayed in this case.
+     *
+     * @param request The request
+     * @param response The response
+     *
+     * @throws IOException If configuration fails to save
+     * @throws PortletException If a portlet error occurs
+     */
+    @ProcessAction(name = ACTION_NAME_SAVE_CONFIGURATION)
+    public void actionSaveConfiguration(ActionRequest request, ActionResponse response) throws IOException, PortletException {
+        // Get raw parameters
+        String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SELECTED_FACETS, EMPTY_ARRAY);
+        String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_SELECTED_ASSET_TYPES, EMPTY_ARRAY);
+        String adtGroupUuid = ParamUtil.get(request, FORM_FIELD_ADT_GROUP_UUID, StringPool.BLANK);
+        String adtUuid = ParamUtil.get(request, FORM_FIELD_ADT_UUID, StringPool.BLANK);
+        HashMap<String, String> validatedContentTemplates = new HashMap<String, String>();
 
-        Enumeration<String> e = actionRequest.getParameterNames();
-        while (e.hasMoreElements()) {
-            String param = (String) e.nextElement();
-            if (param.startsWith("ddm-")) {
-                actionRequest.getPreferences().setValue(param, actionRequest.getParameter(param));
+        // DDM Template UUIDs are validated on the fly
+        Enumeration<String> paramNames = request.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String paramName = paramNames.nextElement();
+            Matcher paramMatcher = FORM_FIELD_STRUCTURE_UUID_PATTERN.matcher(paramName);
+            if (paramMatcher.matches()) {
+                String paramValue = ParamUtil.get(request, paramName, StringPool.BLANK);
+                if(PATTERN_UUID.matcher(paramValue).matches()) {
+                    validatedContentTemplates.put(paramMatcher.group(1), paramValue);
+                }
             }
-
         }
-        if (facets == null) {
-            facets = new String[0];
-        }
-        actionRequest.getPreferences().setValues("facets", facets);
-        actionRequest.getPreferences().setValues("displayStyle", displayStyle);
-        actionRequest.getPreferences().setValues("displayStyleGroupId", displayStyleGroupId);
-        actionRequest.getPreferences().setValues("selectedAssets", selectAssets);
-        actionRequest.getPreferences().store();
 
+        // Validate the fields
+        ArrayList<String> validatedSelectedFacets = new ArrayList<>(selectedFacets.length);
+        for(String facet : selectedFacets) {
+            if(PATTERN_CLASS_NAME.matcher(facet).matches()) {
+                validatedSelectedFacets.add(facet);
+            }
+        }
+
+        ArrayList<String> validatedSelectedAssetTypes = new ArrayList<>(selectAssetTypes.length);
+        for(String assetType : selectAssetTypes) {
+            if(PATTERN_CLASS_NAME.matcher(assetType).matches()) {
+                validatedSelectedAssetTypes.add(assetType);
+            }
+        }
+
+        String validatedGroupUuid;
+        if(PATTERN_UUID.matcher(adtGroupUuid).matches()) {
+            validatedGroupUuid = adtGroupUuid;
+        } else {
+            validatedGroupUuid = StringPool.BLANK;
+        }
+
+        String validatedAdtUuid;
+        if(PATTERN_UUID.matcher(adtUuid).matches()) {
+            validatedAdtUuid = adtUuid;
+        } else {
+            validatedAdtUuid = StringPool.BLANK;
+        }
+
+        // Create the configuration and store it
+        FlashlightConfiguration config = new FlashlightConfiguration(
+            validatedSelectedFacets,
+            validatedSelectedAssetTypes,
+            validatedContentTemplates,
+            validatedGroupUuid,
+            validatedAdtUuid
+        );
+        this.searchService.writeConfiguration(config, request.getPreferences());
     }
 
     protected List<DDMStructure> getWebContentStructures(long groupid){
         List<DDMStructure> structures= new ArrayList<DDMStructure>();
         long classNameId = classNameLocalService.getClassNameId(JournalArticle.class);
         try {
-            long[] groupIds = PortalUtil.getCurrentAndAncestorSiteGroupIds(groupid, true);
+            long[] groupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupid, true);
 
-            List<DDMStructure> groupstructures =  DDMStructureLocalService.getStructures(groupIds);
+            List<DDMStructure> groupstructures =  this.ddmStructureLocalService.getStructures(groupIds);
             for(DDMStructure structure : groupstructures){
                 if(structure.getClassNameId() == classNameId){
                     structures.add(structure);
@@ -175,42 +257,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
         return structures;
     }
-    protected Map<String, String> getFacetsDefinitions(long groupid, Locale locale) {
-
-        Map<String, String> facets = new HashMap<String, String>();
-        List<DDMStructure> structures = getWebContentStructures(groupid);
-        for (DDMStructure structure : structures) {
-            String name = structure.getName(locale);
-            String key = structure.getStructureKey();
-            facets.put(key, name);
-        }
-
-        List<DLFileEntryType> filetypes = DLFileEntryTypeLocalService.getDLFileEntryTypes(0,
-                DLFileEntryTypeLocalService.getDLFileEntryTypesCount());
-
-        for (DLFileEntryType filetype : filetypes) {
-            String key = filetype.getFileEntryTypeId() + "";
-            String name = filetype.getName(locale);
-            facets.put(key, name);
-        }
-        facets.put(BlogsEntry.class.getName(), "Blogs");
-        facets.put(User.class.getName(), "Users");
-        facets.put(DLFolder.class.getName(), "Folders");
-
-        return facets;
-    }
-
-    protected Map<String,String> getAssetEntries(){
-        Map<String,String> assets = new HashMap<String,String>();
-
-        assets.put(JournalArticle.class.getName(), "Articles (Web Content)");
-        assets.put(DLFileEntry.class.getName(), "Documents & medias");
-        assets.put(BlogsEntry.class.getName(), "Blogs");
-        assets.put(User.class.getName(), "Users");
-        assets.put(DLFolder.class.getName(), "Folders");
-
-        return assets;
-    }
 
     @Reference(unbind = "-")
     public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
@@ -219,11 +265,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     @Reference(unbind = "-")
     public void setDDMStructureLocalService(DDMStructureLocalService DDMStructureLocalService){
-        this.DDMStructureLocalService  = DDMStructureLocalService;
-    }
-    @Reference(unbind = "-")
-    public void setDLFileEntryTypeLocalService(DLFileEntryTypeLocalService dLFileEntryTypeLocalService){
-        this.DLFileEntryTypeLocalService  = dLFileEntryTypeLocalService;
+        this.ddmStructureLocalService  = DDMStructureLocalService;
     }
 
     @Reference(unbind = "-")
@@ -232,7 +274,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     }
 
     @Reference(unbind = "-")
-    public void setSearchService(SearchService service) {
+    public void setSearchService(FlashlightSearchService service) {
         this.searchService = service;
     }
 

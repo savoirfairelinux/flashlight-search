@@ -2,6 +2,7 @@ package com.savoirfairelinux.flashlight.portlet.framework;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -63,6 +64,13 @@ public abstract class TemplatedPortlet extends GenericPortlet {
         } catch(TemplateException e) {
             throw new PortletException(e);
         }
+    }
+
+    /**
+     * @return An empty, writable template context
+     */
+    protected Map<String, Object> createTemplateContext() {
+        return new HashMap<String, Object>();
     }
 
     /**
