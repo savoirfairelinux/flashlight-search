@@ -54,16 +54,17 @@ import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
     service = Portlet.class,
     immediate = true,
     property = {
-        "com.liferay.portlet.instanceable=false",
-        "com.liferay.portlet.display-category=category.tools",
-        "com.liferay.portlet.requires-namespaced-parameters=true",
         "javax.portlet.name=" + FlashlightPortletKeys.PORTLET_NAME,
         "javax.portlet.display-name=Flashlight Search",
         "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.templates-path=/",
+        "javax.portlet.init-param.templates-path=/WEB-INF/",
         "javax.portlet.supports.mime-type=text/html",
         "javax.portlet.portlet-mode=text/html;view,edit",
         "javax.portlet.security-role-ref=power-user,user",
+
+        "com.liferay.portlet.requires-namespaced-parameters=true",
+        "com.liferay.portlet.display-category=category.tools",
+        "com.liferay.portlet.instanceable=false",
     }
 )
 public class FlashlightSearchPortlet extends TemplatedPortlet {
@@ -161,7 +162,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("selectedAssetTypes", config.getSelectedAssetTypes());
         templateCtx.put("searchFacets", SearchFacetTracker.getSearchFacets());
         templateCtx.put("structures", getWebContentStructures(scopeGroupId));
-        this.renderTemplate(request, response, templateCtx, "configuration.ftl");
+        this.renderTemplate(request, response, templateCtx, "edit.ftl");
     }
 
     /**
