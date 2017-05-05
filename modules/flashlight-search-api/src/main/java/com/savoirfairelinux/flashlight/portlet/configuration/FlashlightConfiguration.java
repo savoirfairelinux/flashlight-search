@@ -14,9 +14,9 @@ public class FlashlightConfiguration {
     private String adtGroupUUID;
     private String adtUUID;
 
-    public FlashlightConfiguration(List<String> enabledFacets, List<String> assetTypes, Map<String, String> contentTemplates, String adtGroupUUID, String adtUUID) {
-        this.selectedFacets = enabledFacets;
-        this.selectedAssetTypes = assetTypes;
+    public FlashlightConfiguration(List<String> selectedFacets, List<String> selectedAssetTypes, Map<String, String> contentTemplates, String adtGroupUUID, String adtUUID) {
+        this.selectedFacets = selectedFacets;
+        this.selectedAssetTypes = selectedAssetTypes;
         this.contentTemplates = contentTemplates;
         this.adtGroupUUID = adtGroupUUID;
         this.adtUUID = adtUUID;

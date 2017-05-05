@@ -80,7 +80,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final Pattern FORM_FIELD_STRUCTURE_UUID_PATTERN = Pattern.compile("^ddm-([a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12})$");
 
     private static final Pattern PATTERN_UUID = Pattern.compile("^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$");
-    private static final Pattern PATTERN_CLASS_NAME = Pattern.compile("^[a-zA-Z0-9_\\-](\\.[a-zA-Z0-9_\\-])*$");
+    private static final Pattern PATTERN_CLASS_NAME = Pattern.compile("^[a-zA-Z0-9_\\-]+(\\.[a-zA-Z0-9_\\-]+)*$");
 
     private static final String[] EMPTY_ARRAY = new String[0];
 

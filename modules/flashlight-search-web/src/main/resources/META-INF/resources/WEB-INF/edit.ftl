@@ -30,7 +30,7 @@
         </div>
 
         <div class="form-group input-select-wrapper">
-            <label class="control-label"><@liferay_ui["message"] key="Asset types" /></label>
+            <label class="control-label" for="${ns}selected-asset-types"><@liferay_ui["message"] key="Asset types" /></label>
             <select class="form-control" id="${ns}selected-asset-types" name="${ns}selected-asset-types" multiple="multiple">
                 <#list supportedAssetTypes as assetType>
                     <#if selectedAssetTypes?seq_contains(assetType.name)>
@@ -52,9 +52,9 @@
             <select class="form-control" id="${ns}ddm-${structure.uuid}" name="${ns}ddm-${structure.uuid}">
                 <#list structure["templates"] as template>
                     <#if selectdTemplate == template.uuid>
-                    <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
+                        <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
                     <#else>
-                    <option value="${template.uuid}">${template.getName(locale)}</option>
+                        <option value="${template.uuid}">${template.getName(locale)}</option>
                     </#if>
                 </#list>
             </select>
