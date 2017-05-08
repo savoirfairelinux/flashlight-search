@@ -27,14 +27,17 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -79,6 +82,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final Pattern PATTERN_UUID = Pattern.compile("^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$");
     private static final Pattern PATTERN_CLASS_NAME = Pattern.compile("^[a-zA-Z0-9_\\-]+(\\.[a-zA-Z0-9_\\-]+)*$");
+
+    private static final String SESSION_MESSAGE_CONFIG_SAVED = "configuration.saved";
 
     private static final String[] EMPTY_ARRAY = new String[0];
 
@@ -139,12 +144,23 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         List<String> selectedFacets = config.getSelectedFacets();
         Map<String, String> contentTemplates = config.getContentTemplates();
+        String adtUuid = config.getAdtUUID();
 
         Map<String, List<DDMStructure>> availableStructures;
         try {
             availableStructures = this.searchService.getDDMStructures(scopeGroupId);
         } catch (PortalException e) {
             throw new PortletException("Unable to retrieve DDM structures", e);
+        }
+
+        Map<Group, List<DDMTemplate>> applicationDisplayTemplates;
+        try {
+            applicationDisplayTemplates = this.searchService.getApplicationDisplayTemplates(
+                themeDisplay.getPermissionChecker(),
+                scopeGroupId
+            );
+        } catch(PortalException e) {
+            throw new PortletException("Cannot fetch application display templates", e);
         }
 
 
@@ -161,6 +177,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("configureURL", configureURL.toString());
 
         // Configuration data
+        templateCtx.put("adtUuid", adtUuid);
+        templateCtx.put("applicationDisplayTemplates", applicationDisplayTemplates);
         templateCtx.put("supportedAssetTypes", FlashlightSearchService.SUPPORTED_ASSET_TYPES);
         templateCtx.put("selectedFacets", selectedFacets);
         templateCtx.put("selectedAssetTypes", config.getSelectedAssetTypes());
@@ -235,6 +253,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedAdtUuid
         );
         this.searchService.writeConfiguration(config, request.getPreferences());
+        SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
     }
 
     @Reference(unbind = "-")

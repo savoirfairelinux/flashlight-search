@@ -18,12 +18,16 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
+import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
+import com.liferay.dynamic.data.mapping.util.DDMTemplatePermissionSupport;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
@@ -34,6 +38,10 @@ import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.ScopeFacet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -53,7 +61,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchServiceImpl.class);
 
+    private ClassNameLocalService classNameService;
     private DDMStructureLocalService ddmStructureService;
+    private DDMTemplateLocalService ddmTemplateService;
+    private DDMTemplatePermissionSupport ddmTemplatePermissionSupport;
+    private GroupLocalService groupService;
     private JournalArticleLocalService journalArticleService;
     private Portal portal;
     private FacetedSearcherManager facetedSearcherManager;
@@ -170,6 +182,40 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         return results;
     }
 
+    @Override
+    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        HashMap<Group, List<DDMTemplate>> adts = new HashMap<>();
+
+        long[] currentGroupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupId);
+        long classNameId = this.classNameService.getClassNameId(FlashlightSearchService.ADT_CLASS);
+        long userId = permissionChecker.getUserId();
+        for(long currentGroupId : currentGroupIds) {
+            List<DDMTemplate> groupTemplates = this.ddmTemplateService.getTemplates(currentGroupId, classNameId)
+                .stream()
+                .filter(template -> {
+                    // See DDMTemplatePermission.java in Liferay's source code for the inspirational stuff
+                    String modelResourceName = this.ddmTemplatePermissionSupport.getResourceName(template.getResourceClassNameId());
+                    long companyId = template.getCompanyId();
+                    long templateId = template.getTemplateId();
+                    String actionKey = ActionKeys.VIEW;
+
+                    return (
+                        permissionChecker.hasOwnerPermission(companyId, modelResourceName, templateId, userId, actionKey) ||
+                        permissionChecker.hasPermission(companyId, modelResourceName, templateId, actionKey)
+                    );
+                })
+                .collect(Collectors.toList());
+
+            // If we have templates to show, put it in the map
+            if(!groupTemplates.isEmpty()) {
+                Group group = this.groupService.getGroup(currentGroupId);
+                adts.put(group, groupTemplates);
+            }
+        }
+
+        return adts;
+    }
+
     /**
      * Migrates the configuration to the newest possible format
      *
@@ -233,8 +279,28 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Reference(unbind = "-")
+    public void setClassNameService(ClassNameLocalService classNameService) {
+        this.classNameService = classNameService;
+    }
+
+    @Reference(unbind = "-")
     public void setDdmStructureService(DDMStructureLocalService ddmStructureService) {
         this.ddmStructureService = ddmStructureService;
+    }
+
+    @Reference(unbind = "-")
+    public void setDdmTemplatePermissionSupport(DDMTemplatePermissionSupport ddmTemplatePermissionSupport) {
+        this.ddmTemplatePermissionSupport = ddmTemplatePermissionSupport;
+    }
+
+    @Reference(unbind = "-")
+    public void setDdmTemplateService(DDMTemplateLocalService ddmTemplateService) {
+        this.ddmTemplateService = ddmTemplateService;
+    }
+
+    @Reference(unbind = "-")
+    public void setGroupService(GroupLocalService groupService) {
+        this.groupService = groupService;
     }
 
     @Reference(unbind = "-")

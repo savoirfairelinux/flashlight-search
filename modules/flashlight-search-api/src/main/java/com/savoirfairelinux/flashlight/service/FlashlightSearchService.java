@@ -10,16 +10,20 @@ import javax.portlet.ValidatorException;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 
 public interface FlashlightSearchService {
 
     public static final Class<?>[] SUPPORTED_ASSET_TYPES = {JournalArticle.class, DLFileEntry.class};
+    public static final Class<FlashlightSearchService> ADT_CLASS = FlashlightSearchService.class;
 
     /**
      * Reads the configuration stored in portlet preferences and returns a model object corresponding to the
@@ -49,11 +53,24 @@ public interface FlashlightSearchService {
     public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
+     * Returns the list of DDM structures that are visible to the given site and its parents
+     *
      * @param groupId The site from which to start the search for DDM templates
      * @return A list of DDM structures, accessible from the given context. They are indexed by DDM structure class names.
      * @throws PortalException If an error occurs while fetching the structures
      */
     public Map<String, List<DDMStructure>> getDDMStructures(long groupId) throws PortalException;
+
+    /**
+     * Returns the list of application display templates that can be used with the Flashlight search portlet
+     *
+     * @param permissionChecker The current context's permission checker
+     * @param groupId The current site ID
+     * @return The application display templates, indexed by site
+     *
+     * @throws PortalException If an error occurs while fetching the templates
+     */
+    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
 
     public Map<String, List<Document>> customGroupedSearch(SearchContext searchContext, PortletPreferences preferences, String groupBy, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
