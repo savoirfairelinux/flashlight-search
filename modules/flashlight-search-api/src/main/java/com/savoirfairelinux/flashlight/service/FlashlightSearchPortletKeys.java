@@ -1,9 +1,9 @@
-package com.savoirfairelinux.flashlight.portlet;
+package com.savoirfairelinux.flashlight.service;
 
 /**
  * Contains metadata about the portlet
  */
-public class FlashlightPortletKeys {
+public class FlashlightSearchPortletKeys {
 
     /**
      * The portlet's name, as indicated in the portlet declaration
@@ -14,7 +14,7 @@ public class FlashlightPortletKeys {
      * Construction prevention
      * @throws Exception When called
      */
-    private FlashlightPortletKeys() throws Exception {
+    private FlashlightSearchPortletKeys() throws Exception {
         throw new Exception("Constants class. Do not construct.");
     }
 

@@ -15,7 +15,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
-import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 
 public interface FlashlightSearchService {
 
@@ -34,7 +34,7 @@ public interface FlashlightSearchService {
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public FlashlightConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Writes the given configuration model into the configuration. No format validation is performed at this level.
@@ -46,7 +46,7 @@ public interface FlashlightSearchService {
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * @param groupId The site from which to start the search for DDM templates

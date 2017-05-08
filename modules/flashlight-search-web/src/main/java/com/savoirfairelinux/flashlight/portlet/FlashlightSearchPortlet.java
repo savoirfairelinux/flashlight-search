@@ -43,15 +43,16 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
-import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
+import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 
 @Component(
     service = Portlet.class,
     immediate = true,
     property = {
-        "javax.portlet.name=" + FlashlightPortletKeys.PORTLET_NAME,
+        "javax.portlet.name=" + FlashlightSearchPortletKeys.PORTLET_NAME,
         "javax.portlet.display-name=Flashlight Search",
         "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.templates-path=/WEB-INF/",
@@ -89,7 +90,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        FlashlightConfiguration config = this.searchService.readConfiguration(request.getPreferences());
+        FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
         String keywords = ParamUtil.get(request, "keywords", StringPool.BLANK);
 
@@ -135,7 +136,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         long scopeGroupId = themeDisplay.getScopeGroupId();
-        FlashlightConfiguration config = this.searchService.readConfiguration(request.getPreferences());
+        FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         List<String> selectedFacets = config.getSelectedFacets();
         Map<String, String> contentTemplates = config.getContentTemplates();
 
@@ -227,7 +228,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
 
         // Create the configuration and store it
-        FlashlightConfiguration config = new FlashlightConfiguration(
+        FlashlightSearchConfiguration config = new FlashlightSearchConfiguration(
             validatedSelectedFacets,
             validatedSelectedAssetTypes,
             validatedContentTemplates,

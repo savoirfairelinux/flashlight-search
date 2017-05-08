@@ -6,7 +6,7 @@ import javax.portlet.PortletPreferences;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
-import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 
 /**
  * The configuration storage interface is used to read and write application configuration in a versionned manner
@@ -32,7 +32,7 @@ public interface ConfigurationStorage {
      * @param preferences The portlet preferences
      * @return The configuration model
      */
-    public FlashlightConfiguration readConfiguration(PortletPreferences preferences);
+    public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences);
 
     /**
      * Writes the given configuration model into the configuration. No format validation is performed at this level. It
@@ -44,7 +44,7 @@ public interface ConfigurationStorage {
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Migrates the portlet preferences to the format used by this configuration reader/writer

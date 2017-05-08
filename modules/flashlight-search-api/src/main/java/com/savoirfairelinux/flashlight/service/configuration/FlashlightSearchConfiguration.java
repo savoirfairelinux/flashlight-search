@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.portlet.configuration;
+package com.savoirfairelinux.flashlight.service.configuration;
 
 import java.util.Collections;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.Map;
  * Holds the portlet's configuration. This is a read-only view of the configuration. The returned lists and maps are
  * unmodifiable. Use Flashlight's search service to store and retreive configuration items.
  */
-public class FlashlightConfiguration {
+public class FlashlightSearchConfiguration {
 
     private List<String> selectedFacets;
     private List<String> selectedAssetTypes;
@@ -23,7 +23,7 @@ public class FlashlightConfiguration {
      * @param contentTemplates The selected content templates. A read-only view of this element will be stored.
      * @param adtUUID The ADT's UUID
      */
-    public FlashlightConfiguration(List<String> selectedFacets, List<String> selectedAssetTypes, Map<String, String> contentTemplates, String adtUUID) {
+    public FlashlightSearchConfiguration(List<String> selectedFacets, List<String> selectedAssetTypes, Map<String, String> contentTemplates, String adtUUID) {
         this.selectedFacets = Collections.unmodifiableList(selectedFacets);
         this.selectedAssetTypes = Collections.unmodifiableList(selectedAssetTypes);
         this.contentTemplates = Collections.unmodifiableMap(contentTemplates);

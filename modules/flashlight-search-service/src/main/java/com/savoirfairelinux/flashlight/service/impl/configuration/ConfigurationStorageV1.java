@@ -15,7 +15,7 @@ import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
 import com.liferay.portal.kernel.util.StringPool;
-import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 
 /**
  * First version of the configuration storage mechanism
@@ -30,7 +30,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final int CONF_KEY_PATTERN_DDM_GROUP_UUID = 1;
 
     @Override
-    public FlashlightConfiguration readConfiguration(PortletPreferences preferences) {
+    public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences) {
         // Read singular values
         List<String> selectedFacets = Arrays.asList(preferences.getValues(CONF_KEY_SELECTED_FACETS, new String[0]));
         List<String> selectedAssetTypes = Arrays.asList(preferences.getValues(CONF_KEY_SELECTED_ASSET_TYPES, new String[0]));
@@ -46,7 +46,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             }
         }
 
-        FlashlightConfiguration config = new FlashlightConfiguration(
+        FlashlightSearchConfiguration config = new FlashlightSearchConfiguration(
             selectedFacets,
             selectedAssetTypes,
             contentTemplates,
@@ -57,7 +57,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     }
 
     @Override
-    public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws IOException, ValidatorException, ReadOnlyException {
+    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws IOException, ValidatorException, ReadOnlyException {
         List<String> enabledFacets = configuration.getSelectedFacets();
         List<String> selectedAssetTypes = configuration.getSelectedAssetTypes();
 

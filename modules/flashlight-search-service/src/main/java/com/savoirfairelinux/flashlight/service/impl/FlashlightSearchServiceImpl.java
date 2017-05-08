@@ -40,8 +40,8 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
-import com.savoirfairelinux.flashlight.portlet.configuration.FlashlightConfiguration;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
 
@@ -69,8 +69,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public FlashlightConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        FlashlightConfiguration returnedConfig;
+    public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        FlashlightSearchConfiguration returnedConfig;
         int configVersion = Integer.parseInt(preferences.getValue(ConfigurationStorage.PORTLET_PREFERENCES_VERSION_KEY, ConfigurationStorage.PORTLET_PREFERENCES_DEFAULT_VERSION));
         boolean failedMigration = false;
 
@@ -87,7 +87,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             returnedConfig = this.storageEngines[configVersion - 1].readConfiguration(preferences);
         } else {
             LOG.warn("Due to a failure in configuration migration, an empty configuration has been returned");
-            returnedConfig = new FlashlightConfiguration(
+            returnedConfig = new FlashlightSearchConfiguration(
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyMap(),
@@ -99,7 +99,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
         this.storageEngines[this.latestConfigurationVersion - 1].writeConfiguration(configuration, preferences);
     }
 
@@ -128,7 +128,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     @Override
     public Map<String, List<Document>> customGroupedSearch(SearchContext searchContext, PortletPreferences portletPreferences, String groupBy, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException {
-        FlashlightConfiguration config = this.readConfiguration(portletPreferences);
+        FlashlightSearchConfiguration config = this.readConfiguration(portletPreferences);
         Hits hits = this.customSearch(searchContext, config);
         Map<String, List<Document>> results;
 
@@ -194,7 +194,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         }
     }
 
-    private Hits customSearch(SearchContext searchContext, FlashlightConfiguration config) throws SearchException {
+    private Hits customSearch(SearchContext searchContext, FlashlightSearchConfiguration config) throws SearchException {
         // Adding the facets
         Facet assetEntriesFacet = new AssetEntriesFacet(searchContext);
         assetEntriesFacet.setStatic(true);
