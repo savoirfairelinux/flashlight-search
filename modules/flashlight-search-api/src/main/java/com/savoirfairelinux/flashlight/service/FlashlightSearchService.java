@@ -9,7 +9,9 @@ import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
@@ -45,6 +47,13 @@ public interface FlashlightSearchService {
      * @throws IOException If the configuration fails to save
      */
     public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * @param groupId The site from which to start the search for DDM templates
+     * @return A list of DDM structures, accessible from the given context. They are indexed by DDM structure class names.
+     * @throws PortalException If an error occurs while fetching the structures
+     */
+    public Map<String, List<DDMStructure>> getDDMStructures(long groupId) throws PortalException;
 
     public Map<String, List<Document>> customGroupedSearch(SearchContext searchContext, PortletPreferences preferences, String groupBy, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 

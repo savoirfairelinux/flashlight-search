@@ -45,20 +45,26 @@
 
     <fieldset class="fieldet">
         <legend><@liferay_ui["message"] key="Structures" /></legend>
-        <#list structures as structure>
-            <div class="form-group input-select-wrapper">
-            <#assign selectdTemplate=request.getPreferences().getValue("ddm-"+structure.structureKey,"")>
-            <label class="control-label" for="${ns}ddm-${structure.uuid}">${structure.getName(locale)}</label>
-            <select class="form-control" id="${ns}ddm-${structure.uuid}" name="${ns}ddm-${structure.uuid}">
-                <#list structure["templates"] as template>
-                    <#if selectdTemplate == template.uuid>
-                        <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
-                    <#else>
-                        <option value="${template.uuid}">${template.getName(locale)}</option>
+        <#list structures?keys as className>
+            <#assign clStructures = structures[className] />
+            <div class="form-group">
+                <p><strong>${className}</strong></p>
+                <#list clStructures as structure>
+                    <#if structure.templates?has_content>
+                        <div class="form-group input-select-wrapper">
+                            <label class="control-label" for="${ns}ddm-${structure.uuid}">${structure.getName(locale)}</label>
+                            <select class="form-control" id="${ns}ddm-${structure.uuid}" name="${ns}ddm-${structure.uuid}">
+                                <#list structure.templates as template>
+                                    <#if contentTemplates[structure.uuid]?? && contentTemplates[structure.uuid] == template.uuid>
+                                        <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
+                                    <#else>
+                                        <option value="${template.uuid}">${template.getName(locale)}</option>
+                                    </#if>
+                                </#list>
+                            </select>
+                        </div>
                     </#if>
                 </#list>
-            </select>
-
             </div>
         </#list>
     </fieldset>

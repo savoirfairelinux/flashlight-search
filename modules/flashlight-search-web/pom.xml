@@ -34,7 +34,6 @@
             <artifactId>com.liferay.dynamic.data.mapping.api</artifactId>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
 
     <build>

@@ -27,8 +27,6 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
-import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
-import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -37,7 +35,6 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
-import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -69,13 +66,13 @@ import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 )
 public class FlashlightSearchPortlet extends TemplatedPortlet {
 
+    @SuppressWarnings("unused")
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
 
     private static final String ACTION_NAME_SAVE_CONFIGURATION = "saveConfiguration";
 
     private static final String FORM_FIELD_SELECTED_FACETS = "selected-facets";
     private static final String FORM_FIELD_SELECTED_ASSET_TYPES = "selected-asset-types";
-    private static final String FORM_FIELD_ADT_GROUP_UUID = "adt-group-uuid";
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final Pattern FORM_FIELD_STRUCTURE_UUID_PATTERN = Pattern.compile("^ddm-([a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12})$");
 
@@ -85,8 +82,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String[] EMPTY_ARRAY = new String[0];
 
     private AssetCategoryLocalService assetCategoryLocalService;
-    private DDMStructureLocalService ddmStructureLocalService;
-    private ClassNameLocalService classNameLocalService;
     private FlashlightSearchService searchService;
 
     private Portal portal;
@@ -142,6 +137,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         long scopeGroupId = themeDisplay.getScopeGroupId();
         FlashlightConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         List<String> selectedFacets = config.getSelectedFacets();
+        Map<String, String> contentTemplates = config.getContentTemplates();
+
+        Map<String, List<DDMStructure>> availableStructures;
+        try {
+            availableStructures = this.searchService.getDDMStructures(scopeGroupId);
+        } catch (PortalException e) {
+            throw new PortletException("Unable to retrieve DDM structures", e);
+        }
 
 
         PortletURL renderURL = response.createRenderURL();
@@ -161,7 +164,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("selectedFacets", selectedFacets);
         templateCtx.put("selectedAssetTypes", config.getSelectedAssetTypes());
         templateCtx.put("searchFacets", SearchFacetTracker.getSearchFacets());
-        templateCtx.put("structures", getWebContentStructures(scopeGroupId));
+        templateCtx.put("contentTemplates", contentTemplates);
+        templateCtx.put("structures", availableStructures);
         this.renderTemplate(request, response, templateCtx, "edit.ftl");
     }
 
@@ -184,7 +188,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Get raw parameters
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SELECTED_FACETS, EMPTY_ARRAY);
         String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_SELECTED_ASSET_TYPES, EMPTY_ARRAY);
-        String adtGroupUuid = ParamUtil.get(request, FORM_FIELD_ADT_GROUP_UUID, StringPool.BLANK);
         String adtUuid = ParamUtil.get(request, FORM_FIELD_ADT_UUID, StringPool.BLANK);
         HashMap<String, String> validatedContentTemplates = new HashMap<String, String>();
 
@@ -216,13 +219,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             }
         }
 
-        String validatedGroupUuid;
-        if(PATTERN_UUID.matcher(adtGroupUuid).matches()) {
-            validatedGroupUuid = adtGroupUuid;
-        } else {
-            validatedGroupUuid = StringPool.BLANK;
-        }
-
         String validatedAdtUuid;
         if(PATTERN_UUID.matcher(adtUuid).matches()) {
             validatedAdtUuid = adtUuid;
@@ -235,43 +231,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedSelectedFacets,
             validatedSelectedAssetTypes,
             validatedContentTemplates,
-            validatedGroupUuid,
             validatedAdtUuid
         );
         this.searchService.writeConfiguration(config, request.getPreferences());
     }
 
-    protected List<DDMStructure> getWebContentStructures(long groupid){
-        List<DDMStructure> structures= new ArrayList<DDMStructure>();
-        long classNameId = classNameLocalService.getClassNameId(JournalArticle.class);
-        try {
-            long[] groupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupid, true);
-
-            List<DDMStructure> groupstructures =  this.ddmStructureLocalService.getStructures(groupIds);
-            for(DDMStructure structure : groupstructures){
-                if(structure.getClassNameId() == classNameId){
-                    structures.add(structure);
-                }
-            }
-        } catch (PortalException e) {
-            LOG.error(e);
-        }
-        return structures;
-    }
-
     @Reference(unbind = "-")
     public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
         this.assetCategoryLocalService  = assetCategoryLocalService;
-    }
-
-    @Reference(unbind = "-")
-    public void setDDMStructureLocalService(DDMStructureLocalService DDMStructureLocalService){
-        this.ddmStructureLocalService  = DDMStructureLocalService;
-    }
-
-    @Reference(unbind = "-")
-    public void setClassNameLocalService(ClassNameLocalService classNameLocalService){
-        this.classNameLocalService  = classNameLocalService;
     }
 
     @Reference(unbind = "-")

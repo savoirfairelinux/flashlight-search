@@ -17,6 +17,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -34,6 +36,7 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
@@ -50,8 +53,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchServiceImpl.class);
 
-    private JournalArticleLocalService journalArticleLocalService;
+    private DDMStructureLocalService ddmStructureService;
+    private JournalArticleLocalService journalArticleService;
+    private Portal portal;
     private FacetedSearcherManager facetedSearcherManager;
+
     private ConfigurationStorage[] storageEngines;
     private int latestConfigurationVersion;
 
@@ -85,7 +91,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyMap(),
-                StringPool.BLANK,
                 StringPool.BLANK
             );
         }
@@ -96,6 +101,29 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     @Override
     public void writeConfiguration(FlashlightConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
         this.storageEngines[this.latestConfigurationVersion - 1].writeConfiguration(configuration, preferences);
+    }
+
+    @Override
+    public Map<String, List<DDMStructure>> getDDMStructures(long groupId) throws PortalException {
+        long[] groupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupId, true);
+        HashMap<String, List<DDMStructure>> indexedStructures = new HashMap<>();
+
+        List<DDMStructure> groupStructures =  this.ddmStructureService.getStructures(groupIds);
+        for(DDMStructure structure : groupStructures) {
+            if(!structure.getTemplates().isEmpty()) {
+                String clName = structure.getClassName();
+                List<DDMStructure> structures;
+                if(!indexedStructures.containsKey(clName)) {
+                    structures = new ArrayList<>();
+                    indexedStructures.put(clName, structures);
+                } else {
+                    structures = indexedStructures.get(clName);
+                }
+                structures.add(structure);
+            }
+        }
+
+        return indexedStructures;
     }
 
     @Override
@@ -113,10 +141,10 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 String key = groupBy;
                 if (document.get(Field.ENTRY_CLASS_NAME).equals(JournalArticle.class.getName())) {
                     key = "ddmStructureKey";
-                    JournalArticle journalArticle = this.journalArticleLocalService.fetchArticle(GetterUtil.getLong(document.get("groupId")), document.get("articleId"));
+                    JournalArticle journalArticle = this.journalArticleService.fetchArticle(GetterUtil.getLong(document.get("groupId")), document.get("articleId"));
                     String templateKey = portletPreferences.getValue("ddm-"+document.get("ddmStructureKey"), document.get("ddmTemplateKey"));
                     try {
-                        String content  = this.journalArticleLocalService.getArticleContent(journalArticle, templateKey, Constants.VIEW, searchContext.getLanguageId(), null, null);
+                        String content  = this.journalArticleService.getArticleContent(journalArticle, templateKey, Constants.VIEW, searchContext.getLanguageId(), null, null);
                         document.addKeyword("journalContent", content);
                     } catch (PortalException e) {
                         LOG.error("Cannot retrieve article content",e);
@@ -205,8 +233,18 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Reference(unbind = "-")
+    public void setDdmStructureService(DDMStructureLocalService ddmStructureService) {
+        this.ddmStructureService = ddmStructureService;
+    }
+
+    @Reference(unbind = "-")
     public void setJournalArticleService(JournalArticleLocalService service) {
-        this.journalArticleLocalService = service;
+        this.journalArticleService = service;
+    }
+
+    @Reference(unbind = "-")
+    public void setPortal(Portal portal) {
+        this.portal = portal;
     }
 
     @Reference(unbind = "-")
