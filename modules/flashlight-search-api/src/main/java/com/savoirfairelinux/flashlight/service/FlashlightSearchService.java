@@ -14,11 +14,11 @@ import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
+import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 public interface FlashlightSearchService {
 
@@ -72,6 +72,6 @@ public interface FlashlightSearchService {
      */
     public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
 
-    public Map<String, List<Document>> customGroupedSearch(SearchContext searchContext, PortletPreferences preferences, String groupBy, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+    public SearchResultsContainer search(SearchContext searchContext, PortletPreferences preferences, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
 }

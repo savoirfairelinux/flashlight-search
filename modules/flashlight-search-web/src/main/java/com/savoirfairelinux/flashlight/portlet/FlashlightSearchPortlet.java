@@ -32,8 +32,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
@@ -50,6 +48,7 @@ import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
+import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 @Component(
     service = Portlet.class,
@@ -99,18 +98,18 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
         String keywords = ParamUtil.get(request, "keywords", StringPool.BLANK);
 
-        Map<String, List<Document>> groupedDocuments;
+        SearchResultsContainer results;
 
         if (!keywords.isEmpty()) {
             SearchContext searchContext = SearchContextFactory.getInstance(servletRequest);
             searchContext.setKeywords(keywords);
             try {
-                groupedDocuments = this.searchService.customGroupedSearch(searchContext, request.getPreferences(), Field.ENTRY_CLASS_NAME, 800);
+                results = this.searchService.search(searchContext, request.getPreferences(), 800);
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
         } else {
-            groupedDocuments = Collections.emptyMap();
+            results = new SearchResultsContainer(Collections.emptyMap());
         }
 
         List<String> selectedFacets = config.getSelectedFacets();
@@ -129,7 +128,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         keywordUrl.setParameter("keywords", keywords);
 
         templateCtx.put("keywordUrl", keywordUrl.toString());
-        templateCtx.put("groupedDocuments", groupedDocuments);
+        templateCtx.put("resultsContainer", results);
         templateCtx.put("searchFacets", searchFacets);
         templateCtx.put("keywords", keywords);
         templateCtx.put("categories", this.assetCategoryLocalService.getCategories());

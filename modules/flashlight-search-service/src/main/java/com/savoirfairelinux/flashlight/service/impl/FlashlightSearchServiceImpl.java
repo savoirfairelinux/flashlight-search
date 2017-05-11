@@ -16,14 +16,11 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.dynamic.data.mapping.util.DDMTemplatePermissionSupport;
-import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -33,25 +30,23 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
-import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
-import com.liferay.portal.kernel.search.facet.Facet;
-import com.liferay.portal.kernel.search.facet.ScopeFacet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.util.Constants;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.search.web.facet.SearchFacet;
-import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
+import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
+import com.savoirfairelinux.flashlight.service.model.SearchResult;
+import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
+import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
+import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
 @Component(
     service = FlashlightSearchService.class,
@@ -66,9 +61,9 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     private DDMTemplateLocalService ddmTemplateService;
     private DDMTemplatePermissionSupport ddmTemplatePermissionSupport;
     private GroupLocalService groupService;
-    private JournalArticleLocalService journalArticleService;
     private Portal portal;
     private FacetedSearcherManager facetedSearcherManager;
+    private SearchResultProcessorServiceTracker searchResultProcessorServicetracker;
 
     private ConfigurationStorage[] storageEngines;
     private int latestConfigurationVersion;
@@ -139,47 +134,55 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public Map<String, List<Document>> customGroupedSearch(SearchContext searchContext, PortletPreferences portletPreferences, String groupBy, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException {
+    public SearchResultsContainer search(SearchContext searchContext, PortletPreferences portletPreferences, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException {
         FlashlightSearchConfiguration config = this.readConfiguration(portletPreferences);
-        Hits hits = this.customSearch(searchContext, config);
-        Map<String, List<Document>> results;
+        List<String> selectedAssetTypes = config.getSelectedAssetTypes();
+
+        // Configure asset types and search
+        searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
+        FacetedSearcher facetedSearcher = this.facetedSearcherManager.createFacetedSearcher();
+        Hits hits = facetedSearcher.search(searchContext);
+
+        Map<DDMStructure, List<SearchResult>> searchResultsIndex;
+        Map<String, DDMStructure> structureIndex = new HashMap<>();
 
         if (hits != null) {
-
             Document[] documents = hits.getDocs();
-            results = new HashMap<>();
+            searchResultsIndex = new HashMap<>();
 
             for (Document document : documents) {
-                String key = groupBy;
-                if (document.get(Field.ENTRY_CLASS_NAME).equals(JournalArticle.class.getName())) {
-                    key = "ddmStructureKey";
-                    JournalArticle journalArticle = this.journalArticleService.fetchArticle(GetterUtil.getLong(document.get("groupId")), document.get("articleId"));
-                    String templateKey = portletPreferences.getValue("ddm-"+document.get("ddmStructureKey"), document.get("ddmTemplateKey"));
-                    try {
-                        String content  = this.journalArticleService.getArticleContent(journalArticle, templateKey, Constants.VIEW, searchContext.getLanguageId(), null, null);
-                        document.addKeyword("journalContent", content);
-                    } catch (PortalException e) {
-                        LOG.error("Cannot retrieve article content",e);
+                String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
+                long scopeGroupId = Long.parseLong(document.getField(Field.SCOPE_GROUP_ID).getValue());
+                Field ddmStructureKeyField = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName());
+
+                if(ddmStructureKeyField != null) {
+                    String ddmStructureKey = ddmStructureKeyField.getValue();
+                    DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
+                    if(structure != null) {
+                        structureIndex.put(structure.getUuid(), structure);
+                        List<SearchResult> searchResults;
+                        if(searchResultsIndex.containsKey(structure)) {
+                            searchResults = searchResultsIndex.get(structure);
+                        } else {
+                            searchResults = new ArrayList<>();
+                            searchResultsIndex.put(structure, searchResults);
+                        }
+                        searchResults.add(this.processDocument(searchContext, config, assetType, structure, document));
+                    } else {
+                        LOG.debug("No DDM structure found within scope group ID " + scopeGroupId + " and structure key \"" + ddmStructureKey + "\"");
                     }
-                } else if (document.get(Field.ENTRY_CLASS_NAME).equals(DLFileEntry.class.getName())) {
-                    key = "fileEntryTypeId";
+                } else {
+                    LOG.debug("No DDM structure key for document UID \"" + document.getUID() + "\", ignoring");
                 }
 
-                document.addKeyword("type", key);
-                String keyValue = document.get(key);
-                if (!results.containsKey(keyValue)) {
-                    List<Document> list = new ArrayList<Document>();
-                    list.add(document);
-                    results.put(keyValue, list);
-                } else if (results.get(keyValue).size() < maxCount) {
-                    results.get(keyValue).add(document);
-                }
+
+
             }
         } else {
-            results = Collections.emptyMap();
+            searchResultsIndex = Collections.emptyMap();
         }
 
-        return results;
+        return new SearchResultsContainer(searchResultsIndex);
     }
 
     @Override
@@ -216,6 +219,45 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         return adts;
     }
 
+    private SearchResult processDocument(SearchContext searchContext, FlashlightSearchConfiguration configuration, String assetType, DDMStructure structure, Document document) {
+        SearchResult result = null;
+
+        SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
+        if(processor != null) {
+            try {
+                result = processor.process(searchContext, configuration, structure, document);
+            } catch(SearchResultProcessorException e) {
+                LOG.error("Error while processing search result. Not integrating in search results.", e);
+            }
+        } else {
+            LOG.warn("No search result processor registered for asset type \"" + assetType + "\"");
+        }
+
+        return result;
+    }
+
+    /**
+     * Search a DDM structure in the given group ID and its ancestors
+     *
+     * @param groupId The group ID from which to start the search
+     * @param assetType The asset type on which the structure must be applied
+     * @param structureKey The structure key
+     * @return The DDM structure or null if none found or unavailable
+     */
+    private DDMStructure searchStructure(long groupId, String assetType, String structureKey) {
+        DDMStructure foundStructure;
+        long classNameId = this.classNameService.getClassNameId(assetType);
+
+        try{
+            foundStructure = this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
+        } catch(PortalException e) {
+            foundStructure = null;
+            LOG.error("DDM structure not found", e);
+        }
+
+        return foundStructure;
+    }
+
     /**
      * Migrates the configuration to the newest possible format
      *
@@ -238,44 +280,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             // configuration is not tampered with. If that happens, return an empty configuration.
             throw new IOException("Cannot migrate the configuration as there is no migration path possible with the current code.");
         }
-    }
-
-    private Hits customSearch(SearchContext searchContext, FlashlightSearchConfiguration config) throws SearchException {
-        // Adding the facets
-        Facet assetEntriesFacet = new AssetEntriesFacet(searchContext);
-        assetEntriesFacet.setStatic(true);
-        searchContext.addFacet(assetEntriesFacet);
-
-        Facet scopeFacet = new ScopeFacet(searchContext);
-        scopeFacet.setStatic(true);
-        searchContext.addFacet(scopeFacet);
-
-        List<String> selectedFacetNames = config.getSelectedFacets();
-        List<SearchFacet> enabledFacets = SearchFacetTracker.getSearchFacets()
-            .stream()
-            .filter(facet -> selectedFacetNames.contains(facet.getClassName()))
-            .collect(Collectors.toList());
-
-        for (SearchFacet searchFacet : enabledFacets) {
-            try {
-                searchFacet.init(searchContext.getCompanyId(), StringPool.BLANK, searchContext);
-            } catch (Exception e) {
-                LOG.warn("cannot init the facet " + searchFacet.getClass().getName(), e);
-            }
-            Facet facet = searchFacet.getFacet();
-            if (facet != null) {
-                searchContext.addFacet(facet);
-            }
-        }
-
-         // Actual search
-        List<String> selectedAssetTypes = config.getSelectedAssetTypes();
-        if (searchContext.getEntryClassNames().length > 1) {
-            searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
-        }
-
-        FacetedSearcher facetedSearcher = this.facetedSearcherManager.createFacetedSearcher();
-        return facetedSearcher.search(searchContext);
     }
 
     @Reference(unbind = "-")
@@ -304,11 +308,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Reference(unbind = "-")
-    public void setJournalArticleService(JournalArticleLocalService service) {
-        this.journalArticleService = service;
-    }
-
-    @Reference(unbind = "-")
     public void setPortal(Portal portal) {
         this.portal = portal;
     }
@@ -316,6 +315,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     @Reference(unbind = "-")
     public void setFacetedSearcherManager(FacetedSearcherManager facetedSearcherManager) {
         this.facetedSearcherManager = facetedSearcherManager;
+    }
+
+    @Reference(unbind = "-")
+    public void setSearchResultProcessorServiceTracker(SearchResultProcessorServiceTracker searchResultProcessorServiceTracker) {
+        this.searchResultProcessorServicetracker = searchResultProcessorServiceTracker;
     }
 
 }
