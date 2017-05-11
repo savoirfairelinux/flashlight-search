@@ -1,6 +1,7 @@
 package com.savoirfairelinux.flashlight.service.configuration;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,45 +11,25 @@ import java.util.Map;
  */
 public class FlashlightSearchConfiguration {
 
-    private List<String> selectedFacets;
-    private List<String> selectedAssetTypes;
-    private Map<String, String> contentTemplates;
     private String adtUUID;
+    private Map<String, FlashlightSearchConfigurationTab> tabs;
 
     /**
      * Creates the configuration model
      *
-     * @param selectedFacets The selected facets. A read-only view of this element will be stored.
      * @param selectedAssetTypes The selected asset types. A read-only view of this element will be stored.
      * @param contentTemplates The selected content templates. A read-only view of this element will be stored.
      * @param adtUUID The ADT's UUID
      */
-    public FlashlightSearchConfiguration(List<String> selectedFacets, List<String> selectedAssetTypes, Map<String, String> contentTemplates, String adtUUID) {
-        this.selectedFacets = Collections.unmodifiableList(selectedFacets);
-        this.selectedAssetTypes = Collections.unmodifiableList(selectedAssetTypes);
-        this.contentTemplates = Collections.unmodifiableMap(contentTemplates);
+    public FlashlightSearchConfiguration(String adtUUID, List<FlashlightSearchConfigurationTab> tabs) {
         this.adtUUID = adtUUID;
-    }
-
-    /**
-     * @return A read-only view of the selected facet names
-     */
-    public List<String> getSelectedFacets() {
-        return this.selectedFacets;
-    }
-
-    /**
-     * @return A read-only view of the selected asset types
-     */
-    public List<String> getSelectedAssetTypes() {
-        return this.selectedAssetTypes;
-    }
-
-    /**
-     * @return A read-only view of the selected content templates
-     */
-    public Map<String, String> getContentTemplates() {
-        return this.contentTemplates;
+        this.tabs = new LinkedHashMap<>(tabs.size());
+        tabs.stream()
+            .sorted(FlashlightSearchConfiguration::sortByOrder)
+            .forEach(t -> {
+                this.tabs.put(t.getId(), t);
+            });
+        this.tabs = Collections.unmodifiableMap(this.tabs);
     }
 
     /**
@@ -56,6 +37,34 @@ public class FlashlightSearchConfiguration {
      */
     public String getAdtUUID() {
         return this.adtUUID;
+    }
+
+    /**
+     * @return The search configuration tabs, sorted in order, indexed by ID
+     */
+    public Map<String, FlashlightSearchConfigurationTab> getTabs() {
+        return tabs;
+    }
+
+    /**
+     * Sorts the configuration tabs by their order
+     *
+     * @param a The first tab to compare
+     * @param b The second tab to compare
+     * @return 1 if a > b, -1 if b < a, 0 if a == b
+     */
+    private static int sortByOrder(FlashlightSearchConfigurationTab a, FlashlightSearchConfigurationTab b) {
+        int aOrder = a.getOrder();
+        int bOrder = b.getOrder();
+        int val;
+        if(aOrder > bOrder) {
+            val = 1;
+        } else if(aOrder < bOrder) {
+            val = -1;
+        } else {
+            val = 0;
+        }
+        return val;
     }
 
 }

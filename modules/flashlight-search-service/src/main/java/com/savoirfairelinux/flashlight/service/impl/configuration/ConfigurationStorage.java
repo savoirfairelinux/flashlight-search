@@ -7,6 +7,7 @@ import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 
 /**
  * The configuration storage interface is used to read and write application configuration in a versionned manner
@@ -35,16 +36,41 @@ public interface ConfigurationStorage {
     public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences);
 
     /**
-     * Writes the given configuration model into the configuration. No format validation is performed at this level. It
-     * is the developer's responsibility to send data that is in the expected format.
+     * Saves the application display template settings
      *
-     * @param configuration The configuration model
+     * @param adtUuid The ADT's UUID
      * @param preferences The portlet preferences
+     *
      * @throws ReadOnlyException If the configuration is read only
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * Writes the given configuration tab model into the configuration. No format validation is performed at this level.
+     * It is the developer's responsibility to send data that is in the expected format.
+     *
+     * @param configurationTab The configuration tab model
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * Delete the given configuration tab
+     *
+     * @param tabId The tab's unique ID
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Migrates the portlet preferences to the format used by this configuration reader/writer

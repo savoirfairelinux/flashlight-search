@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 public interface FlashlightSearchService {
@@ -41,16 +42,40 @@ public interface FlashlightSearchService {
     public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
-     * Writes the given configuration model into the configuration. No format validation is performed at this level.
+     * Saves the application display template into the configuration
      *
-     * @param configuration The configuration model
+     * @param adtUuid The ADT's UUID
      * @param preferences The portlet preferences
      *
      * @throws ReadOnlyException If the configuration is read only
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * Writes the given configuration tab model into the configuration. No format validation is performed at this level.
+     *
+     * @param configurationTab The configuration tab model
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * Removes the given configuration tab from the configuration
+     *
+     * @param tabId The tab's unique ID
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Returns the list of DDM structures that are visible to the given site and its parents

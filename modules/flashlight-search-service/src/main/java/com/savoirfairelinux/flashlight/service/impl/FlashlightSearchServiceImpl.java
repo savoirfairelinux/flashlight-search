@@ -40,6 +40,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
@@ -95,10 +96,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         } else {
             LOG.warn("Due to a failure in configuration migration, an empty configuration has been returned");
             returnedConfig = new FlashlightSearchConfiguration(
-                Collections.emptyList(),
-                Collections.emptyList(),
-                Collections.emptyMap(),
-                StringPool.BLANK
+                StringPool.BLANK,
+                Collections.emptyList()
             );
         }
 
@@ -106,8 +105,18 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public void writeConfiguration(FlashlightSearchConfiguration configuration, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.storageEngines[this.latestConfigurationVersion - 1].writeConfiguration(configuration, preferences);
+    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.getLatestStorageEngine().saveADT(adtUuid, preferences);
+    }
+
+    @Override
+    public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.getLatestStorageEngine().saveConfigurationTab(configurationTab, preferences);
+    }
+
+    @Override
+    public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.getLatestStorageEngine().deleteConfigurationTab(tabId, preferences);
     }
 
     @Override
@@ -136,7 +145,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     @Override
     public SearchResultsContainer search(SearchContext searchContext, PortletPreferences portletPreferences, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException {
         FlashlightSearchConfiguration config = this.readConfiguration(portletPreferences);
-        List<String> selectedAssetTypes = config.getSelectedAssetTypes();
+        // FIXME TEMP
+        List<String> selectedAssetTypes = Collections.emptyList();
 
         // Configure asset types and search
         searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
@@ -225,7 +235,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
         if(processor != null) {
             try {
-                result = processor.process(searchContext, configuration, structure, document);
+                // FIXME TEMP
+                result = processor.process(searchContext, configuration.getTabs().get(0), structure, document);
             } catch(SearchResultProcessorException e) {
                 LOG.error("Error while processing search result. Not integrating in search results.", e);
             }
@@ -280,6 +291,13 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             // configuration is not tampered with. If that happens, return an empty configuration.
             throw new IOException("Cannot migrate the configuration as there is no migration path possible with the current code.");
         }
+    }
+
+    /**
+     * @return The latest configuration storage engine
+     */
+    private ConfigurationStorage getLatestStorageEngine() {
+        return this.storageEngines[this.latestConfigurationVersion - 1];
     }
 
     @Reference(unbind = "-")
