@@ -8,7 +8,7 @@ public class PatternConstants {
     /**
      * A pattern illustrating a class name
      */
-    public static final String CLASS_NAME = "(([a-zA-Z0-9\\-_]\\.)*[a-zA-Z0-9\\-_]+)";
+    public static final String CLASS_NAME = "(([a-zA-Z0-9\\-_]+\\.)*[a-zA-Z0-9\\-_]+)";
 
     public static final String UUID = "([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})";
 

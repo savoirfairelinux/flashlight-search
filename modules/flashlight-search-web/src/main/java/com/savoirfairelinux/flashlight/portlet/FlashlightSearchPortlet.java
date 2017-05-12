@@ -15,6 +15,7 @@ import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
 import javax.portlet.PortletMode;
+import javax.portlet.PortletPreferences;
 import javax.portlet.PortletURL;
 import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
@@ -76,13 +77,15 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String ACTION_NAME_SAVE_TAB = "saveTab";
     private static final String ACTION_NAME_SAVE_GLOBAL = "saveGlobal";
+    private static final String ACTION_NAME_DELETE_TAB = "deleteTab";
 
-    private static final String FORM_FIELD_EDIT_MODE = "edit-mode";
     private static final String FORM_FIELD_KEYWORDS = "keywords";
+    private static final String FORM_FIELD_EDIT_MODE = "edit-mode";
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
     private static final String FORM_FIELD_FACETS = "facets";
+    private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
     private static final String FORM_FIELD_ASSET_TYPES = "asset-types";
     private static final Pattern FORM_FIELD_DDM_STRUCTURE_UUID_PATTERN = Pattern.compile("^ddm-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_TITLE_PATTERN = Pattern.compile("^title-" + PatternConstants.LOCALE + "$");
@@ -168,19 +171,31 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         String adtUuid = config.getAdtUUID();
 
+        PortletURL editGlobalUrl = response.createRenderURL();
+        editGlobalUrl.setPortletMode(PortletMode.EDIT);;
+
         PortletURL createTabUrl = response.createRenderURL();
+        createTabUrl.setPortletMode(PortletMode.EDIT);
         createTabUrl.setParameter(FORM_FIELD_EDIT_MODE, EDIT_MODE_TAB);
 
         PortletURL saveGlobalUrl = response.createActionURL();
+        saveGlobalUrl.setPortletMode(PortletMode.EDIT);
         saveGlobalUrl.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_GLOBAL);
 
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         HashMap<String, PortletURL> editTabUrls = new HashMap<>(tabs.size());
+        HashMap<String, PortletURL> deleteTabUrls = new HashMap<>(tabs.size());
         tabs.keySet().forEach(tabId -> {
             PortletURL editUrl = response.createRenderURL();
             editUrl.setParameter(FORM_FIELD_EDIT_MODE, EDIT_MODE_TAB);
             editUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
             editTabUrls.put(tabId, editUrl);
+
+            PortletURL deleteUrl = response.createActionURL();
+            deleteUrl.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_DELETE_TAB);
+            deleteUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+            deleteUrl.setParameter(FORM_FIELD_REDIRECT_URL, editGlobalUrl.toString());
+            deleteTabUrls.put(tabId, deleteUrl);
         });
 
         Map<Group, List<DDMTemplate>> applicationDisplayTemplates;
@@ -192,12 +207,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         Map<String, Object> templateCtx = this.createTemplateContext();
         templateCtx.put("ns", response.getNamespace());
+        templateCtx.put("editGlobalUrl", editGlobalUrl);
         templateCtx.put("createTabUrl", createTabUrl);
         templateCtx.put("saveGlobalUrl", saveGlobalUrl);
         templateCtx.put("adtUuid", adtUuid);
         templateCtx.put("applicationDisplayTemplates", applicationDisplayTemplates);
         templateCtx.put("tabs", tabs);
         templateCtx.put("editTabUrls", editTabUrls);
+        templateCtx.put("deleteTabUrls", deleteTabUrls);
         this.renderTemplate(request, response, templateCtx, "edit.ftl");
     }
 
@@ -224,6 +241,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             tabId = StringPool.BLANK;
         }
 
+        int tabOrderRange = tabs.size() + 1;
+
         String[] availableLocales = themeDisplay.getScopeGroup().getAvailableLanguageIds();
         Map<String, List<DDMStructure>> availableStructures;
         try {
@@ -235,19 +254,25 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         PortletURL editGlobalURL = response.createRenderURL();
         editGlobalURL.setPortletMode(PortletMode.EDIT);
 
-        PortletURL configureURL = response.createActionURL();
-        configureURL.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_TAB);
-        configureURL.setParameter(FORM_FIELD_TAB_ID, tabId);
+        PortletURL saveTabURL = response.createActionURL();
+        saveTabURL.setPortletMode(PortletMode.EDIT);
+        saveTabURL.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_TAB);
 
+        int tabOrder;
         List<String> assetTypes;
         Map<String, String> contentTemplates;
         Map<String, String> titleMap;
+        PortletURL redirectUrl = response.createRenderURL();
 
         if(tab != null) {
+            tabOrder = tab.getOrder();
             assetTypes = tab.getAssetTypes();
             contentTemplates = tab.getContentTemplates();
             titleMap = tab.getTitleMap();
+            redirectUrl.setParameter(FORM_FIELD_EDIT_MODE, EDIT_MODE_TAB);
+            redirectUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
         } else {
+            tabOrder = tabOrderRange;
             assetTypes = Collections.emptyList();
             contentTemplates = Collections.emptyMap();
             titleMap = Collections.emptyMap();
@@ -258,10 +283,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Base template data
         templateCtx.put("ns", response.getNamespace());
         templateCtx.put("editGlobalUrl", editGlobalURL.toString());
-        templateCtx.put("saveTabUrl", configureURL.toString());
+        templateCtx.put("saveTabUrl", saveTabURL.toString());
+        templateCtx.put("redirectUrl", redirectUrl);
 
         // Configuration data
         templateCtx.put("tabId", tabId);
+        templateCtx.put("tabOrder", tabOrder);
+        templateCtx.put("tabOrderRange", tabOrderRange);
         templateCtx.put("availableLocales", availableLocales);
         templateCtx.put("availableStructures", availableStructures);
         templateCtx.put("supportedAssetTypes", FlashlightSearchService.SUPPORTED_ASSET_TYPES);
@@ -273,12 +301,17 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     @ProcessAction(name = ACTION_NAME_SAVE_GLOBAL)
     public void actionSaveGlobal(ActionRequest request, ActionResponse response) throws IOException, PortletException {
+        String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String adtUuid = ParamUtil.get(request, FORM_FIELD_ADT_UUID, StringPool.BLANK);
         if(!PATTERN_UUID.matcher(adtUuid).matches()) {
             adtUuid = StringPool.BLANK;
         }
         this.searchService.saveADT(adtUuid, request.getPreferences());
+
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
+        if(!redirectUrl.isEmpty()) {
+            response.sendRedirect(redirectUrl);
+        }
     }
 
     /**
@@ -298,6 +331,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     @ProcessAction(name = ACTION_NAME_SAVE_TAB)
     public void actionSaveTab(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         // Get raw parameters
+        String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, ZERO);
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_FACETS, EMPTY_ARRAY);
@@ -355,13 +389,45 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if(validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
-        } else {
             tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
+        } else {
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
+
+        if(!redirectUrl.isEmpty()) {
+            response.sendRedirect(redirectUrl);
+        }
+    }
+
+    /**
+     * Deletes a tab from the configuration
+     *
+     * @param request The request
+     * @param response The response
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
+     */
+    @ProcessAction(name = ACTION_NAME_DELETE_TAB)
+    public void actionDeleteTab(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
+
+        if(tabId != null && PATTERN_UUID.matcher(tabId).matches()) {
+            PortletPreferences preferences = request.getPreferences();
+            Map<String, FlashlightSearchConfigurationTab> tabs = this.searchService.readConfiguration(preferences).getTabs();
+            if(tabs.containsKey(tabId)) {
+                this.searchService.deleteConfigurationTab(tabId, preferences);
+            }
+        }
+
+        SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
+
+        if(!redirectUrl.isEmpty()) {
+            response.sendRedirect(redirectUrl);
+        }
     }
 
     @Reference(unbind = "-")

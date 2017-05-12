@@ -4,6 +4,8 @@
 
 <form action="${saveGlobalUrl}" method="POST" name="${ns}global-form">
 
+    <input type="hidden" name="${ns}redirect-url" value="${editGlobalUrl}" />
+
     <fieldset class="fieldset">
         <legend><@liferay_ui["message"] key="Appearance" /></legend>
 
@@ -32,11 +34,32 @@
     <fieldset class="fieldset">
         <#if tabs?has_content>
             <legend><@liferay_ui["message"] key="Search tabs" /></legend>
-            <#list tabs?keys as tabId>
-                <ul>
-                    <li><a href="${editTabUrls[tabId]}">${tabs[tabId].getTitle(locale)}</a></li>
-                </ul>
-            </#list>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th><@liferay_ui["message"] key="Order" /></th>
+                        <th><@liferay_ui["message"] key="Title" /></th>
+                        <th><@liferay_ui["message"] key="Actions" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <#list tabs?keys as tabId>
+                    <#assign tab = tabs[tabId] />
+                    <#assign editTabUrl = editTabUrls[tabId] />
+                    <#assign deleteTabUrl = deleteTabUrls[tabId] />
+                    <tr>
+                        <td><a href="${editTabUrl}">${tab.order}</a></td>
+                        <td><a href="${editTabUrl}">${tab.getTitle(locale)}</a></td>
+                        <td>
+                            <ul>
+                                <li><a href="${editTabUrl}"><@liferay_ui["message"] key="Edit" /></a></li>
+                                <li><a href="${deleteTabUrl}"><@liferay_ui["message"] key="Delete" /></a></li>
+                            </ul>
+                        </td>
+                    </tr>
+                </#list>
+                </tbody>
+            </table>
         </#if>
         <p><a href="${createTabUrl}"><@liferay_ui["message"] key="Create a new tab" /></a></p>
     </fieldset>

@@ -107,6 +107,21 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             preferences.setValue(format(CONF_KEY_FORMAT_TITLE, tabId, titleMapping.getKey()), titleMapping.getValue());
         }
 
+        // Register the tab in the tab list, if it is not there already
+        String[] registeredTabs = preferences.getValues(CONF_KEY_TABS, EMPTY_ARRAY);
+        int registeredTabsLength = registeredTabs.length;
+        boolean tabRegistered = false;
+        for(int i = 0; !tabRegistered && i < registeredTabsLength; i++) {
+            tabRegistered = registeredTabs[i].equals(tabId);
+        }
+
+        if(!tabRegistered) {
+            registeredTabs = Arrays.copyOf(registeredTabs, registeredTabsLength + 1);
+            registeredTabs[registeredTabsLength] = tabId;
+            preferences.setValues(CONF_KEY_TABS, registeredTabs);
+        }
+
+
         preferences.store();
     }
 

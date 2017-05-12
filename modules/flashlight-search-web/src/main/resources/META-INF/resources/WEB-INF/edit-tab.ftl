@@ -5,10 +5,27 @@
 <p><a href="${editGlobalUrl}"><@liferay_ui["message"] key="Back to global configuration" /></a></p>
 
 <form action="${saveTabUrl}" method="POST" name="${ns}tab-form">
-    <input type="hidden" name="${ns}tab-id" value="${tabId}" />
+    <#if tabId?? && tabId != "">
+        <input type="hidden" name="${ns}tab-id" value="${tabId}" />
+        <input type="hidden" name="${ns}edit-mode" value="tab" />
+    </#if>
+
+    <input type="hidden" name="${ns}redirect-url" value="${redirectUrl}" />
 
     <fieldset class="fieldset">
-        <legend><@liferay_ui["message"] key="Title" /></legend>
+        <legend><@liferay_ui["message"] key="Tab information" /></legend>
+        <div class="form-group input-select-wrapper">
+            <label for="${ns}tab-order"><@liferay_ui["message"] key="Tab order" /></label>
+            <select class="form-control" id="${ns}tab-order" name="${ns}tab-order">
+                <#list 1..tabOrderRange as i>
+                    <#if i == tabOrder>
+                        <option value="${i}" selected="selected">${i}</option>
+                    <#else>
+                        <option value="${i}">${i}</option>
+                    </#if>
+                </#list>
+            </select>
+        </div>
         <#list availableLocales as availableLocale>
             <div class="form-group input-text-wrapper">
                 <label for="${ns}title-${availableLocale}">${availableLocale}</label>
@@ -21,8 +38,8 @@
         <legend><@liferay_ui["message"] key="Facet configuration" /></legend>
 
         <div class="form-group input-select-wrapper">
-            <label class="control-label" for="${ns}selected-asset-types"><@liferay_ui["message"] key="Asset types" /></label>
-            <select class="form-control" id="${ns}selected-asset-types" name="${ns}selected-asset-types" multiple="multiple">
+            <label class="control-label" for="${ns}asset-types"><@liferay_ui["message"] key="Asset types" /></label>
+            <select class="form-control" id="${ns}asset-types" name="${ns}asset-types" multiple="multiple">
                 <#list supportedAssetTypes as assetType>
                     <#if assetTypes?seq_contains(assetType.name)>
                         <option value="${assetType.name}" selected="selected">${assetType.name}</option>
