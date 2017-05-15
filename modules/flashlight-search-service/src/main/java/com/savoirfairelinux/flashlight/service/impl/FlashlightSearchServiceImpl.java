@@ -222,6 +222,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             .collect(Collectors.toList());
         searchContext.setFacets(searchFacets);
         searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
+        searchContext.setStart(0);
+        searchContext.setEnd(tab.getPageSize());
 
         Hits hits = searcher.search(searchContext);
         List<Document> searchableDocuments = Arrays.asList(hits.getDocs())

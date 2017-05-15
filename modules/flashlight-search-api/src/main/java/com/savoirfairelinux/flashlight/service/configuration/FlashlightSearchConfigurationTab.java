@@ -14,8 +14,11 @@ import com.liferay.portal.kernel.util.StringPool;
  */
 public class FlashlightSearchConfigurationTab {
 
+    public static final int DEFAULT_PAGE_SIZE = 3;
+
     private String id;
     private int order;
+    private int pageSize;
     private Map<String, String> titleMap;
 
     private List<String> assetTypes;
@@ -25,19 +28,20 @@ public class FlashlightSearchConfigurationTab {
      * Creates an empty configuration tab
      */
     public FlashlightSearchConfigurationTab() {
-        this(generateId(), 0, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap());
+        this(generateId(), 0, DEFAULT_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap());
     }
 
     /**
      * Creates a new configuration tab with a generated unique ID
      *
      * @param order The tab's appearance order
+     * @param pageSize The amount of results to display per page
      * @param titleMap The tab's localized title map
      * @param assetTypes the tab's asset types
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(int order, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
-        this(generateId(), order, titleMap, assetTypes, contentTemplates);
+    public FlashlightSearchConfigurationTab(int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
+        this(generateId(), order, pageSize, titleMap, assetTypes, contentTemplates);
     }
 
     /**
@@ -45,13 +49,15 @@ public class FlashlightSearchConfigurationTab {
      *
      * @param id The tab's unique ID
      * @param order The tab's appearance order
+     * @param pageSize The amount or results to display per page
      * @param titleMap The tab's localized title map
      * @param assetTypes The tab's asset types
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(String id, int order, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
+    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
         this.id = id;
         this.order = order;
+        this.pageSize = pageSize;
         this.titleMap = Collections.unmodifiableMap(titleMap);
         this.assetTypes = Collections.unmodifiableList(assetTypes);
         this.contentTemplates = Collections.unmodifiableMap(contentTemplates);
@@ -69,6 +75,13 @@ public class FlashlightSearchConfigurationTab {
      */
     public int getOrder() {
         return order;
+    }
+
+    /**
+     * @return The amount of results to display per page
+     */
+    public int getPageSize() {
+        return pageSize;
     }
 
     /**

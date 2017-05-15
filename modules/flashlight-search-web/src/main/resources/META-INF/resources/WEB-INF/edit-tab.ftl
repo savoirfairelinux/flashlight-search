@@ -32,6 +32,10 @@
                 <input type="text" id="${ns}title-${availableLocale}" name="${ns}title-${availableLocale}" value="${titleMap[availableLocale]!''}" />
             </div>
         </#list>
+        <div class="form-group input-text-wrapper">
+            <label for="${ns}page-size"><@liferay_ui["message"] key="Page size" /></label>
+            <input type="text" id="${ns}page-size" name="${ns}page-size" value="${tabPageSize}" />
+        </div>
     </fieldset>
 
     <fieldset class="fieldset">

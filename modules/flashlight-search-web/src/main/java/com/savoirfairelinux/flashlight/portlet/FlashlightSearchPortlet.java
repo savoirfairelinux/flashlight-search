@@ -86,6 +86,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
+    private static final String FORM_FIELD_PAGE_SIZE = "page-size";
     private static final String FORM_FIELD_FACETS = "facets";
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
     private static final String FORM_FIELD_ASSET_TYPES = "asset-types";
@@ -100,6 +101,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String SESSION_MESSAGE_CONFIG_SAVED = "configuration.saved";
 
     private static final String ZERO = "0";
+    private static final String THREE = "3";
     private static final String[] EMPTY_ARRAY = new String[0];
 
     @Reference(unbind = "-")
@@ -283,6 +285,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         saveTabURL.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_TAB);
 
         int tabOrder;
+        int tabPageSize;
         List<String> assetTypes;
         Map<String, String> contentTemplates;
         Map<String, String> titleMap;
@@ -290,6 +293,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         if(tab != null) {
             tabOrder = tab.getOrder();
+            tabPageSize = tab.getPageSize();
             assetTypes = tab.getAssetTypes();
             contentTemplates = tab.getContentTemplates();
             titleMap = tab.getTitleMap();
@@ -297,6 +301,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             redirectUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
         } else {
             tabOrder = tabOrderRange;
+            tabPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
             assetTypes = Collections.emptyList();
             contentTemplates = Collections.emptyMap();
             titleMap = Collections.emptyMap();
@@ -314,6 +319,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Configuration data
         templateCtx.put("tabId", tabId);
         templateCtx.put("tabOrder", tabOrder);
+        templateCtx.put("tabPageSize", tabPageSize);
         templateCtx.put("tabOrderRange", tabOrderRange);
         templateCtx.put("availableLocales", availableLocales);
         templateCtx.put("availableStructures", availableStructures);
@@ -367,6 +373,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, ZERO);
+        String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, THREE);
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_FACETS, EMPTY_ARRAY);
         String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_ASSET_TYPES, EMPTY_ARRAY);
         HashMap<String, String> validatedContentTemplates = new HashMap<>();
@@ -405,6 +412,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedTabOrder = 0;
         }
 
+        int validatedPageSize;
+        try {
+            validatedPageSize = Integer.parseInt(pageSize);
+        } catch(NumberFormatException e) {
+            validatedPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
+        }
+
         ArrayList<String> validatedSelectedFacets = new ArrayList<>(selectedFacets.length);
         for(String facet : selectedFacets) {
             if(PATTERN_CLASS_NAME.matcher(facet).matches()) {
@@ -422,9 +436,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if(validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
         } else {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 

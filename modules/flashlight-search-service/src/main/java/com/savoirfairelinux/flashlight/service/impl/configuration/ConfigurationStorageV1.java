@@ -32,6 +32,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final String CONF_KEY_TABS = "tabs";
 
     private static final String CONF_KEY_FORMAT_ORDER = "%s[order]";
+    private static final String CONF_KEY_FORMAT_PAGE_SIZE = "%s[page-size]";
     private static final String CONF_KEY_FORMAT_ASSET_TYPES = "%s[asset-types]";
 
     private static final String CONF_KEY_FORMAT_DDM = "%s[ddm-%s]";
@@ -44,6 +45,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final int CONF_KEY_PATTERN_FORMAT_TITLE_GROUP_LOCALE = 1;
 
     private static final String ZERO = "0";
+    private static final String THREE = "3";
     private static final String[] EMPTY_ARRAY = new String[0];
 
     @Override
@@ -74,6 +76,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws IOException, ValidatorException, ReadOnlyException {
         String tabId = configurationTab.getId();
         int order = configurationTab.getOrder();
+        int pageSize = configurationTab.getPageSize();
         List<String> assetTypes = configurationTab.getAssetTypes();
         Map<String, String> titleMap = configurationTab.getTitleMap();
         Map<String, String> contentTemplates = configurationTab.getContentTemplates();
@@ -81,8 +84,10 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         // Write singular values
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
+        String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         preferences.setValues(assetTypesKey, assetTypes.toArray(new String[assetTypes.size()]));
         preferences.setValue(orderKey, Integer.toString(order));
+        preferences.setValue(pageSizeKey, Integer.toString(pageSize));
 
         // Flush previously entered composed values
         Enumeration<String> prefKeys = preferences.getNames();
@@ -167,12 +172,14 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
      */
     private FlashlightSearchConfigurationTab readTabConfiguration(PortletPreferences preferences, String tabId) {
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
+        String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
 
         // Singular keys
         int order = Integer.parseInt(preferences.getValue(orderKey, ZERO));
+        int pageSize = Integer.parseInt(preferences.getValue(pageSizeKey, THREE));
         List<String> assetTypes = Arrays.asList(preferences.getValues(assetTypesKey, EMPTY_ARRAY));
 
         // Composed keys
@@ -192,7 +199,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, titleMap, assetTypes, contentTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, titleMap, assetTypes, contentTemplates);
     }
 
 }
