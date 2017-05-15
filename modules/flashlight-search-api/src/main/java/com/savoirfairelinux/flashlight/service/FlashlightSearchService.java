@@ -9,10 +9,8 @@ import javax.portlet.PortletRequest;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
-import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
-import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.SearchException;
@@ -23,7 +21,6 @@ import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 public interface FlashlightSearchService {
 
-    public static final Class<?>[] SUPPORTED_ASSET_TYPES = {JournalArticle.class, DLFileEntry.class};
     public static final Class<FlashlightSearchService> ADT_CLASS = FlashlightSearchService.class;
 
     /**
@@ -96,6 +93,11 @@ public interface FlashlightSearchService {
      * @throws PortalException If an error occurs while fetching the templates
      */
     public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
+
+    /**
+     * @return A list of asset types that the search engine supports
+     */
+    public List<String> getSupportedAssetTypes();
 
     public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 

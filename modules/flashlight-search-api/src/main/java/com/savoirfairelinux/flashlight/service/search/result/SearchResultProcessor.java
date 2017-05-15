@@ -14,12 +14,6 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 public interface SearchResultProcessor {
 
     /**
-     * The name of the OSGi component property indicating the type of assets that can be processed. Use the asset type's
-     * name as a value.
-     */
-    public static final String PROPERTY_ASSET_TYPE = "asset.type";
-
-    /**
      * Creates a search result model representing the given search result document
      *
      * @param searchContext The search context
@@ -31,5 +25,10 @@ public interface SearchResultProcessor {
      * @throws SearchResultProcessorException If the processor is unable to process the given document
      */
     public SearchResult process(SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, DDMStructure ddmStructure, Document searchResultDocument) throws SearchResultProcessorException;
+
+    /**
+     * @return The asset type supported by the processor
+     */
+    public String getAssetType();
 
 }

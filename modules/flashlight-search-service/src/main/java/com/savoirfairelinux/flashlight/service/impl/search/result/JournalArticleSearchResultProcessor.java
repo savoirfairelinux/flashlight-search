@@ -26,14 +26,16 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
     service = SearchResultProcessor.class,
     immediate = true,
     property = {
-        org.osgi.framework.Constants.SERVICE_RANKING + ":Integer=0",
-        SearchResultProcessor.PROPERTY_ASSET_TYPE + ":String=com.liferay.journal.model.JournalArticle"
+        org.osgi.framework.Constants.SERVICE_RANKING + ":Integer=0"
     }
 )
 public class JournalArticleSearchResultProcessor implements SearchResultProcessor {
 
+    private static final String ASSET_TYPE = JournalArticle.class.getName();
+
     @Reference(unbind = "-")
     private JournalArticleLocalService journalArticleService;
+
 
     @Override
     public SearchResult process(SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, DDMStructure structure, Document document) throws SearchResultProcessorException {
@@ -63,6 +65,11 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
         }
 
         return result;
+    }
+
+    @Override
+    public String getAssetType() {
+        return ASSET_TYPE;
     }
 
 }

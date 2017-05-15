@@ -34,28 +34,23 @@ public class SearchResultProcessorServiceTrackerCustomizer implements ServiceTra
 
     @Override
     public SearchResultProcessor addingService(ServiceReference<SearchResultProcessor> reference) {
-        Object assetTypeObj = reference.getProperty(SearchResultProcessor.PROPERTY_ASSET_TYPE);
         Object serviceRankingObj = reference.getProperty(Constants.SERVICE_RANKING);
         SearchResultProcessor service = this.bundleContext.getService(reference);
 
-        if(assetTypeObj != null) {
-            String assetType = assetTypeObj.toString();
-            int serviceRanking;
-            if(serviceRankingObj != null && serviceRankingObj instanceof Integer) {
-                serviceRanking = (int) serviceRankingObj;
-            } else {
-                LOG.info("Invalid service ranking (not an integer). Was given : \"" + String.valueOf(serviceRankingObj) + "\". Defaulting to rank 0.");
-                serviceRanking = 0;
-            }
-
-            RankedSearchResultProcessor mapping = this.processors.get(assetType);
-            if(mapping == null || mapping.getRanking() < serviceRanking) {
-                this.processors.put(assetType, new RankedSearchResultProcessor(serviceRanking, service));
-            }
-
+        int serviceRanking;
+        if(serviceRankingObj != null && serviceRankingObj instanceof Integer) {
+            serviceRanking = (int) serviceRankingObj;
         } else {
-            LOG.info("\"" + service.getClass().getName() + "\" does not declare any asset type. Not mapping the processor.");
+            LOG.info("Invalid service ranking (not an integer). Was given : \"" + String.valueOf(serviceRankingObj) + "\". Defaulting to rank 0.");
+            serviceRanking = 0;
         }
+
+        String assetType = service.getAssetType();
+        RankedSearchResultProcessor mapping = this.processors.get(assetType);
+        if(mapping == null || mapping.getRanking() < serviceRanking) {
+            this.processors.put(assetType, new RankedSearchResultProcessor(serviceRanking, service));
+        }
+
 
         return service;
     }

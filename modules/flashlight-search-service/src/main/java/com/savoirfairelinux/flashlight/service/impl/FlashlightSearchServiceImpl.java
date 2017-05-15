@@ -171,6 +171,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
+    public List<String> getSupportedAssetTypes() {
+        return this.searchResultProcessorServicetracker.getSupportedAssetTypes();
+    }
+
+    @Override
     public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException {
         FlashlightSearchConfiguration config = this.readConfiguration(request.getPreferences());
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();

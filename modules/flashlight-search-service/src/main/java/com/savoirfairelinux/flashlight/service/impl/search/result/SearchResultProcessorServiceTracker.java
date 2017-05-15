@@ -1,5 +1,7 @@
 package com.savoirfairelinux.flashlight.service.impl.search.result;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.osgi.framework.BundleContext;
@@ -25,6 +27,13 @@ public class SearchResultProcessorServiceTracker {
         SearchResultProcessorServiceTrackerCustomizer customizer = new SearchResultProcessorServiceTrackerCustomizer(ctx, this.searchResultProcessors);
         this.serviceTracker = new ServiceTracker<>(ctx, SearchResultProcessor.class, customizer);
         this.serviceTracker.open();
+    }
+
+    /**
+     * @return The list of supported asset types
+     */
+    public List<String> getSupportedAssetTypes() {
+        return Collections.list(this.searchResultProcessors.keys());
     }
 
     /**

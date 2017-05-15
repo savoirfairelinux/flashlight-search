@@ -296,6 +296,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             titleMap = Collections.emptyMap();
         }
 
+        List<String> supportedAssetTypes = this.searchService.getSupportedAssetTypes();
 
         Map<String, Object> templateCtx = this.createTemplateContext();
         // Base template data
@@ -310,7 +311,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("tabOrderRange", tabOrderRange);
         templateCtx.put("availableLocales", availableLocales);
         templateCtx.put("availableStructures", availableStructures);
-        templateCtx.put("supportedAssetTypes", FlashlightSearchService.SUPPORTED_ASSET_TYPES);
+        templateCtx.put("supportedAssetTypes", supportedAssetTypes);
         templateCtx.put("assetTypes", assetTypes);
         templateCtx.put("contentTemplates", contentTemplates);
         templateCtx.put("titleMap", titleMap);

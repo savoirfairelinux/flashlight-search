@@ -41,10 +41,10 @@
             <label class="control-label" for="${ns}asset-types"><@liferay_ui["message"] key="Asset types" /></label>
             <select class="form-control" id="${ns}asset-types" name="${ns}asset-types" multiple="multiple">
                 <#list supportedAssetTypes as assetType>
-                    <#if assetTypes?seq_contains(assetType.name)>
-                        <option value="${assetType.name}" selected="selected">${assetType.name}</option>
+                    <#if assetTypes?seq_contains(assetType)>
+                        <option value="${assetType}" selected="selected">${assetType}</option>
                     <#else>
-                        <option value="${assetType.name}" />${assetType.name}</option>
+                        <option value="${assetType}" />${assetType}</option>
                     </#if>
                 </#list>
             </select>
