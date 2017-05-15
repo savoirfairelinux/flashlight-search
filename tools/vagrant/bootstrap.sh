@@ -17,8 +17,8 @@ TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/7_0_EE_GA1/liferay-dxp-digital-e
 TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/7_0_EE_GA1/liferay-dxp-digital-enterprise-tomcat-7.0-ga1-20160617092557801.zip "
 TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/patching-tool-dxp/patching-tool-2.0.6.zip "
 TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/patching-tool-dxp/patching-tool-2.0.6.zip.md5 "
-TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/fix-pack/liferay-fix-pack-de-13-7010.zip "
-TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/fix-pack/liferay-fix-pack-de-13-7010.zip.md5 "
+TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/fix-pack/liferay-fix-pack-de-15-7010.zip "
+TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/fix-pack/liferay-fix-pack-de-15-7010.zip.md5 "
 TRANSFERS="${TRANSFERS}:/srv/entreprise/liferay/licenses/7_0_EE/2016-06-21-2017-07-21/activation-key-development-DXP-liferaytrialSFL.xml"
 
 INSTALLERS_PATH="installers"

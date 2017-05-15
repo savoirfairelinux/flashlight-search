@@ -65,4 +65,4 @@ liferay7_es:
   cluster_name: "liferay"
 
 patches:
-  - path: "/vagrant/installers/liferay-fix-pack-de-13-7010.zip"
+  - path: "/vagrant/installers/liferay-fix-pack-de-15-7010.zip"
