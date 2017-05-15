@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequest;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
+import javax.portlet.*;
 
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
@@ -99,6 +96,6 @@ public interface FlashlightSearchService {
      */
     public List<String> getSupportedAssetTypes();
 
-    public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+    public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
 }

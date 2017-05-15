@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
@@ -177,14 +178,14 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException {
+    public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException {
         FlashlightSearchConfiguration config = this.readConfiguration(request.getPreferences());
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
 
         LinkedHashMap<FlashlightSearchConfigurationTab, SearchPage> resultMap = new LinkedHashMap<>(tabs.size());
         for(FlashlightSearchConfigurationTab tab : tabs.values()) {
-            resultMap.put(tab, this.search(request, config, tab, searcher));
+            resultMap.put(tab, this.search(request, response, config, tab, searcher));
         }
 
         return new SearchResultsContainer(resultMap);
@@ -194,6 +195,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * Performs a search for a single configuration tab
      *
      * @param request The portlet request that triggered the search
+     * @param response The portlet response that triggered the search
      * @param config The search configuration
      * @param tab The tab in which the search is performed
      * @param searcher The searched used for the search itself
@@ -201,7 +203,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      *
      * @throws SearchException If an error occurs during search
      */
-    private SearchPage search(PortletRequest request, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
+    private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
         List<String> selectedAssetTypes = tab.getAssetTypes();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
 
@@ -243,7 +245,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
 
                 if(tab.getContentTemplates().containsKey(structure.getUuid())) {
-                    processedDocument = this.processDocument(searchContext, config, tab, assetType, structure, document);
+                    processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, structure, document);
                 } else {
                     LOG.debug("Template not defined for given document - skipping");
                     processedDocument = null;
@@ -266,6 +268,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     /**
      * Transforms a document in a search result
      *
+     * @param request The portlet request that triggered the search
+     * @param response The portlet response that triggered the search
      * @param searchContext The search context
      * @param configuration The search configuration
      * @param tab The tab in which the search is performed
@@ -277,12 +281,12 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      *
      * @throws SearchResultProcessorException Thrown if an active processor was unable to process the document
      */
-    private SearchResult processDocument(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, DDMStructure structure, Document document) throws SearchResultProcessorException {
+    private SearchResult processDocument(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, DDMStructure structure, Document document) throws SearchResultProcessorException {
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
         SearchResult result;
 
         if(processor != null) {
-            result = processor.process(searchContext, tab, structure, document);
+            result = processor.process(request, response, searchContext, tab, structure, document);
         } else {
             result = null;
         }

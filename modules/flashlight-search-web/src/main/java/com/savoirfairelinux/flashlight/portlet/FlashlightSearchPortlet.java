@@ -135,7 +135,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         SearchResultsContainer results;
         if (!keywords.isEmpty()) {
             try {
-                results = this.searchService.search(request);
+                results = this.searchService.search(request, response);
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
