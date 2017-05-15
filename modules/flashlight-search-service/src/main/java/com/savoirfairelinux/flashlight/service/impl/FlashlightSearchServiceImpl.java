@@ -2,7 +2,7 @@ package com.savoirfairelinux.flashlight.service.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +34,7 @@ import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
-import com.liferay.portal.kernel.search.facet.Facet;
+import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -43,12 +43,12 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
+import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
@@ -191,6 +191,24 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         return new SearchResultsContainer(resultMap);
     }
 
+    @Override
+    public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId) throws ReadOnlyException, ValidatorException, IOException, SearchException {
+        FlashlightSearchConfiguration config = this.readConfiguration(request.getPreferences());
+        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
+        SearchResultsContainer container;
+
+        if(tabs.containsKey(tabId)) {
+            FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
+            FlashlightSearchConfigurationTab tab = tabs.get(tabId);
+            SearchPage page = this.search(request, response, config, tabs.get(tabId), searcher);
+            container = new SearchResultsContainer(Collections.singletonMap(tab, page));
+        } else {
+            container = new SearchResultsContainer(Collections.emptyMap());
+        }
+
+        return container;
+    }
+
     /**
      * Performs a search for a single configuration tab
      *
@@ -205,37 +223,52 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      */
     private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
         List<String> selectedAssetTypes = tab.getAssetTypes();
+        Map<String, String> contentTemplates = tab.getContentTemplates();
+
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
+        int start = 0;
+        int end = tab.getPageSize();
 
         // Configure asset types and search
-        List<Facet> searchFacets = SearchFacetTracker.getSearchFacets()
-            .stream()
-            .map(f -> {
-                Facet initializedFacet;
-                try {
-                    f.init(searchContext.getCompanyId(), StringPool.BLANK);
-                    initializedFacet = f.getFacet();
-                } catch(Exception e) {
-                    LOG.error("Cannot initialize search facet", e);
-                    initializedFacet = null;
-                }
-                return initializedFacet;
-            })
-            .filter(f -> f != null)
-            .collect(Collectors.toList());
-        searchContext.setFacets(searchFacets);
+        searchContext.setStart(start);
+        searchContext.setEnd(end);
+
+        AssetEntriesFacet assetEntriesFacet = new AssetEntriesFacet(searchContext);
         searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
-        searchContext.setStart(0);
-        searchContext.setEnd(tab.getPageSize());
+        searchContext.addFacet(assetEntriesFacet);
+
+        DDMStructureFacet structureFacet = new DDMStructureFacet(searchContext);
+        String ddmStructures = contentTemplates.keySet()
+            .stream()
+            .map(structureUuid -> {
+                String structureKey;
+                List<DDMStructure> structures = this.ddmStructureService.getDDMStructuresByUuidAndCompanyId(structureUuid, searchContext.getCompanyId());
+                if(structures.size() == 1) {
+                    structureKey = structures.get(0).getStructureKey();
+                } else {
+                    // Ambiguous or unavailable structure
+                    structureKey = StringPool.BLANK;
+                }
+                return structureKey;
+            })
+            .filter(key -> !key.equals(StringPool.BLANK))
+            .reduce(StringPool.BLANK, (structureA, structureB) -> {
+                StringBuilder assembly = new StringBuilder(structureA.length() + structureB.length() + 1);
+                if(!structureA.equals(StringPool.BLANK)) {
+                    assembly.append(structureA);
+                    assembly.append(StringPool.COMMA);
+                }
+                assembly.append(structureB);
+                return assembly.toString();
+            });
+
+        searchContext.setAttribute(DocumentField.DDM_STRUCTURE_KEY.getName(), ddmStructures);
+        searchContext.addFacet(structureFacet);
 
         Hits hits = searcher.search(searchContext);
-        List<Document> searchableDocuments = Arrays.asList(hits.getDocs())
-            .stream()
-            .filter(doc -> this.isSearchable(tab, doc))
-            .collect(Collectors.toList());
-        List<SearchResult> searchResults = new ArrayList<>(searchableDocuments.size());
+        List<SearchResult> searchResults = new ArrayList<>(end - start);
 
-        for (Document document : searchableDocuments) {
+        for (Document document : hits.getDocs()) {
             String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
             long scopeGroupId = Long.parseLong(document.getField(Field.SCOPE_GROUP_ID).getValue());
             String ddmStructureKey = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName()).getValue();
@@ -244,7 +277,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             try {
                 DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
 
-                if(tab.getContentTemplates().containsKey(structure.getUuid())) {
+                if(contentTemplates.containsKey(structure.getUuid())) {
                     processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, structure, document);
                 } else {
                     LOG.debug("Template not defined for given document - skipping");
@@ -292,37 +325,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         }
 
         return result;
-    }
-
-
-
-    /**
-     * Indicates is the given document is searchable in the given tab context
-     * @param tab The tab context
-     * @param document The document
-     *
-     * @return <p>True if :</p>
-     *         <ul>
-     *           <li>The document is of <strong>an asset type supported by the given tab</strong></li>
-     *           <li>The document has a <strong>non-empty structure key field</strong></li>
-     *         </ul>
-     */
-    private boolean isSearchable(FlashlightSearchConfigurationTab tab, Document document) {
-        boolean searchable = true;
-        String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
-        Field ddmStructureKeyField = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName());
-
-        if(!tab.getAssetTypes().contains(assetType)) {
-            searchable = false;
-            LOG.debug("Omitting search document - asset type not configured");
-        }
-
-        if(searchable && (ddmStructureKeyField == null || ddmStructureKeyField.getValue().isEmpty())) {
-            searchable = false;
-            LOG.debug("Omitting search document - structure not found");
-        }
-
-        return searchable;
     }
 
     /**

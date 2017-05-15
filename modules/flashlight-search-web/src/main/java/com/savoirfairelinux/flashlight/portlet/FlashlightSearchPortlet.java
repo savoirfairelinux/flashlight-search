@@ -129,19 +129,37 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      */
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+        FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
         String keywords = searchContext.getKeywords();
+        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+
+        if(!PATTERN_UUID.matcher(tabId).matches()) {
+            tabId = null;
+        }
 
         SearchResultsContainer results;
         if (!keywords.isEmpty()) {
             try {
-                results = this.searchService.search(request, response);
+                if(tabId == null) {
+                    results = this.searchService.search(request, response);
+                } else {
+                    results = this.searchService.search(request, response, tabId);
+                }
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
         } else {
             results = new SearchResultsContainer(Collections.emptyMap());
         }
+
+        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
+        HashMap<String, PortletURL> tabUrls = new HashMap<>(tabs.size());
+        tabs.keySet().forEach(key -> {
+            PortletURL tabUrl = response.createRenderURL();
+            tabUrl.setParameter(FORM_FIELD_TAB_ID, key);
+            tabUrls.put(key, tabUrl);
+        });
 
         Map<String, Object> templateCtx = this.createTemplateContext();
         // General objects
