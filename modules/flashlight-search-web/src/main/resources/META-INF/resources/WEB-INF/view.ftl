@@ -10,29 +10,27 @@
         <input type="submit" name="${ns}submit" value="<@liferay_ui['message'] key='search' />" />
     </fieldset>
 
-    <#assign results = resultsContainer.searchResults />
-    <#if results?has_content>
-        <ul>
-            <li><a href="${keywordUrl}"><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
-            <#list results?keys as structure>
-                <#if resultsContainer.hasSearchResults(structure)>
-                    <li>${structure.getName(locale)}</li>
-                </#if>
-            </#list>
-        </ul>
-        <ul>
-            <#list results?keys as structure>
-                <#if resultsContainer.hasSearchResults(structure)>
-                    <li>
-                        <p><strong>${structure.getName(locale)}</strong></p>
-                        <ul>
-                            <#list resultsContainer.getSearchResults(structure) as result>
-                                <li><a href="${result.viewUrl!'#'}" title="${result.title}">${result.rendering}</a></li>
-                            </#list>
-                        </ul>
-                    </li>
-                </#if>
-            </#list>
-        </ul>
-    </#if>
+    <#assign searchResults = resultsContainer.searchResults />
+    <ul>
+        <li><a href="${keywordUrl}"><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
+        <#list searchResults?keys as tab>
+            <#if resultsContainer.hasSearchResults(tab)>
+                <li><a href="#">${tab.getTitle(locale)}</a></li>
+            </#if>
+        </#list>
+    </ul>
+    <ul>
+        <#list searchResults?keys as tab>
+            <#if resultsContainer.hasSearchResults(tab)>
+                <li>
+                    <p><strong>${tab.getTitle(locale)}</strong></p>
+                    <ul>
+                        <#list resultsContainer.getSearchResults(tab) as result>
+                            <li><a href="${result.viewUrl!'#'}" title="${result.title}">${result.rendering}</a></li>
+                        </#list>
+                    </ul>
+                </li>
+            </#if>
+        </#list>
+    </ul>
 </form>

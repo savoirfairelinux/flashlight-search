@@ -2,13 +2,16 @@ package com.savoirfairelinux.flashlight.service.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.portlet.PortletPreferences;
+import javax.portlet.PortletRequest;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
@@ -29,7 +32,9 @@ import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -38,6 +43,7 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
@@ -143,59 +149,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public SearchResultsContainer search(SearchContext searchContext, PortletPreferences portletPreferences, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException {
-        FlashlightSearchConfiguration config = this.readConfiguration(portletPreferences);
-        // FIXME TEMP
-        List<String> selectedAssetTypes = Collections.emptyList();
-
-        // Configure asset types and search
-        searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
-        FacetedSearcher facetedSearcher = this.facetedSearcherManager.createFacetedSearcher();
-        Hits hits = facetedSearcher.search(searchContext);
-
-        Map<DDMStructure, List<SearchResult>> searchResultsIndex;
-        Map<String, DDMStructure> structureIndex = new HashMap<>();
-
-        if (hits != null) {
-            Document[] documents = hits.getDocs();
-            searchResultsIndex = new HashMap<>();
-
-            for (Document document : documents) {
-                String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
-                long scopeGroupId = Long.parseLong(document.getField(Field.SCOPE_GROUP_ID).getValue());
-                Field ddmStructureKeyField = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName());
-
-                if(ddmStructureKeyField != null) {
-                    String ddmStructureKey = ddmStructureKeyField.getValue();
-                    DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
-                    if(structure != null) {
-                        structureIndex.put(structure.getUuid(), structure);
-                        List<SearchResult> searchResults;
-                        if(searchResultsIndex.containsKey(structure)) {
-                            searchResults = searchResultsIndex.get(structure);
-                        } else {
-                            searchResults = new ArrayList<>();
-                            searchResultsIndex.put(structure, searchResults);
-                        }
-                        searchResults.add(this.processDocument(searchContext, config, assetType, structure, document));
-                    } else {
-                        LOG.debug("No DDM structure found within scope group ID " + scopeGroupId + " and structure key \"" + ddmStructureKey + "\"");
-                    }
-                } else {
-                    LOG.debug("No DDM structure key for document UID \"" + document.getUID() + "\", ignoring");
-                }
-
-
-
-            }
-        } else {
-            searchResultsIndex = Collections.emptyMap();
-        }
-
-        return new SearchResultsContainer(searchResultsIndex);
-    }
-
-    @Override
     public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
         HashMap<Group, List<DDMTemplate>> adts = new HashMap<>();
 
@@ -229,23 +182,150 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         return adts;
     }
 
-    private SearchResult processDocument(SearchContext searchContext, FlashlightSearchConfiguration configuration, String assetType, DDMStructure structure, Document document) {
-        SearchResult result = null;
+    @Override
+    public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException {
+        FlashlightSearchConfiguration config = this.readConfiguration(request.getPreferences());
+        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
+        FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
 
-        SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
-        if(processor != null) {
+        LinkedHashMap<FlashlightSearchConfigurationTab, List<SearchResult>> resultMap = new LinkedHashMap<>(tabs.size());
+        for(FlashlightSearchConfigurationTab tab : tabs.values()) {
+            resultMap.put(tab, this.search(request, config, tab, searcher));
+        }
+
+        return new SearchResultsContainer(resultMap);
+    }
+
+    /**
+     * Performs a search for a single configuration tab
+     *
+     * @param request The portlet request that triggered the search
+     * @param config The search configuration
+     * @param tab The tab in which the search is performed
+     * @param searcher The searched used for the search itself
+     * @return A list of non-null search results
+     *
+     * @throws SearchException If an error occurs during search
+     */
+    private List<SearchResult> search(PortletRequest request, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
+        List<String> selectedAssetTypes = tab.getAssetTypes();
+        SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
+
+        // Configure asset types and search
+        List<Facet> searchFacets = SearchFacetTracker.getSearchFacets()
+            .stream()
+            .map(f -> {
+                Facet initializedFacet;
+                try {
+                    f.init(searchContext.getCompanyId(), StringPool.BLANK);
+                    initializedFacet = f.getFacet();
+                } catch(Exception e) {
+                    LOG.error("Cannot initialize search facet", e);
+                    initializedFacet = null;
+                }
+                return initializedFacet;
+            })
+            .filter(f -> f != null)
+            .collect(Collectors.toList());
+        searchContext.setFacets(searchFacets);
+        searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
+
+        Hits hits = searcher.search(searchContext);
+        List<Document> searchableDocuments = Arrays.asList(hits.getDocs())
+            .stream()
+            .filter(doc -> this.isSearchable(tab, doc))
+            .collect(Collectors.toList());
+        List<SearchResult> searchResults = new ArrayList<>(searchableDocuments.size());
+
+        for (Document document : searchableDocuments) {
+            String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
+            long scopeGroupId = Long.parseLong(document.getField(Field.SCOPE_GROUP_ID).getValue());
+            String ddmStructureKey = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName()).getValue();
+            SearchResult processedDocument;
+
             try {
-                // FIXME TEMP
-                result = processor.process(searchContext, configuration.getTabs().get(0), structure, document);
-            } catch(SearchResultProcessorException e) {
-                LOG.error("Error while processing search result. Not integrating in search results.", e);
+                DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
+
+                if(tab.getContentTemplates().containsKey(structure.getUuid())) {
+                    processedDocument = this.processDocument(searchContext, config, tab, assetType, structure, document);
+                } else {
+                    LOG.debug("Template not defined for given document - skipping");
+                    processedDocument = null;
+                }
+            } catch (SearchResultProcessorException | PortalException e) {
+                LOG.error("Cannot process document", e);
+                processedDocument = null;
             }
+
+            if(processedDocument != null) {
+                searchResults.add(processedDocument);
+            } else {
+                LOG.debug("Search result omitted as it was null");
+            }
+        }
+
+        return searchResults;
+    }
+
+    /**
+     * Transforms a document in a search result
+     *
+     * @param searchContext The search context
+     * @param configuration The search configuration
+     * @param tab The tab in which the search is performed
+     * @param assetType The document's asset type
+     * @param structure The document's DDM structure
+     * @param document The document itself
+     *
+     * @return A search result or null if no processor can handle the document
+     *
+     * @throws SearchResultProcessorException Thrown if an active processor was unable to process the document
+     */
+    private SearchResult processDocument(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, DDMStructure structure, Document document) throws SearchResultProcessorException {
+        SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
+        SearchResult result;
+
+        if(processor != null) {
+            result = processor.process(searchContext, tab, structure, document);
         } else {
-            LOG.warn("No search result processor registered for asset type \"" + assetType + "\"");
+            result = null;
         }
 
         return result;
     }
+
+
+
+    /**
+     * Indicates is the given document is searchable in the given tab context
+     * @param tab The tab context
+     * @param document The document
+     *
+     * @return <p>True if :</p>
+     *         <ul>
+     *           <li>The document is of <strong>an asset type supported by the given tab</strong></li>
+     *           <li>The document has a <strong>non-empty structure key field</strong></li>
+     *         </ul>
+     */
+    private boolean isSearchable(FlashlightSearchConfigurationTab tab, Document document) {
+        boolean searchable = true;
+        String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
+        Field ddmStructureKeyField = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName());
+
+        if(!tab.getAssetTypes().contains(assetType)) {
+            searchable = false;
+            LOG.debug("Omitting search document - asset type not configured");
+        }
+
+        if(searchable && (ddmStructureKeyField == null || ddmStructureKeyField.getValue().isEmpty())) {
+            searchable = false;
+            LOG.debug("Omitting search document - structure not found");
+        }
+
+        return searchable;
+    }
+
+
 
     /**
      * Search a DDM structure in the given group ID and its ancestors
@@ -254,19 +334,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @param assetType The asset type on which the structure must be applied
      * @param structureKey The structure key
      * @return The DDM structure or null if none found or unavailable
+     * @throws PortalException If the structure is not found
      */
-    private DDMStructure searchStructure(long groupId, String assetType, String structureKey) {
-        DDMStructure foundStructure;
+    private DDMStructure searchStructure(long groupId, String assetType, String structureKey) throws PortalException {
         long classNameId = this.classNameService.getClassNameId(assetType);
-
-        try{
-            foundStructure = this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
-        } catch(PortalException e) {
-            foundStructure = null;
-            LOG.error("DDM structure not found", e);
-        }
-
-        return foundStructure;
+        return this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
     }
 
     /**

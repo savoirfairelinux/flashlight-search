@@ -3,7 +3,7 @@ package com.savoirfairelinux.flashlight.service.model;
 import java.util.List;
 import java.util.Map;
 
-import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 
 /**
  * The search results container is the main model used by the view to display the relevant information about the search
@@ -11,25 +11,25 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
  */
 public class SearchResultsContainer {
 
-    private Map<DDMStructure, List<SearchResult>> searchResults;
+    private Map<FlashlightSearchConfigurationTab, List<SearchResult>> searchResults;
 
-    public SearchResultsContainer(Map<DDMStructure, List<SearchResult>> searchResults) {
+    public SearchResultsContainer(Map<FlashlightSearchConfigurationTab, List<SearchResult>> searchResults) {
         this.searchResults = searchResults;
     }
 
     /**
      * @return The search results, indexed by DDM structure
      */
-    public Map<DDMStructure, List<SearchResult>> getSearchResults() {
+    public Map<FlashlightSearchConfigurationTab, List<SearchResult>> getSearchResults() {
         return this.searchResults;
     }
 
-    public boolean hasSearchResults(DDMStructure structure) {
-        return (this.searchResults.containsKey(structure) && !this.searchResults.get(structure).isEmpty());
+    public boolean hasSearchResults(FlashlightSearchConfigurationTab tab) {
+        return !this.searchResults.get(tab).isEmpty();
     }
 
-    public List<SearchResult> getSearchResults(DDMStructure structure) {
-        return this.searchResults.get(structure);
+    public List<SearchResult> getSearchResults(FlashlightSearchConfigurationTab tab) {
+        return this.searchResults.get(tab);
     }
 
 }

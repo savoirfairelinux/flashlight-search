@@ -20,7 +20,6 @@ import javax.portlet.PortletURL;
 import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
-import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -106,18 +105,23 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private Portal portal;
     private TemplateManager templateManager;
 
+    /**
+     * Displays the search view (both search fields and search results)
+     *
+     * @param request The request
+     * @param response The response
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
+     */
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
-        String keywords = ParamUtil.get(request, FORM_FIELD_KEYWORDS, StringPool.BLANK);
+        SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
+        String keywords = searchContext.getKeywords();
 
         SearchResultsContainer results;
-
         if (!keywords.isEmpty()) {
-            SearchContext searchContext = SearchContextFactory.getInstance(servletRequest);
-            searchContext.setKeywords(keywords);
             try {
-                results = this.searchService.search(searchContext, request.getPreferences(), 800);
+                results = this.searchService.search(request);
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
@@ -141,6 +145,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         this.renderTemplate(request, response, templateCtx, "view.ftl");
     }
 
+    /**
+     * Routes between global configuration editing and tab editing
+     *
+     * @param request The request
+     * @param response The response
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
+     */
     @Override
     public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         // Very, very simple routing. That's all we need, folks.
@@ -299,6 +311,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         this.renderTemplate(request, response, templateCtx, "edit-tab.ftl");
     }
 
+    /**
+     * Saves the global aspect of the configuration
+     *
+     * @param request The request
+     * @param response The response
+     * @throws IOException If something goes wrong
+     * @throws PortletException If something goes wrong
+     */
     @ProcessAction(name = ACTION_NAME_SAVE_GLOBAL)
     public void actionSaveGlobal(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
@@ -430,6 +450,16 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
     }
 
+    @Override
+    protected Portal getPortal() {
+        return this.portal;
+    }
+
+    @Override
+    protected TemplateManager getTemplateManager() {
+        return this.templateManager;
+    }
+
     @Reference(unbind = "-")
     public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
         this.assetCategoryLocalService  = assetCategoryLocalService;
@@ -445,19 +475,11 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         this.portal = portal;
     }
 
-    @Override
-    protected Portal getPortal() {
-        return this.portal;
-    }
 
     @Reference(target = "(language.type=" + TemplateConstants.LANG_TYPE_FTL + ")")
     public void setTemplateManager(TemplateManager templateManager) {
         this.templateManager = templateManager;
     }
 
-    @Override
-    protected TemplateManager getTemplateManager() {
-        return this.templateManager;
-    }
 
 }

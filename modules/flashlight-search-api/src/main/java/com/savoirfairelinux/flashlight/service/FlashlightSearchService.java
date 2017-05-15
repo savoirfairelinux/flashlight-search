@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.portlet.PortletPreferences;
+import javax.portlet.PortletRequest;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
@@ -14,7 +15,6 @@ import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
@@ -97,6 +97,6 @@ public interface FlashlightSearchService {
      */
     public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
 
-    public SearchResultsContainer search(SearchContext searchContext, PortletPreferences preferences, int maxCount) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+    public SearchResultsContainer search(PortletRequest request) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
 }
