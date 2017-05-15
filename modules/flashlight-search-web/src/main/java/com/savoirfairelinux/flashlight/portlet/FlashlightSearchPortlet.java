@@ -6,7 +6,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,7 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -98,6 +101,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String ZERO = "0";
     private static final String[] EMPTY_ARRAY = new String[0];
+
+    @Reference(unbind = "-")
+    private Language language;
 
     @Reference(unbind = "-")
     private AssetCategoryLocalService assetCategoryLocalService;
@@ -261,7 +267,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         int tabOrderRange = tabs.size() + 1;
 
-        String[] availableLocales = themeDisplay.getScopeGroup().getAvailableLanguageIds();
+        Set<Locale> availableLocales = this.language.getAvailableLocales(scopeGroupId);
         Map<String, List<DDMStructure>> availableStructures;
         try {
             availableStructures = this.searchService.getDDMStructures(scopeGroupId);

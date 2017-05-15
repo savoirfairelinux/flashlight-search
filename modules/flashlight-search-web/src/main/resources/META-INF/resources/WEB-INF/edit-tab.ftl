@@ -28,7 +28,7 @@
         </div>
         <#list availableLocales as availableLocale>
             <div class="form-group input-text-wrapper">
-                <label for="${ns}title-${availableLocale}">${availableLocale}</label>
+                <label for="${ns}title-${availableLocale}">${availableLocale.getDisplayName(locale)}</label>
                 <input type="text" id="${ns}title-${availableLocale}" name="${ns}title-${availableLocale}" value="${titleMap[availableLocale]!''}" />
             </div>
         </#list>
