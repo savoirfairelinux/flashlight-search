@@ -99,10 +99,16 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String ZERO = "0";
     private static final String[] EMPTY_ARRAY = new String[0];
 
+    @Reference(unbind = "-")
     private AssetCategoryLocalService assetCategoryLocalService;
+
+    @Reference(unbind = "-")
     private FlashlightSearchService searchService;
 
+    @Reference(unbind = "-")
     private Portal portal;
+
+    @Reference(target = "(language.type=" + TemplateConstants.LANG_TYPE_FTL + ")", unbind = "-")
     private TemplateManager templateManager;
 
     /**
@@ -459,27 +465,5 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     protected TemplateManager getTemplateManager() {
         return this.templateManager;
     }
-
-    @Reference(unbind = "-")
-    public void setAssetCategoryLocalService(AssetCategoryLocalService assetCategoryLocalService){
-        this.assetCategoryLocalService  = assetCategoryLocalService;
-    }
-
-    @Reference(unbind = "-")
-    public void setSearchService(FlashlightSearchService service) {
-        this.searchService = service;
-    }
-
-    @Reference
-    public void setPortal(Portal portal) {
-        this.portal = portal;
-    }
-
-
-    @Reference(target = "(language.type=" + TemplateConstants.LANG_TYPE_FTL + ")")
-    public void setTemplateManager(TemplateManager templateManager) {
-        this.templateManager = templateManager;
-    }
-
 
 }

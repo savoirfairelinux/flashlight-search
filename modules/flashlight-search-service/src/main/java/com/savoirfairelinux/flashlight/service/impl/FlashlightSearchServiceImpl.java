@@ -3,7 +3,6 @@ package com.savoirfairelinux.flashlight.service.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,66 +62,55 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchServiceImpl.class);
 
+    @Reference(unbind = "-")
     private ClassNameLocalService classNameService;
+
+    @Reference(unbind = "-")
     private DDMStructureLocalService ddmStructureService;
+
+    @Reference(unbind = "-")
     private DDMTemplateLocalService ddmTemplateService;
+
+    @Reference(unbind = "-")
     private DDMTemplatePermissionSupport ddmTemplatePermissionSupport;
+
+    @Reference(unbind = "-")
     private GroupLocalService groupService;
+
+    @Reference(unbind = "-")
     private Portal portal;
+
+    @Reference(unbind = "-")
     private FacetedSearcherManager facetedSearcherManager;
+
+    @Reference(unbind = "-")
     private SearchResultProcessorServiceTracker searchResultProcessorServicetracker;
 
-    private ConfigurationStorage[] storageEngines;
-    private int latestConfigurationVersion;
+    private ConfigurationStorage storageEngine;
 
     @Activate
     protected void activate() {
-        this.storageEngines = new ConfigurationStorage[1];
-        this.storageEngines[0] = new ConfigurationStorageV1();
-        this.latestConfigurationVersion = this.storageEngines.length;
+        this.storageEngine = new ConfigurationStorageV1();
     }
 
     @Override
     public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        FlashlightSearchConfiguration returnedConfig;
-        int configVersion = Integer.parseInt(preferences.getValue(ConfigurationStorage.PORTLET_PREFERENCES_VERSION_KEY, ConfigurationStorage.PORTLET_PREFERENCES_DEFAULT_VERSION));
-        boolean failedMigration = false;
-
-        if(configVersion != this.latestConfigurationVersion) {
-            try {
-                this.migrateConfiguration(preferences, configVersion);
-            } catch(ReadOnlyException | ValidatorException | IOException e) {
-                LOG.error("Error during configuration migration", e);
-                failedMigration = true;
-            }
-        }
-
-        if(!failedMigration) {
-            returnedConfig = this.storageEngines[configVersion - 1].readConfiguration(preferences);
-        } else {
-            LOG.warn("Due to a failure in configuration migration, an empty configuration has been returned");
-            returnedConfig = new FlashlightSearchConfiguration(
-                StringPool.BLANK,
-                Collections.emptyList()
-            );
-        }
-
-        return returnedConfig;
+        return this.storageEngine.readConfiguration(preferences);
     }
 
     @Override
     public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.getLatestStorageEngine().saveADT(adtUuid, preferences);
+        this.storageEngine.saveADT(adtUuid, preferences);
     }
 
     @Override
     public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.getLatestStorageEngine().saveConfigurationTab(configurationTab, preferences);
+        this.storageEngine.saveConfigurationTab(configurationTab, preferences);
     }
 
     @Override
     public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.getLatestStorageEngine().deleteConfigurationTab(tabId, preferences);
+        this.storageEngine.deleteConfigurationTab(tabId, preferences);
     }
 
     @Override
@@ -325,8 +313,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         return searchable;
     }
 
-
-
     /**
      * Search a DDM structure in the given group ID and its ancestors
      *
@@ -339,77 +325,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     private DDMStructure searchStructure(long groupId, String assetType, String structureKey) throws PortalException {
         long classNameId = this.classNameService.getClassNameId(assetType);
         return this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
-    }
-
-    /**
-     * Migrates the configuration to the newest possible format
-     *
-     * @param preferences The portlet preferences
-     * @param storedVersion The currently stored version
-     *
-     * @throws IOException If an error occurs during migration
-     * @throws ValidatorException If the configuration is invalid
-     * @throws ReadOnlyException If the configuration is read-only
-     */
-    private void migrateConfiguration(PortletPreferences preferences, int storedVersion) throws IOException, ValidatorException, ReadOnlyException {
-        if(this.latestConfigurationVersion > 0 && this.latestConfigurationVersion <= this.storageEngines.length) {
-            // Migrate config up to the current version
-            while(storedVersion < this.latestConfigurationVersion) {
-                this.storageEngines[storedVersion - 1].migrateConfiguration(preferences);
-                storedVersion++;
-            }
-        } else {
-            // Something is wrong with the configuration. It cannot be migrated. This should never happen if the
-            // configuration is not tampered with. If that happens, return an empty configuration.
-            throw new IOException("Cannot migrate the configuration as there is no migration path possible with the current code.");
-        }
-    }
-
-    /**
-     * @return The latest configuration storage engine
-     */
-    private ConfigurationStorage getLatestStorageEngine() {
-        return this.storageEngines[this.latestConfigurationVersion - 1];
-    }
-
-    @Reference(unbind = "-")
-    public void setClassNameService(ClassNameLocalService classNameService) {
-        this.classNameService = classNameService;
-    }
-
-    @Reference(unbind = "-")
-    public void setDdmStructureService(DDMStructureLocalService ddmStructureService) {
-        this.ddmStructureService = ddmStructureService;
-    }
-
-    @Reference(unbind = "-")
-    public void setDdmTemplatePermissionSupport(DDMTemplatePermissionSupport ddmTemplatePermissionSupport) {
-        this.ddmTemplatePermissionSupport = ddmTemplatePermissionSupport;
-    }
-
-    @Reference(unbind = "-")
-    public void setDdmTemplateService(DDMTemplateLocalService ddmTemplateService) {
-        this.ddmTemplateService = ddmTemplateService;
-    }
-
-    @Reference(unbind = "-")
-    public void setGroupService(GroupLocalService groupService) {
-        this.groupService = groupService;
-    }
-
-    @Reference(unbind = "-")
-    public void setPortal(Portal portal) {
-        this.portal = portal;
-    }
-
-    @Reference(unbind = "-")
-    public void setFacetedSearcherManager(FacetedSearcherManager facetedSearcherManager) {
-        this.facetedSearcherManager = facetedSearcherManager;
-    }
-
-    @Reference(unbind = "-")
-    public void setSearchResultProcessorServiceTracker(SearchResultProcessorServiceTracker searchResultProcessorServiceTracker) {
-        this.searchResultProcessorServicetracker = searchResultProcessorServiceTracker;
     }
 
 }

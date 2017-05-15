@@ -32,6 +32,7 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 )
 public class JournalArticleSearchResultProcessor implements SearchResultProcessor {
 
+    @Reference(unbind = "-")
     private JournalArticleLocalService journalArticleService;
 
     @Override
@@ -63,11 +64,5 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
         return result;
     }
-
-    @Reference(unbind = "-")
-    public void setJournalArticleService(JournalArticleLocalService journalArticleService) {
-        this.journalArticleService = journalArticleService;
-    }
-
 
 }

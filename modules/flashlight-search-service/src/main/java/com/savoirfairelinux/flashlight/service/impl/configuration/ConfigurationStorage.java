@@ -72,15 +72,4 @@ public interface ConfigurationStorage {
      */
     public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
-    /**
-     * Migrates the portlet preferences to the format used by this configuration reader/writer
-     *
-     * @param preferences The portlet preferences to migrate
-     *
-     * @throws ReadOnlyException If the configuration is read only
-     * @throws ValidatorException If the configuration is invalid
-     * @throws IOException If the configuration fails to save
-     */
-    public void migrateConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
-
 }

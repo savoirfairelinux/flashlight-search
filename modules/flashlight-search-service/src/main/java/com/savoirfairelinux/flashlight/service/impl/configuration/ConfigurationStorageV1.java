@@ -158,9 +158,6 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         preferences.store();
     }
 
-    @Override
-    public void migrateConfiguration(PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {}
-
     /**
      * Reads a single configuration tab from the preferences
      *
