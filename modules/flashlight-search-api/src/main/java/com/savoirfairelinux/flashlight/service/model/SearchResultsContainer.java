@@ -1,6 +1,5 @@
 package com.savoirfairelinux.flashlight.service.model;
 
-import java.util.List;
 import java.util.Map;
 
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
@@ -11,25 +10,51 @@ import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchCon
  */
 public class SearchResultsContainer {
 
-    private Map<FlashlightSearchConfigurationTab, List<SearchResult>> searchResults;
+    private Map<FlashlightSearchConfigurationTab, SearchPage> searchPages;
 
-    public SearchResultsContainer(Map<FlashlightSearchConfigurationTab, List<SearchResult>> searchResults) {
-        this.searchResults = searchResults;
+    /**
+     * Creates the container
+     * @param searchPages The search pages, indexed by tab
+     */
+    public SearchResultsContainer(Map<FlashlightSearchConfigurationTab, SearchPage> searchPages) {
+        this.searchPages = searchPages;
     }
 
     /**
-     * @return The search results, indexed by DDM structure
+     * @return The search pages, indexed by DDM structure
      */
-    public Map<FlashlightSearchConfigurationTab, List<SearchResult>> getSearchResults() {
-        return this.searchResults;
+    public Map<FlashlightSearchConfigurationTab, SearchPage> getSearchPages() {
+        return this.searchPages;
     }
 
+    /**
+     * @return True if there are any results in any of the pages
+     */
+    public boolean hasSearchResults() {
+        return this.searchPages.values()
+            .stream()
+            .map(page -> (page.getTotalSearchResults() > 0))
+            .reduce(false, (page1HasResults, page2HasResults) -> page1HasResults || page2HasResults);
+    }
+
+    /**
+     * Indicates if a tab's search page has search results
+     *
+     * @param Tab the tab in which to look for
+     * @return True if there are results in the given tab's search page
+     */
     public boolean hasSearchResults(FlashlightSearchConfigurationTab tab) {
-        return !this.searchResults.get(tab).isEmpty();
+        return this.searchPages.get(tab).getTotalSearchResults() > 0;
     }
 
-    public List<SearchResult> getSearchResults(FlashlightSearchConfigurationTab tab) {
-        return this.searchResults.get(tab);
+    /**
+     * Returns a search tab's page
+     *
+     * @param tab The tab from which to return the page
+     * @return The search tab's page
+     */
+    public SearchPage getSearchPage(FlashlightSearchConfigurationTab tab) {
+        return this.searchPages.get(tab);
     }
 
 }

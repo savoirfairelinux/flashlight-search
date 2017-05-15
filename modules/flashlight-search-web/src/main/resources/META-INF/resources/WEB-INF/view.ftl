@@ -10,27 +10,30 @@
         <input type="submit" name="${ns}submit" value="<@liferay_ui['message'] key='search' />" />
     </fieldset>
 
-    <#assign searchResults = resultsContainer.searchResults />
-    <ul>
-        <li><a href="${keywordUrl}"><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
-        <#list searchResults?keys as tab>
-            <#if resultsContainer.hasSearchResults(tab)>
-                <li><a href="#">${tab.getTitle(locale)}</a></li>
-            </#if>
-        </#list>
-    </ul>
-    <ul>
-        <#list searchResults?keys as tab>
-            <#if resultsContainer.hasSearchResults(tab)>
-                <li>
-                    <p><strong>${tab.getTitle(locale)}</strong></p>
-                    <ul>
-                        <#list resultsContainer.getSearchResults(tab) as result>
-                            <li><a href="${result.viewUrl!'#'}" title="${result.title}">${result.rendering}</a></li>
-                        </#list>
-                    </ul>
-                </li>
-            </#if>
-        </#list>
-    </ul>
+    <#if resultsContainer.hasSearchResults()>
+        <#assign searchPages = resultsContainer.searchPages />
+        <ul>
+            <li><a href="${keywordUrl}"><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
+            <#list searchPages?keys as tab>
+                <#if resultsContainer.hasSearchResults(tab)>
+                    <li><a href="#">${tab.getTitle(locale)} (${resultsContainer.getSearchPage(tab).totalSearchResults})</a></li>
+                </#if>
+            </#list>
+        </ul>
+        <ul>
+            <#list searchPages?keys as tab>
+                <#if resultsContainer.hasSearchResults(tab)>
+                    <#assign page = resultsContainer.getSearchPage(tab) />
+                    <li>
+                        <p><strong>${tab.getTitle(locale)}</strong><span>(${page.totalSearchResults})</span></p>
+                        <ul>
+                            <#list page.searchResults as result>
+                                <li><a href="${result.viewUrl!'#'}" title="${result.title}">${result.rendering}</a></li>
+                            </#list>
+                        </ul>
+                    </li>
+                </#if>
+            </#list>
+        </ul>
+    </#if>
 </form>

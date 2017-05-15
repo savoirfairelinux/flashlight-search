@@ -49,6 +49,7 @@ import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchCon
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
+import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
@@ -181,7 +182,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
 
-        LinkedHashMap<FlashlightSearchConfigurationTab, List<SearchResult>> resultMap = new LinkedHashMap<>(tabs.size());
+        LinkedHashMap<FlashlightSearchConfigurationTab, SearchPage> resultMap = new LinkedHashMap<>(tabs.size());
         for(FlashlightSearchConfigurationTab tab : tabs.values()) {
             resultMap.put(tab, this.search(request, config, tab, searcher));
         }
@@ -196,11 +197,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @param config The search configuration
      * @param tab The tab in which the search is performed
      * @param searcher The searched used for the search itself
-     * @return A list of non-null search results
+     * @return A search page
      *
      * @throws SearchException If an error occurs during search
      */
-    private List<SearchResult> search(PortletRequest request, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
+    private SearchPage search(PortletRequest request, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
         List<String> selectedAssetTypes = tab.getAssetTypes();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
 
@@ -259,7 +260,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             }
         }
 
-        return searchResults;
+        return new SearchPage(searchResults, hits.getLength());
     }
 
     /**
