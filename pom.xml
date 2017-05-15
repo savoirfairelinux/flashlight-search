@@ -264,12 +264,8 @@
                             <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                             <Bundle-Version>${project.version}</Bundle-Version>
                             <!-- The Import-Package instruction is wildly guessed from Liferay's bundles -->
-                            <!--
-                                There is a fix here to make util-bridges work correctly (see org.apache.* Import-Package
-                                directive and Embed-Dependency directive)
-                            -->
                             <Import-Package>
-                                com.liferay.portal.kernel.service;version="1.1.0",
+                                com.liferay.portal.kernel.service,
                                 javax.portlet,javax.servlet,
                                 *
                             </Import-Package>

@@ -60,10 +60,7 @@ public class SearchResultProcessorServiceTrackerCustomizer implements ServiceTra
 
     @Override
     public void removedService(ServiceReference<SearchResultProcessor> reference, SearchResultProcessor service) {
-        String assetType = (String) reference.getProperty("asset.type");
-        if(this.processors.containsKey(assetType)) {
-            this.processors.remove(service);
-        }
+        this.processors.remove(service.getAssetType());
     }
 
 }
