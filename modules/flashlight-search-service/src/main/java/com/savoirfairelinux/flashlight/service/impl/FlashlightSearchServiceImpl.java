@@ -247,20 +247,19 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                     structureKey = structures.get(0).getStructureKey();
                 } else {
                     // Ambiguous or unavailable structure
-                    structureKey = StringPool.BLANK;
+                    structureKey = null;
                 }
                 return structureKey;
             })
-            .filter(key -> !key.equals(StringPool.BLANK))
-            .reduce(StringPool.BLANK, (structureA, structureB) -> {
+            .filter(k -> k != null)
+            .reduce((structureA, structureB) -> {
                 StringBuilder assembly = new StringBuilder(structureA.length() + structureB.length() + 1);
-                if(!structureA.equals(StringPool.BLANK)) {
-                    assembly.append(structureA);
-                    assembly.append(StringPool.COMMA);
-                }
+                assembly.append(structureA);
+                assembly.append(StringPool.COMMA);
                 assembly.append(structureB);
                 return assembly.toString();
-            });
+            })
+            .orElse(StringPool.BLANK);
 
         searchContext.setAttribute(DocumentField.DDM_STRUCTURE_KEY.getName(), ddmStructures);
         searchContext.addFacet(structureFacet);
