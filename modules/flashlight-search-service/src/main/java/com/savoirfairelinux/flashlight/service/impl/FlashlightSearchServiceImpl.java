@@ -42,7 +42,6 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
@@ -238,7 +237,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         searchContext.addFacet(assetEntriesFacet);
 
         DDMStructureFacet structureFacet = new DDMStructureFacet(searchContext);
-        String ddmStructures = contentTemplates.keySet()
+        String[] ddmStructures = contentTemplates.keySet()
             .stream()
             .map(structureUuid -> {
                 String structureKey;
@@ -252,16 +251,10 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 return structureKey;
             })
             .filter(k -> k != null)
-            .reduce((structureA, structureB) -> {
-                StringBuilder assembly = new StringBuilder(structureA.length() + structureB.length() + 1);
-                assembly.append(structureA);
-                assembly.append(StringPool.COMMA);
-                assembly.append(structureB);
-                return assembly.toString();
-            })
-            .orElse(StringPool.BLANK);
+            .collect(Collectors.toSet())
+            .toArray(new String[contentTemplates.size()]);
 
-        searchContext.setAttribute(DocumentField.DDM_STRUCTURE_KEY.getName(), ddmStructures);
+        structureFacet.setValues(ddmStructures);
         searchContext.addFacet(structureFacet);
 
         Hits hits = searcher.search(searchContext);
