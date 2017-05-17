@@ -73,9 +73,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     private DDMTemplateLocalService ddmTemplateService;
 
     @Reference(unbind = "-")
-    private DDMTemplatePermissionSupport ddmTemplatePermissionSupport;
-
-    @Reference(unbind = "-")
     private GroupLocalService groupService;
 
     @Reference(unbind = "-")
@@ -149,7 +146,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 .stream()
                 .filter(template -> {
                     // See DDMTemplatePermission.java in Liferay's source code for the inspirational stuff
-                    String modelResourceName = this.ddmTemplatePermissionSupport.getResourceName(template.getResourceClassNameId());
+                    String modelResourceName = DDMTemplate.class.getName();
                     long companyId = template.getCompanyId();
                     long templateId = template.getTemplateId();
                     String actionKey = ActionKeys.VIEW;

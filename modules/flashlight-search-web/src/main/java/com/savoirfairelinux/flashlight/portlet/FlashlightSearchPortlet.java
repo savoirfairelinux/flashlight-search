@@ -1,27 +1,13 @@
 package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.Portlet;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletURL;
-import javax.portlet.ProcessAction;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -29,6 +15,8 @@ import org.osgi.service.component.annotations.Reference;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
+import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
+import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
@@ -42,12 +30,11 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.*;
+import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
+import com.savoirfairelinux.flashlight.portlet.framework.exception.CouldNotRenderTemplateException;
+import com.savoirfairelinux.flashlight.portlet.framework.exception.TemplateNotFoundException;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
@@ -119,29 +106,36 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     @Reference(target = "(language.type=" + TemplateConstants.LANG_TYPE_FTL + ")", unbind = "-")
     private TemplateManager templateManager;
 
+    @Reference(unbind = "-")
+    private DDMTemplateLocalService ddmTemplateLocalService;
+
+    @Reference(unbind = "-")
+    private PortletDisplayTemplate portletDisplayTemplate;
+
     /**
      * Displays the search view (both search fields and search results)
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
      * @throws PortletException If something goes wrong
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      */
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
-        SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
+        HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
+        SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
         String keywords = searchContext.getKeywords();
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
 
-        if(!PATTERN_UUID.matcher(tabId).matches()) {
+        if (!PATTERN_UUID.matcher(tabId).matches()) {
             tabId = null;
         }
 
         SearchResultsContainer results;
         if (!keywords.isEmpty()) {
             try {
-                if(tabId == null) {
+                if (tabId == null) {
                     results = this.searchService.search(request, response);
                 } else {
                     results = this.searchService.search(request, response, tabId);
@@ -173,50 +167,57 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("resultsContainer", results);
         templateCtx.put("keywords", keywords);
         templateCtx.put("categories", this.assetCategoryLocalService.getCategories());
-        templateCtx.put("flashlightUtil",  new FlashlightUtil());
-        this.renderTemplate(request, response, templateCtx, "view.ftl");
+        templateCtx.put("flashlightUtil", new FlashlightUtil());
+
+        if (config.getAdtUUID() != null && PATTERN_UUID.matcher(config.getAdtUUID()).matches()) {
+            this.renderADT(request, response, templateCtx, config.getAdtUUID());
+        } else {
+            this.renderTemplate(request, response, templateCtx, "view.ftl");
+        }
     }
 
     /**
      * Routes between global configuration editing and tab editing
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
      * @throws PortletException If something goes wrong
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      */
     @Override
     public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         // Very, very simple routing. That's all we need, folks.
         String editMode = ParamUtil.get(request, FORM_FIELD_EDIT_MODE, StringPool.BLANK);
-        switch(editMode) {
+        switch (editMode) {
             case EDIT_MODE_TAB:
                 this.doEditTab(request, response);
-            break;
+                break;
             default:
                 this.doEditGlobal(request, response);
-            break;
+                break;
         }
     }
 
     /**
      * Render phase, edit mode, global configuration
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
      * @throws PortletException If something goes wrong
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      */
     public void doEditGlobal(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         PermissionChecker permissionChecker = themeDisplay.getPermissionChecker();
         long groupId = themeDisplay.getScopeGroupId();
+        Locale locale = themeDisplay.getLocale();
 
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         String adtUuid = config.getAdtUUID();
 
         PortletURL editGlobalUrl = response.createRenderURL();
-        editGlobalUrl.setPortletMode(PortletMode.EDIT);;
+        editGlobalUrl.setPortletMode(PortletMode.EDIT);
+        ;
 
         PortletURL createTabUrl = response.createRenderURL();
         createTabUrl.setPortletMode(PortletMode.EDIT);
@@ -242,10 +243,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             deleteTabUrls.put(tabId, deleteUrl);
         });
 
-        Map<Group, List<DDMTemplate>> applicationDisplayTemplates;
+        Map<String, List<DDMTemplate>> applicationDisplayTemplates;
         try {
-            applicationDisplayTemplates = this.searchService.getApplicationDisplayTemplates(permissionChecker, groupId);
-        } catch(PortalException e) {
+            Map<Group, List<DDMTemplate>> applicationDisplayTemplatesByGroup = this.searchService.getApplicationDisplayTemplates(permissionChecker, groupId);
+            applicationDisplayTemplates = new LinkedHashMap<>(applicationDisplayTemplatesByGroup.size());
+            for (Map.Entry<Group, List<DDMTemplate>> entry : applicationDisplayTemplatesByGroup.entrySet()) {
+                applicationDisplayTemplates.put(entry.getKey().getName(locale), entry.getValue());
+            }
+        } catch (PortalException e) {
             throw new PortletException("Cannot fetch application display templates", e);
         }
 
@@ -265,10 +270,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     /**
      * Render phase, edit mode, tab configuration
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
      * @throws PortletException If something goes wrong
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      */
     public void doEditTab(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
@@ -278,7 +283,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         FlashlightSearchConfigurationTab tab;
-        if(tabs.containsKey(tabId)) {
+        if (tabs.containsKey(tabId)) {
             tab = tabs.get(tabId);
         } else {
             tab = null;
@@ -309,7 +314,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         Map<String, String> titleMap;
         PortletURL redirectUrl = response.createRenderURL();
 
-        if(tab != null) {
+        if (tab != null) {
             tabOrder = tab.getOrder();
             tabPageSize = tab.getPageSize();
             assetTypes = tab.getAssetTypes();
@@ -351,38 +356,37 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     /**
      * Saves the global aspect of the configuration
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      * @throws PortletException If something goes wrong
      */
     @ProcessAction(name = ACTION_NAME_SAVE_GLOBAL)
     public void actionSaveGlobal(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String adtUuid = ParamUtil.get(request, FORM_FIELD_ADT_UUID, StringPool.BLANK);
-        if(!PATTERN_UUID.matcher(adtUuid).matches()) {
+        if (!PATTERN_UUID.matcher(adtUuid).matches()) {
             adtUuid = StringPool.BLANK;
         }
         this.searchService.saveADT(adtUuid, request.getPreferences());
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
-        if(!redirectUrl.isEmpty()) {
+        if (!redirectUrl.isEmpty()) {
             response.sendRedirect(redirectUrl);
         }
     }
 
     /**
      * Saves a Flashlight Search configuration tab as portlet preferences.
-     *
+     * <p>
      * The save action performs very basic validation - it checks for format validity, but it will not check whether
      * objects referenced by the parameters exist. We are not holding the user's hands on this one - the form consists
      * of select fields generated by Liferay data. If the user tampers with such data in a way that breaks the format,
      * such data will not be saved. No error will be displayed in this case.
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
-     *
-     * @throws IOException If configuration fails to save
+     * @throws IOException      If configuration fails to save
      * @throws PortletException If a portlet error occurs
      */
     @ProcessAction(name = ACTION_NAME_SAVE_TAB)
@@ -406,10 +410,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             Matcher titleMatcher = FORM_FIELD_TITLE_PATTERN.matcher(paramName);
 
             if (ddmMatcher.matches()) {
-                if(PATTERN_UUID.matcher(paramValue).matches()) {
+                if (PATTERN_UUID.matcher(paramValue).matches()) {
                     validatedContentTemplates.put(ddmMatcher.group(1), paramValue);
                 }
-            } else if(titleMatcher.matches()) {
+            } else if (titleMatcher.matches()) {
                 // Escape the title
                 validatedTitleMap.put(titleMatcher.group(1), HtmlUtil.escape(paramValue));
             }
@@ -417,7 +421,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         // Validate the fields
         String validatedTabId;
-        if(PATTERN_UUID.matcher(tabId).matches()) {
+        if (PATTERN_UUID.matcher(tabId).matches()) {
             validatedTabId = tabId;
         } else {
             validatedTabId = null;
@@ -426,34 +430,34 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         int validatedTabOrder;
         try {
             validatedTabOrder = Integer.parseInt(tabOrder);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             validatedTabOrder = 0;
         }
 
         int validatedPageSize;
         try {
             validatedPageSize = Integer.parseInt(pageSize);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             validatedPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
         }
 
         ArrayList<String> validatedSelectedFacets = new ArrayList<>(selectedFacets.length);
-        for(String facet : selectedFacets) {
-            if(PATTERN_CLASS_NAME.matcher(facet).matches()) {
+        for (String facet : selectedFacets) {
+            if (PATTERN_CLASS_NAME.matcher(facet).matches()) {
                 validatedSelectedFacets.add(facet);
             }
         }
 
         ArrayList<String> validatedAssetTypes = new ArrayList<>(selectAssetTypes.length);
-        for(String assetType : selectAssetTypes) {
-            if(PATTERN_CLASS_NAME.matcher(assetType).matches()) {
+        for (String assetType : selectAssetTypes) {
+            if (PATTERN_CLASS_NAME.matcher(assetType).matches()) {
                 validatedAssetTypes.add(assetType);
             }
         }
 
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
-        if(validatedTabId != null) {
+        if (validatedTabId != null) {
             tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
         } else {
             tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedContentTemplates);
@@ -462,7 +466,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
 
-        if(!redirectUrl.isEmpty()) {
+        if (!redirectUrl.isEmpty()) {
             response.sendRedirect(redirectUrl);
         }
     }
@@ -470,27 +474,27 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     /**
      * Deletes a tab from the configuration
      *
-     * @param request The request
+     * @param request  The request
      * @param response The response
      * @throws PortletException If something goes wrong
-     * @throws IOException If something goes wrong
+     * @throws IOException      If something goes wrong
      */
     @ProcessAction(name = ACTION_NAME_DELETE_TAB)
     public void actionDeleteTab(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
 
-        if(tabId != null && PATTERN_UUID.matcher(tabId).matches()) {
+        if (tabId != null && PATTERN_UUID.matcher(tabId).matches()) {
             PortletPreferences preferences = request.getPreferences();
             Map<String, FlashlightSearchConfigurationTab> tabs = this.searchService.readConfiguration(preferences).getTabs();
-            if(tabs.containsKey(tabId)) {
+            if (tabs.containsKey(tabId)) {
                 this.searchService.deleteConfigurationTab(tabId, preferences);
             }
         }
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
 
-        if(!redirectUrl.isEmpty()) {
+        if (!redirectUrl.isEmpty()) {
             response.sendRedirect(redirectUrl);
         }
     }
@@ -505,4 +509,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         return this.templateManager;
     }
 
+    @Override
+    protected PortletDisplayTemplate getPortletDisplayTemplate() {
+        return this.portletDisplayTemplate;
+    }
+
+    @Override
+    protected DDMTemplateLocalService getDDMTemplateLocalService() {
+        return this.ddmTemplateLocalService;
+    }
 }

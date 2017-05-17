@@ -1,11 +1,8 @@
 package com.savoirfairelinux.flashlight.portlet.framework;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.portlet.GenericPortlet;
 import javax.portlet.PortletConfig;
@@ -14,7 +11,11 @@ import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import com.liferay.dynamic.data.mapping.model.DDMTemplate;
+import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateException;
@@ -22,9 +23,12 @@ import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.template.TemplateResourceLoader;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portlet.display.template.PortletDisplayTemplate;
+import com.savoirfairelinux.flashlight.portlet.framework.exception.CouldNotRenderTemplateException;
 import com.savoirfairelinux.flashlight.portlet.framework.exception.TemplateNotFoundException;
 
 /**
@@ -140,6 +144,34 @@ public abstract class TemplatedPortlet extends GenericPortlet {
     }
 
     /**
+     * Renders an ADT.
+     *
+     * @param request the request
+     * @param response the response
+     * @param templateCtx the template context
+     * @param templateUUID the UUID of the ADT (DDMTemplate object/table) to render
+     * @throws TemplateNotFoundException if no template having such UUID could be found
+     * @throws CouldNotRenderTemplateException if the template could not be rendered
+     */
+    public void renderADT(RenderRequest request, RenderResponse response, Map<String, Object> templateCtx, String templateUUID) throws CouldNotRenderTemplateException, TemplateNotFoundException {
+        HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
+        HttpServletResponse httpServletResponse = this.portal.getHttpServletResponse(response);
+        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        long companyId = themeDisplay.getCompanyId();
+
+        try {
+            List<DDMTemplate> ddmTemplates = this.getDDMTemplateLocalService().getDDMTemplatesByUuidAndCompanyId(templateUUID, companyId);
+            if (ddmTemplates.isEmpty()) {
+                throw new TemplateNotFoundException("No ADT found with companyId ["+companyId+"] and UUID ["+templateUUID+"]");
+            }
+            String renderedTemplate = this.getPortletDisplayTemplate().renderDDMTemplate(httpServletRequest, httpServletResponse, ddmTemplates.get(0), Collections.emptyList(), templateCtx);
+            response.getWriter().write(renderedTemplate);
+        } catch (Exception e) {
+            throw new CouldNotRenderTemplateException("Could not render from ADT [" + templateUUID + "]", e);
+        }
+    }
+
+    /**
      * Puts commonly used variables in the template context
      * @param request The request
      * @param response The response
@@ -163,5 +195,15 @@ public abstract class TemplatedPortlet extends GenericPortlet {
      * @return The template manager
      */
     protected abstract TemplateManager getTemplateManager();
+
+    /**
+     * @return the display template service.
+     */
+    protected abstract PortletDisplayTemplate getPortletDisplayTemplate();
+
+    /**
+     * @return the DDM template service.
+     */
+    protected abstract DDMTemplateLocalService getDDMTemplateLocalService();
 
 }

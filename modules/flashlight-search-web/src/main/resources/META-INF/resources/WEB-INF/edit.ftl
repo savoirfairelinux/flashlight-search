@@ -16,7 +16,7 @@
                     <option value=""><@liferay_ui["message"] key="No ADT" /></option>
                 </optgroup>
                 <#list applicationDisplayTemplates?keys as key>
-                    <optgroup label="${key.getName(locale)}">
+                    <optgroup label="${key}">
                         <#assign templates = applicationDisplayTemplates[key] />
                         <#list templates as template>
                             <#if template.uuid == adtUuid>
