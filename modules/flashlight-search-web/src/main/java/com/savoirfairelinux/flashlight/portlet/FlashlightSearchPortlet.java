@@ -1,22 +1,36 @@
 package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.portlet.*;
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.PortletMode;
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletURL;
+import javax.portlet.ProcessAction;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
-import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
@@ -30,11 +44,13 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.*;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
-import com.savoirfairelinux.flashlight.portlet.framework.exception.CouldNotRenderTemplateException;
-import com.savoirfairelinux.flashlight.portlet.framework.exception.TemplateNotFoundException;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
@@ -89,13 +105,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String ZERO = "0";
     private static final String THREE = "3";
-    private static final String[] EMPTY_ARRAY = new String[0];
 
     @Reference(unbind = "-")
     private Language language;
-
-    @Reference(unbind = "-")
-    private AssetCategoryLocalService assetCategoryLocalService;
 
     @Reference(unbind = "-")
     private FlashlightSearchService searchService;
@@ -149,28 +161,30 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         HashMap<String, PortletURL> tabUrls = new HashMap<>(tabs.size());
-        tabs.keySet().forEach(key -> {
+        for(String tabUuid : tabs.keySet()) {
             PortletURL tabUrl = response.createRenderURL();
-            tabUrl.setParameter(FORM_FIELD_TAB_ID, key);
-            tabUrls.put(key, tabUrl);
-        });
+            tabUrl.setParameter(FORM_FIELD_TAB_ID, tabUuid);
+            if(!keywords.isEmpty()) {
+                tabUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
+            }
+
+            tabUrls.put(tabUuid, tabUrl);
+        }
 
         Map<String, Object> templateCtx = this.createTemplateContext();
-        // General objects
         templateCtx.put("ns", response.getNamespace());
 
-        // Search objects
         PortletURL keywordUrl = response.createRenderURL();
         keywordUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
 
         templateCtx.put("keywordUrl", keywordUrl);
+        templateCtx.put("tabUrls", tabUrls);
         templateCtx.put("resultsContainer", results);
         templateCtx.put("keywords", keywords);
-        templateCtx.put("categories", this.assetCategoryLocalService.getCategories());
-        templateCtx.put("flashlightUtil", new FlashlightUtil());
 
-        if (config.getAdtUUID() != null && PATTERN_UUID.matcher(config.getAdtUUID()).matches()) {
-            this.renderADT(request, response, templateCtx, config.getAdtUUID());
+        String adtUuid = config.getAdtUUID();
+        if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {
+            this.renderADT(request, response, templateCtx, adtUuid);
         } else {
             this.renderTemplate(request, response, templateCtx, "view.ftl");
         }
@@ -396,8 +410,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, ZERO);
         String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, THREE);
-        String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_FACETS, EMPTY_ARRAY);
-        String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_ASSET_TYPES, EMPTY_ARRAY);
+        String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_FACETS, StringPool.EMPTY_ARRAY);
+        String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_ASSET_TYPES, StringPool.EMPTY_ARRAY);
         HashMap<String, String> validatedContentTemplates = new HashMap<>();
         HashMap<String, String> validatedTitleMap = new HashMap<>();
 

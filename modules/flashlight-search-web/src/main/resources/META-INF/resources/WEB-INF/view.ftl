@@ -16,7 +16,7 @@
             <li><a href="${keywordUrl}"><@liferay_ui["message"] key="flashlight-all-results" /></a></li>
             <#list searchPages?keys as tab>
                 <#if resultsContainer.hasSearchResults(tab)>
-                    <li><a href="#">${tab.getTitle(locale)} (${resultsContainer.getSearchPage(tab).totalSearchResults})</a></li>
+                    <li><a href="${tabUrls[tab.id]}">${tab.getTitle(locale)} (${resultsContainer.getSearchPage(tab).totalSearchResults})</a></li>
                 </#if>
             </#list>
         </ul>
