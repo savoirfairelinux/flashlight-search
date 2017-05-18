@@ -275,6 +275,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             throw new PortletException("Cannot fetch application display templates", e);
         }
 
+        Map<String, List<DDMStructure>> availableStructures;
+        try {
+            availableStructures = this.searchService.getDDMStructures(groupId);
+        } catch (PortalException e) {
+            throw new PortletException("Unable to retrieve DDM structures", e);
+        }
+
         Map<String, Object> templateCtx = this.createTemplateContext();
         templateCtx.put("ns", response.getNamespace());
         templateCtx.put("editGlobalUrl", editGlobalUrl);
@@ -282,6 +289,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("saveGlobalUrl", saveGlobalUrl);
         templateCtx.put("adtUuid", adtUuid);
         templateCtx.put("applicationDisplayTemplates", applicationDisplayTemplates);
+        templateCtx.put("availableStructures", availableStructures);
         templateCtx.put("tabs", tabs);
         templateCtx.put("editTabUrls", editTabUrls);
         templateCtx.put("deleteTabUrls", deleteTabUrls);

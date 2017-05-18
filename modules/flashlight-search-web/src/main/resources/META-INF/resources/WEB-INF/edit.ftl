@@ -39,17 +39,35 @@
                     <tr>
                         <th><@liferay_ui["message"] key="Order" /></th>
                         <th><@liferay_ui["message"] key="Title" /></th>
+                        <th><@liferay_ui["message"] key="Structures" /></th>
                         <th><@liferay_ui["message"] key="Actions" /></th>
                     </tr>
                 </thead>
                 <tbody>
                 <#list tabs?keys as tabId>
                     <#assign tab = tabs[tabId] />
+                    <#assign contentTemplates = tab.getContentTemplates() />
                     <#assign editTabUrl = editTabUrls[tabId] />
                     <#assign deleteTabUrl = deleteTabUrls[tabId] />
                     <tr>
                         <td><a href="${editTabUrl}">${tab.order}</a></td>
                         <td><a href="${editTabUrl}">${tab.getTitle(locale)}</a></td>
+                        <td>
+                            <ul>
+                                <#list availableStructures?keys as className>
+                                    <#assign clStructures = availableStructures[className] />
+                                    <#list clStructures as structure>
+                                        <#if structure.templates?has_content>
+                                            <#list structure.templates as template>
+                                                <#if contentTemplates[structure.uuid]?? && contentTemplates[structure.uuid] == template.uuid>
+                                                    <li><a href="${editTabUrl}">${structure.getName(locale)} => ${template.getName(locale)}</a></li>
+                                                </#if>
+                                            </#list>
+                                        </#if>
+                                    </#list>
+                                </#list>
+                            </ul>
+                        </td>
                         <td>
                             <ul>
                                 <li><a href="${editTabUrl}"><@liferay_ui["message"] key="Edit" /></a></li>
