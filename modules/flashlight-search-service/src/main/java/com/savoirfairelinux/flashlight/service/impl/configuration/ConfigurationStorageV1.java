@@ -1,28 +1,21 @@
 package com.savoirfairelinux.flashlight.service.impl.configuration;
 
-import static java.lang.String.format;
-
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import javax.portlet.PortletPreferences;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
-
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
+
+import static java.lang.String.format;
 
 /**
  * First version of the configuration storage mechanism
@@ -34,6 +27,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
     private static final String CONF_KEY_FORMAT_ORDER = "%s[order]";
     private static final String CONF_KEY_FORMAT_PAGE_SIZE = "%s[page-size]";
+    private static final String CONF_KEY_FORMAT_FULL_PAGE_SIZE = "%s[full-page-size]";
     private static final String CONF_KEY_FORMAT_ASSET_TYPES = "%s[asset-types]";
 
     private static final String CONF_KEY_FORMAT_SEARCH_FACET = "%s[search-facet-%s]";
@@ -82,6 +76,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String tabId = configurationTab.getId();
         int order = configurationTab.getOrder();
         int pageSize = configurationTab.getPageSize();
+        int fullPageSize = configurationTab.getFullPageSize();
         List<String> assetTypes = configurationTab.getAssetTypes();
         Map<String, String> searchFacets = configurationTab.getSearchFacets();
         Map<String, String> titleMap = configurationTab.getTitleMap();
@@ -91,10 +86,12 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
+        String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
 
         preferences.setValues(assetTypesKey, assetTypes.toArray(new String[assetTypes.size()]));
         preferences.setValue(orderKey, Integer.toString(order));
         preferences.setValue(pageSizeKey, Integer.toString(pageSize));
+        preferences.setValue(fullPageSizeKey, Integer.toString(fullPageSize));
 
         // Flush previously entered composed values
         Enumeration<String> prefKeys = preferences.getNames();
@@ -207,6 +204,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private FlashlightSearchConfigurationTab readTabConfiguration(PortletPreferences preferences, String tabId) {
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
+        String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
@@ -215,6 +213,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         // Singular keys
         int order = Integer.parseInt(preferences.getValue(orderKey, ZERO));
         int pageSize = Integer.parseInt(preferences.getValue(pageSizeKey, THREE));
+        int fullPageSize = Integer.parseInt(preferences.getValue(fullPageSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE)));
         List<String> assetTypes = Arrays.asList(preferences.getValues(assetTypesKey, EMPTY_ARRAY));
 
         // Composed keys
@@ -239,7 +238,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, titleMap, assetTypes, searchFacets, contentTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, titleMap, assetTypes, searchFacets, contentTemplates);
     }
 
 }

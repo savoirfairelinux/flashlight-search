@@ -47,7 +47,7 @@
         </div>
 
         <#list searchPages?keys as tab>
-            <#if resultsContainer.hasSearchResults(tab)>
+            <#if resultsContainer.hasSearchResults(tab) && (! tabId?has_content || tabId == tab.id) >
                 <#assign page = resultsContainer.getSearchPage(tab) />
                 <div class="panel panel-default">
                     <div class="panel-heading">

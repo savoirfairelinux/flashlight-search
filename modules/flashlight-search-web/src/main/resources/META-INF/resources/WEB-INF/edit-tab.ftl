@@ -36,6 +36,10 @@
             <label for="${ns}page-size"><@liferay_ui["message"] key="Page size" /></label>
             <input type="text" id="${ns}page-size" name="${ns}page-size" value="${tabPageSize}" />
         </div>
+        <div class="form-group input-text-wrapper">
+            <label for="${ns}full-page-size"><@liferay_ui["message"] key="Detail/load more page size" /></label>
+            <input type="text" id="${ns}full-page-size" name="${ns}full-page-size" value="${tabFullPageSize}" />
+        </div>
     </fieldset>
 
     <fieldset class="fieldset">

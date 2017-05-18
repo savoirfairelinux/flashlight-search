@@ -40,7 +40,7 @@ public class SearchResultsContainer {
     /**
      * Indicates if a tab's search page has search results
      *
-     * @param Tab the tab in which to look for
+     * @param tab the tab in which to look for
      * @return True if there are results in the given tab's search page
      */
     public boolean hasSearchResults(FlashlightSearchConfigurationTab tab) {

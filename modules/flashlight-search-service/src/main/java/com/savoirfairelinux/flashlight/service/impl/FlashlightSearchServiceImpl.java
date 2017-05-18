@@ -209,7 +209,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
         LinkedHashMap<FlashlightSearchConfigurationTab, SearchPage> resultMap = new LinkedHashMap<>(tabs.size());
         for(FlashlightSearchConfigurationTab tab : tabs.values()) {
-            resultMap.put(tab, this.search(request, response, config, tab, searcher));
+            resultMap.put(tab, this.search(request, response, config, tab, searcher, tab.getPageSize()));
         }
 
         return new SearchResultsContainer(resultMap);
@@ -219,18 +219,15 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId) throws ReadOnlyException, ValidatorException, IOException, SearchException {
         FlashlightSearchConfiguration config = this.readConfiguration(request.getPreferences());
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
-        SearchResultsContainer container;
+        FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
 
-        if(tabs.containsKey(tabId)) {
-            FacetedSearcher searcher = this.facetedSearcherManager.createFacetedSearcher();
-            FlashlightSearchConfigurationTab tab = tabs.get(tabId);
-            SearchPage page = this.search(request, response, config, tabs.get(tabId), searcher);
-            container = new SearchResultsContainer(Collections.singletonMap(tab, page));
-        } else {
-            container = new SearchResultsContainer(Collections.emptyMap());
+        LinkedHashMap<FlashlightSearchConfigurationTab, SearchPage> resultMap = new LinkedHashMap<>(tabs.size());
+        for(FlashlightSearchConfigurationTab tab : tabs.values()) {
+            int pageSize = tab.getId().equals(tabId) ? 100 : tab.getPageSize();
+            resultMap.put(tab, this.search(request, response, config, tab, searcher, pageSize));
         }
 
-        return container;
+        return new SearchResultsContainer(resultMap);
     }
 
     /**
@@ -245,13 +242,13 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      *
      * @throws SearchException If an error occurs during search
      */
-    private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher) throws SearchException {
+    private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher, int pageSize) throws SearchException {
         List<String> selectedAssetTypes = tab.getAssetTypes();
         Map<String, String> contentTemplates = tab.getContentTemplates();
 
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
         int start = 0;
-        int end = tab.getPageSize();
+        int end = pageSize;
 
         // Configure asset types and search
         searchContext.setStart(start);

@@ -94,6 +94,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
     private static final String FORM_FIELD_PAGE_SIZE = "page-size";
+    private static final String FORM_FIELD_FULL_PAGE_SIZE = "full-page-size";
     private static final String FORM_FIELD_SEARCH_FACETS = "search-facets";
     private static final String FORM_FIELD_FACET_CLASS_NAME = "facet-class-name";
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
@@ -187,6 +188,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("tabUrls", tabUrls);
         templateCtx.put("resultsContainer", results);
         templateCtx.put("keywords", keywords);
+        templateCtx.put("tabId", tabId);
 
         String adtUuid = config.getAdtUUID();
         if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {
@@ -343,6 +345,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         int tabOrder;
         int tabPageSize;
+        int tabFullPageSize;
         List<String> assetTypes;
         Map<String, String> searchFacets;
         Map<String, PortletURL> searchFacetsUrls;
@@ -353,6 +356,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         if (tab != null) {
             tabOrder = tab.getOrder();
             tabPageSize = tab.getPageSize();
+            tabFullPageSize = tab.getFullPageSize();
             assetTypes = tab.getAssetTypes();
             searchFacets = tab.getSearchFacets();
 
@@ -372,6 +376,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         } else {
             tabOrder = tabOrderRange;
             tabPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
+            tabFullPageSize = FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE;
             assetTypes = Collections.emptyList();
             searchFacets = Collections.emptyMap();
             searchFacetsUrls = Collections.emptyMap();
@@ -393,6 +398,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("tabId", tabId);
         templateCtx.put("tabOrder", tabOrder);
         templateCtx.put("tabPageSize", tabPageSize);
+        templateCtx.put("tabFullPageSize", tabFullPageSize);
         templateCtx.put("tabOrderRange", tabOrderRange);
         templateCtx.put("availableLocales", availableLocales);
         templateCtx.put("availableStructures", availableStructures);
@@ -506,6 +512,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, ZERO);
         String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, THREE);
+        String fullPageSize = ParamUtil.get(request, FORM_FIELD_FULL_PAGE_SIZE, THREE);
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SEARCH_FACETS, StringPool.EMPTY_ARRAY);
         String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_ASSET_TYPES, StringPool.EMPTY_ARRAY);
         HashMap<String, String> validatedContentTemplates = new HashMap<>();
@@ -551,6 +558,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
         }
 
+        int validatedFullPageSize;
+        try {
+            validatedFullPageSize = Integer.parseInt(fullPageSize);
+        } catch (NumberFormatException e) {
+            validatedFullPageSize = FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE;
+        }
+
         List<SearchFacet> supportedFacets = this.searchService.getSupportedSearchFacets();
         HashMap<String, String> validatedSelectedFacets = new HashMap<>(selectedFacets.length);
         for (String facet : selectedFacets) {
@@ -576,9 +590,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if (validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
         } else {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 
