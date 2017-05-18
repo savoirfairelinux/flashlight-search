@@ -47,9 +47,9 @@
                 <#list supportedAssetTypes as assetType>
                     <li>
                         <#if assetTypes?seq_contains(assetType)>
-                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" checked="checked" />
+                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" checked="checked" value="${assetType}" />
                         <#else>
-                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" />
+                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" value="${assetType}" />
                         </#if>
                         <label for="${ns}asset-types-${assetType}">${assetType}</label>
                     </li>
