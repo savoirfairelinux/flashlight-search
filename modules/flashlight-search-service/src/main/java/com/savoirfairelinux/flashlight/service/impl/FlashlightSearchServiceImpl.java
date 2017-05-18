@@ -23,7 +23,6 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
-import com.liferay.dynamic.data.mapping.util.DDMTemplatePermissionSupport;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -35,6 +34,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
+import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -42,6 +42,8 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.search.web.facet.SearchFacet;
+import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
@@ -62,6 +64,14 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchServiceImpl.class);
+
+    private static final List<Class<?>> MANAGED_SEARCH_FACETS;
+    static {
+        ArrayList<Class<?>> searchFacets = new ArrayList<>(2);
+        searchFacets.add(DDMStructureFacet.class);
+        searchFacets.add(AssetEntriesFacet.class);
+        MANAGED_SEARCH_FACETS = Collections.unmodifiableList(searchFacets);
+    }
 
     @Reference(unbind = "-")
     private ClassNameLocalService classNameService;
@@ -171,6 +181,19 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     @Override
     public List<String> getSupportedAssetTypes() {
         return this.searchResultProcessorServicetracker.getSupportedAssetTypes();
+    }
+
+    @Override
+    public List<SearchFacet> getSupportedSearchFacets() {
+        List<SearchFacet> liferayFacets = SearchFacetTracker.getSearchFacets();
+        ArrayList<SearchFacet> supportedFacets = new ArrayList<>(liferayFacets.size());
+        for(SearchFacet f : liferayFacets) {
+            Facet underlyingFacet = f.getFacet();
+            if(underlyingFacet != null && !MANAGED_SEARCH_FACETS.contains(underlyingFacet.getClass())) {
+                supportedFacets.add(f);
+            }
+        }
+        return supportedFacets;
     }
 
     @Override

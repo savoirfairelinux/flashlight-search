@@ -22,13 +22,14 @@ public class FlashlightSearchConfigurationTab {
     private Map<String, String> titleMap;
 
     private List<String> assetTypes;
+    private Map<String, String> searchFacets;
     private Map<String, String> contentTemplates;
 
     /**
      * Creates an empty configuration tab
      */
     public FlashlightSearchConfigurationTab() {
-        this(generateId(), 0, DEFAULT_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap());
+        this(generateId(), 0, DEFAULT_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -37,11 +38,12 @@ public class FlashlightSearchConfigurationTab {
      * @param order The tab's appearance order
      * @param pageSize The amount of results to display per page
      * @param titleMap The tab's localized title map
-     * @param assetTypes the tab's asset types
+     * @param assetTypes The tab's asset types
+     * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
-        this(generateId(), order, pageSize, titleMap, assetTypes, contentTemplates);
+    public FlashlightSearchConfigurationTab(int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
+        this(generateId(), order, pageSize, titleMap, assetTypes, searchFacets, contentTemplates);
     }
 
     /**
@@ -52,14 +54,16 @@ public class FlashlightSearchConfigurationTab {
      * @param pageSize The amount or results to display per page
      * @param titleMap The tab's localized title map
      * @param assetTypes The tab's asset types
+     * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> contentTemplates) {
+    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
         this.id = id;
         this.order = order;
         this.pageSize = pageSize;
         this.titleMap = Collections.unmodifiableMap(titleMap);
         this.assetTypes = Collections.unmodifiableList(assetTypes);
+        this.searchFacets = Collections.unmodifiableMap(searchFacets);
         this.contentTemplates = Collections.unmodifiableMap(contentTemplates);
     }
 
@@ -116,6 +120,13 @@ public class FlashlightSearchConfigurationTab {
      */
     public List<String> getAssetTypes() {
         return assetTypes;
+    }
+
+    /**
+     * @return The search facets that are enabled in this tab, along with their configuration
+     */
+    public Map<String, String> getSearchFacets() {
+        return this.searchFacets;
     }
 
     /**

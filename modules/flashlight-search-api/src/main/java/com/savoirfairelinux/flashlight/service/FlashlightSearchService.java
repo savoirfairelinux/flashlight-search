@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.*;
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+import javax.portlet.ReadOnlyException;
+import javax.portlet.ValidatorException;
 
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
@@ -12,6 +16,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
@@ -49,6 +54,7 @@ public interface FlashlightSearchService {
 
     /**
      * Writes the given configuration tab model into the configuration. No format validation is performed at this level.
+     * Note that at this point, no facet configuration is altered. Only the selected facets themselves are altered.
      *
      * @param configurationTab The configuration tab model
      * @param preferences The portlet preferences
@@ -95,6 +101,11 @@ public interface FlashlightSearchService {
      * @return A list of asset types that the search engine supports
      */
     public List<String> getSupportedAssetTypes();
+
+    /**
+     * @return The list of search facets supported by the application
+     */
+    public List<SearchFacet> getSupportedSearchFacets();
 
     public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 

@@ -51,6 +51,8 @@ public interface ConfigurationStorage {
      * Writes the given configuration tab model into the configuration. No format validation is performed at this level.
      * It is the developer's responsibility to send data that is in the expected format.
      *
+     * Also, this method does not alter facet configurations. It only alters which facets are selected.
+     *
      * @param configurationTab The configuration tab model
      * @param preferences The portlet preferences
      *

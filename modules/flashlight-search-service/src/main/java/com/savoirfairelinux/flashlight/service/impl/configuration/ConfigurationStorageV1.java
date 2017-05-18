@@ -35,6 +35,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final String CONF_KEY_FORMAT_PAGE_SIZE = "%s[page-size]";
     private static final String CONF_KEY_FORMAT_ASSET_TYPES = "%s[asset-types]";
 
+    private static final String CONF_KEY_FORMAT_SEARCH_FACET = "%s[search-facet-%s]";
     private static final String CONF_KEY_FORMAT_DDM = "%s[ddm-%s]";
     private static final String CONF_KEY_FORMAT_TITLE = "%s[title-%s]";
 
@@ -43,6 +44,9 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
     private static final String CONF_KEY_PATTERN_FORMAT_TITLE = "^%s\\[title-" + PatternConstants.LOCALE + "\\]$";
     private static final int CONF_KEY_PATTERN_FORMAT_TITLE_GROUP_LOCALE = 1;
+
+    private static final String CONF_KEY_PATTERN_FORMAT_SEARCH_FACET = "^%s\\[search-facet-" + PatternConstants.CLASS_NAME + "\\]$";
+    private static final int CONF_KEY_PATTERN_FORMAT_SEARCH_FACET_GROUP_CLASS_NAME = 1;
 
     private static final String ZERO = "0";
     private static final String THREE = "3";
@@ -78,6 +82,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int order = configurationTab.getOrder();
         int pageSize = configurationTab.getPageSize();
         List<String> assetTypes = configurationTab.getAssetTypes();
+        Map<String, String> searchFacets = configurationTab.getSearchFacets();
         Map<String, String> titleMap = configurationTab.getTitleMap();
         Map<String, String> contentTemplates = configurationTab.getContentTemplates();
 
@@ -85,6 +90,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
+
         preferences.setValues(assetTypesKey, assetTypes.toArray(new String[assetTypes.size()]));
         preferences.setValue(orderKey, Integer.toString(order));
         preferences.setValue(pageSizeKey, Integer.toString(pageSize));
@@ -93,18 +99,37 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         Enumeration<String> prefKeys = preferences.getNames();
         Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
+        Pattern searchFacetConfigPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         while(prefKeys.hasMoreElements()) {
             String key = prefKeys.nextElement();
-            boolean matchesDdm = ddmKeyPattern.matcher(key).matches();
-            boolean matchesTitle = titleKeyPattern.matcher(key).matches();
-            if(matchesDdm || matchesTitle) {
+            Matcher ddmMatcher = ddmKeyPattern.matcher(key);
+            Matcher titleMatcher = titleKeyPattern.matcher(key);
+            Matcher searchFacetConfigMatcher = searchFacetConfigPattern.matcher(key);
+
+            if(ddmMatcher.matches() || titleMatcher.matches()) {
+                // Always re-write DDM and title fields
                 preferences.reset(key);
+            } else if(searchFacetConfigMatcher.matches()) {
+                // Only flush a facet configuration if it was removed from the list
+                String facetClassName = searchFacetConfigMatcher.group(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET_GROUP_CLASS_NAME);
+                if(!searchFacets.containsKey(facetClassName)) {
+                    preferences.reset(key);
+                }
             }
         }
 
         // Write the DDM templates
         for(Entry<String, String> templateMapping : contentTemplates.entrySet()) {
             preferences.setValue(format(CONF_KEY_FORMAT_DDM, tabId, templateMapping.getKey()), templateMapping.getValue());
+        }
+
+        // Write the search facets
+        for(Entry<String, String> searchFacet : searchFacets.entrySet()) {
+            String confKey = format(CONF_KEY_FORMAT_SEARCH_FACET, tabId, searchFacet.getKey());
+            // Only write configuration is it was empty before
+            if(preferences.getValue(confKey, StringPool.BLANK).isEmpty()) {
+                preferences.setValue(confKey, searchFacet.getValue());
+            }
         }
 
         // Write the localized titles
@@ -174,6 +199,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
+        Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
 
@@ -185,21 +211,26 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         // Composed keys
         Enumeration<String> prefKeys = preferences.getNames();
         HashMap<String, String> contentTemplates = new HashMap<>();
+        HashMap<String, String> searchFacets = new HashMap<>();
         HashMap<String, String> titleMap = new HashMap<>();
+
         while(prefKeys.hasMoreElements()) {
             String key = prefKeys.nextElement();
             Matcher ddmKeyMatcher = ddmKeyPattern.matcher(key);
             Matcher titleKeyMatcher = titleKeyPattern.matcher(key);
+            Matcher searchFacetMatcher = searchFacetPattern.matcher(key);
 
             if(ddmKeyMatcher.matches()) {
                 contentTemplates.put(ddmKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_DDM_GROUP_UUID), preferences.getValue(key, StringPool.BLANK));
             } else if(titleKeyMatcher.matches()) {
                 titleMap.put(titleKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_TITLE_GROUP_LOCALE), preferences.getValue(key, StringPool.BLANK));
+            } else if(searchFacetMatcher.matches()) {
+                searchFacets.put(searchFacetMatcher.group(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET_GROUP_CLASS_NAME), preferences.getValue(key, StringPool.BLANK));
             }
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, titleMap, assetTypes, contentTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, titleMap, assetTypes, searchFacets, contentTemplates);
     }
 
 }
