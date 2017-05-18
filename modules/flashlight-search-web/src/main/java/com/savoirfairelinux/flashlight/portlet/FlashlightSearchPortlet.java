@@ -33,6 +33,8 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -79,11 +81,11 @@ import com.savoirfairelinux.flashlight.service.util.PatternConstants;
 )
 public class FlashlightSearchPortlet extends TemplatedPortlet {
 
-    @SuppressWarnings("unused")
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
 
     private static final String ACTION_NAME_SAVE_TAB = "saveTab";
     private static final String ACTION_NAME_SAVE_GLOBAL = "saveGlobal";
+    private static final String ACTION_NAME_SAVE_FACET_CONFIG = "saveFacetConfig";
     private static final String ACTION_NAME_DELETE_TAB = "deleteTab";
 
     private static final String FORM_FIELD_KEYWORDS = "keywords";
@@ -106,6 +108,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String ZERO = "0";
     private static final String THREE = "3";
+
+    @Reference(unbind = "-")
+    private JSONFactory jsonFactory;
 
     @Reference(unbind = "-")
     private Language language;
@@ -413,38 +418,26 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     public void doEditFacet(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         String tabId = ParamUtil.getString(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
         String facetClassName = ParamUtil.getString(request, FORM_FIELD_FACET_CLASS_NAME, StringPool.BLANK);
-
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
-        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
-
-        SearchFacet targetFacet;
-        FlashlightSearchConfigurationTab targetTab;
-
-        // Valid tab ID, tab ID exists, valid facet class name, facet class name in tab config
-        if(
-                PATTERN_UUID.matcher(tabId).matches() &&
-                tabs.containsKey(tabId) &&
-                PATTERN_CLASS_NAME.matcher(facetClassName).matches() &&
-                tabs.get(tabId).getSearchFacets().containsKey(facetClassName)) {
-
-            targetTab = tabs.get(tabId);
-            targetFacet = this.searchService.getSupportedSearchFacets()
-                .stream()
-                .filter(f -> f.getClass().getName().equals(facetClassName))
-                .findFirst()
-                .orElse(null);
-        } else {
-            targetTab = null;
-            targetFacet = null;
-        }
+        SearchFacet targetFacet = this.getSearchFacetFromRequest(tabId, facetClassName, config);
 
         // If we have a valid facet, show its configuration
-        if(targetTab != null && targetFacet != null) {
+        if(targetFacet != null) {
             // This is needed by Liferay facets JSP configs
             HttpServletRequest servletRequest = this.portal.getHttpServletRequest(request);
             HttpServletResponse servletResponse = this.portal.getHttpServletResponse(response);
             servletRequest.setAttribute("facet_configuration.jsp-searchFacet", targetFacet);
             servletRequest.setAttribute("search.jsp-facet", targetFacet.getFacet());
+
+            try {
+                String facetConfig = config.getTabs().get(tabId).getSearchFacets().get(facetClassName);
+
+                if(!facetConfig.isEmpty()) {
+                    targetFacet.getFacetConfiguration().setDataJSONObject(this.jsonFactory.createJSONObject(facetConfig));
+                }
+            } catch(Exception e) {
+                LOG.error("Unable to reinitialize facet with stored configuration - resetting", e);
+            }
 
             // Now we assemble our own view that includes the JSP configuration
             Map<String, Object> templateCtx = this.createTemplateContext();
@@ -453,7 +446,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             editTabUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.TAB.getParamValue());
             editTabUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
 
+            PortletURL saveFacetConfigUrl = response.createActionURL();
+            saveFacetConfigUrl.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_FACET_CONFIG);
+
+            templateCtx.put("ns", response.getNamespace());
             templateCtx.put("editTabUrl", editTabUrl);
+            templateCtx.put("redirectUrl", editTabUrl);
+            templateCtx.put("saveFacetConfigUrl", saveFacetConfigUrl);
+            templateCtx.put("tabId", tabId);
             templateCtx.put("searchFacet", targetFacet);
             templateCtx.put("servletRequest", servletRequest);
             templateCtx.put("servletResponse", servletResponse);
@@ -589,6 +589,24 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
     }
 
+    @ProcessAction(name = ACTION_NAME_SAVE_FACET_CONFIG)
+    public void actionSaveFacetConfig(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String facetClassName = ParamUtil.get(request, FORM_FIELD_FACET_CLASS_NAME, StringPool.BLANK);
+        String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
+        PortletPreferences preferences = request.getPreferences();
+        FlashlightSearchConfiguration configuration = this.searchService.readConfiguration(preferences);
+        SearchFacet targetFacet = this.getSearchFacetFromRequest(tabId, facetClassName, configuration);
+
+        if(targetFacet != null) {
+            JSONObject facetConfiguration = targetFacet.getJSONData(request);
+            targetFacet.getFacetConfiguration().setDataJSONObject(facetConfiguration);
+            this.searchService.saveSearchFacetConfig(configuration.getTabs().get(tabId), targetFacet, preferences);
+            SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
+            response.sendRedirect(redirectUrl);
+        }
+    }
+
     /**
      * Deletes a tab from the configuration
      *
@@ -615,6 +633,51 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         if (!redirectUrl.isEmpty()) {
             response.sendRedirect(redirectUrl);
         }
+    }
+
+
+    /**
+     * <p>Returns a tab's search facet object extracted from the request's information. The following is done:</p>
+     * <ul>
+     *   <li>The given tab ID is validated and checked for existence in the configuration</li>
+     *   <li>The given facet class name is validated and checked for existence in the tab</li>
+     *   <li>The search facet is obtained from the list of supported facets</li>
+     * </ul>
+     * <p>When all of these conditions are met, a facet object is returned.</p>
+     *
+     * @param tabId The tab's ID
+     * @param facetClassName The facet's class name
+     * @param configuration The search portlet configuration
+     * @return The facet object or null if the conditions are not met
+     */
+    private SearchFacet getSearchFacetFromRequest(String tabId, String facetClassName, FlashlightSearchConfiguration configuration) {
+        Map<String, FlashlightSearchConfigurationTab> tabs = configuration.getTabs();
+        SearchFacet returnedFacet;
+
+        // Valid tab ID, tab ID exists, valid facet class name, facet class name in tab config
+        if(
+                PATTERN_UUID.matcher(tabId).matches() &&
+                tabs.containsKey(tabId) &&
+                PATTERN_CLASS_NAME.matcher(facetClassName).matches() &&
+                tabs.get(tabId).getSearchFacets().containsKey(facetClassName)) {
+
+            FlashlightSearchConfigurationTab targetTab = tabs.get(tabId);
+            SearchFacet supportedFacet = this.searchService.getSupportedSearchFacets()
+                .stream()
+                .filter(f -> f.getClass().getName().equals(facetClassName))
+                .findFirst()
+                .orElse(null);
+
+            if(targetTab != null && supportedFacet != null) {
+                returnedFacet = supportedFacet;
+            } else {
+                returnedFacet = null;
+            }
+        } else {
+            returnedFacet = null;
+        }
+
+        return returnedFacet;
     }
 
     @Override

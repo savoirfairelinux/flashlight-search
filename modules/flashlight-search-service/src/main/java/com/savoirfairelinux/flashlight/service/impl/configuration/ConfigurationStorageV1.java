@@ -19,6 +19,7 @@ import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
@@ -152,6 +153,14 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         }
 
 
+        preferences.store();
+    }
+
+    @Override
+    public void saveSearchFacetConfig(FlashlightSearchConfigurationTab configurationTab, SearchFacet searchFacet, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        String tabId = configurationTab.getId();
+        String facetConfigKey = format(CONF_KEY_FORMAT_SEARCH_FACET, tabId, searchFacet.getClass().getName());
+        preferences.setValue(facetConfigKey, searchFacet.getData().toJSONString());
         preferences.store();
     }
 

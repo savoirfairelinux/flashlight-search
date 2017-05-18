@@ -117,6 +117,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
+    public void saveSearchFacetConfig(FlashlightSearchConfigurationTab configurationTab, SearchFacet searchFacet, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.storageEngine.saveSearchFacetConfig(configurationTab, searchFacet, preferences);
+    }
+
+    @Override
     public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
         this.storageEngine.deleteConfigurationTab(tabId, preferences);
     }
@@ -352,5 +357,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         long classNameId = this.classNameService.getClassNameId(assetType);
         return this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
     }
+
 
 }

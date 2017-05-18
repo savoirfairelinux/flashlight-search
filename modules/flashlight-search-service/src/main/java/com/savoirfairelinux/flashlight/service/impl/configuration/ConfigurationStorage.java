@@ -6,6 +6,7 @@ import javax.portlet.PortletPreferences;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 
+import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 
@@ -73,5 +74,19 @@ public interface ConfigurationStorage {
      * @throws IOException If the configuration fails to save
      */
     public void deleteConfigurationTab(String tabId, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
+     * Writes the given facet configuration into the tab's configuration. No format validation is performed at this
+     * level.
+     *
+     * @param configurationTab The tab for which we configure facets
+     * @param searchFacet The facet to save
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void saveSearchFacetConfig(FlashlightSearchConfigurationTab configurationTab, SearchFacet searchFacet, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
 }

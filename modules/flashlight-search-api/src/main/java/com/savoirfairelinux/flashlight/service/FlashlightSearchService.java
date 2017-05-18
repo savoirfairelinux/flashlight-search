@@ -66,6 +66,20 @@ public interface FlashlightSearchService {
     public void saveConfigurationTab(FlashlightSearchConfigurationTab configurationTab, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
+     * Writes the given facet configuration into the tab's configuration. No format validation is performed at this
+     * level.
+     *
+     * @param configurationTab The tab for which we configure facets
+     * @param searchFacet The facet to save
+     * @param preferences The portlet preferences
+     *
+     * @throws ReadOnlyException If the configuration is read only
+     * @throws ValidatorException If the configuration is invalid
+     * @throws IOException If the configuration fails to save
+     */
+    public void saveSearchFacetConfig(FlashlightSearchConfigurationTab configurationTab, SearchFacet searchFacet, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+
+    /**
      * Removes the given configuration tab from the configuration
      *
      * @param tabId The tab's unique ID
