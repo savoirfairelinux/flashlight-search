@@ -33,7 +33,7 @@
             <div class="nav-tabs-scrollbar">
                 <ul class="nav nav-tabs nav-tabs-default">
                     <li role="presentation">
-                        <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="flashlight-all-results" /></a>
+                        <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="flashlight-all-results" /> (${resultsContainer.totalSearchResults})</a>
                     </li>
                     <#list searchPages?keys as tab>
                         <#if resultsContainer.hasSearchResults(tab)>

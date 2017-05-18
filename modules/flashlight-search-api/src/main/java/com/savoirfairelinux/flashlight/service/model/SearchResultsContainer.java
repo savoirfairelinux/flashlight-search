@@ -57,4 +57,11 @@ public class SearchResultsContainer {
         return this.searchPages.get(tab);
     }
 
+    /**
+     * @return The total amount of search results in all pages.
+     */
+    public int getTotalSearchResults() {
+        return this.searchPages.values().stream().mapToInt(SearchPage::getTotalSearchResults).sum();
+    }
+
 }
