@@ -55,6 +55,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
+import com.savoirfairelinux.flashlight.portlet.template.ViewContextVariable;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
@@ -179,16 +180,16 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
 
         Map<String, Object> templateCtx = this.createTemplateContext();
-        templateCtx.put("ns", response.getNamespace());
+        templateCtx.put(ViewContextVariable.NAMESPACE.getVariableName(), response.getNamespace());
 
         PortletURL keywordUrl = response.createRenderURL();
         keywordUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
 
-        templateCtx.put("keywordUrl", keywordUrl);
-        templateCtx.put("tabUrls", tabUrls);
-        templateCtx.put("resultsContainer", results);
-        templateCtx.put("keywords", keywords);
-        templateCtx.put("tabId", tabId);
+        templateCtx.put(ViewContextVariable.KEYWORD_URL.getVariableName(), keywordUrl);
+        templateCtx.put(ViewContextVariable.TAB_URLS.getVariableName(), tabUrls);
+        templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
+        templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
+        templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
 
         String adtUuid = config.getAdtUUID();
         if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {
