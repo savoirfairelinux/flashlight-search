@@ -1,5 +1,6 @@
 package com.savoirfairelinux.flashlight.service.model;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
@@ -11,6 +12,7 @@ import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchCon
 public class SearchResultsContainer {
 
     private Map<FlashlightSearchConfigurationTab, SearchPage> searchPages;
+    private Map<String, FlashlightSearchConfigurationTab> tabIndex;
 
     /**
      * Creates the container
@@ -18,6 +20,10 @@ public class SearchResultsContainer {
      */
     public SearchResultsContainer(Map<FlashlightSearchConfigurationTab, SearchPage> searchPages) {
         this.searchPages = searchPages;
+        this.tabIndex = new HashMap<>(searchPages.size());
+        for(FlashlightSearchConfigurationTab tab : searchPages.keySet()) {
+            this.tabIndex.put(tab.getId(), tab);
+        }
     }
 
     /**
@@ -40,6 +46,24 @@ public class SearchResultsContainer {
     /**
      * Indicates if a tab's search page has search results
      *
+     * @param tabId The tab's ID
+     * @return True if there are results in the given tab's search page
+     */
+    public boolean hasSearchResults(String tabId) {
+        boolean hasResults;
+
+        if(this.tabIndex.containsKey(tabId)) {
+            hasResults = this.hasSearchResults(this.tabIndex.get(tabId));
+        } else {
+            hasResults = false;
+        }
+
+        return hasResults;
+    }
+
+    /**
+     * Indicates if a tab's search page has search results
+     *
      * @param tab the tab in which to look for
      * @return True if there are results in the given tab's search page
      */
@@ -50,8 +74,26 @@ public class SearchResultsContainer {
     /**
      * Returns a search tab's page
      *
+     * @param tabId The tab from which to return the page
+     * @return The search tab's page or null if none found
+     */
+    public SearchPage getSearchPage(String tabId) {
+        SearchPage page;
+
+        if(this.tabIndex.containsKey(tabId)) {
+            page = this.getSearchPage(this.tabIndex.get(tabId));
+        } else {
+            page = null;
+        }
+
+        return page;
+    }
+
+    /**
+     * Returns a search tab's page
+     *
      * @param tab The tab from which to return the page
-     * @return The search tab's page
+     * @return The search tab's page or null if none found
      */
     public SearchPage getSearchPage(FlashlightSearchConfigurationTab tab) {
         return this.searchPages.get(tab);

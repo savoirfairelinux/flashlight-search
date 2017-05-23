@@ -32,7 +32,7 @@
         <div class="nav-tabs-scroll">
             <div class="nav-tabs-scrollbar">
                 <ul class="nav nav-tabs nav-tabs-default">
-                    <li role="presentation" class="${tabId?has_content?then("","active")}">
+                    <li role="presentation" class="${tabId?has_content?then('','active')}">
                         <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="flashlight-all-results" /> (${resultsContainer.totalSearchResults})</a>
                     </li>
                     <#list searchPages?keys as tab>
@@ -72,6 +72,9 @@
                         </ul>
                     </div>
                 </div>
+                <#if loadMoreUrls[tab.id]??>
+                    <p><a href="${loadMoreUrls[tab.id]}"><@liferay_ui["message"] key="Load more" /></p>
+                </#if>
             </#if>
         </#list>
     </#if>

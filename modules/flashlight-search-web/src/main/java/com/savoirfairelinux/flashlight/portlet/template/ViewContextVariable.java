@@ -26,7 +26,8 @@ public enum ViewContextVariable {
     NAMESPACE(          "ns",                                               String.class,                   "Portlet namespace"),
     KEYWORD_URL(        "keywordUrl",                                       String.class,                   "Search keyword URL"),
     KEYWORDS(           "keywords",                                         String.class,                   "Search keywords"),
-    TAB_URLS(           "tabUrls",                                          Map.class,                      "Tap view URL mapping"),
+    TAB_URLS(           "tabUrls",                                          Map.class,                      "Tab view URL mapping"),
+    LOAD_MORE_URLS(     "loadMoreUrls",                                     Map.class,                      "Load more URL mapping"),
     RESULTS_CONTAINER(  "resultsContainer",                                 SearchResultsContainer.class,   "Search results"),
     TAB_ID(             "tabId",                                            String.class,                   "Selected tab ID");
 

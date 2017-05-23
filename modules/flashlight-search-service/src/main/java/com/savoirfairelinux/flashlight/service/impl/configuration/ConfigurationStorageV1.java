@@ -28,6 +28,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final String CONF_KEY_FORMAT_ORDER = "%s[order]";
     private static final String CONF_KEY_FORMAT_PAGE_SIZE = "%s[page-size]";
     private static final String CONF_KEY_FORMAT_FULL_PAGE_SIZE = "%s[full-page-size]";
+    private static final String CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE = "%s[load-more-page-size]";
     private static final String CONF_KEY_FORMAT_ASSET_TYPES = "%s[asset-types]";
 
     private static final String CONF_KEY_FORMAT_SEARCH_FACET = "%s[search-facet-%s]";
@@ -77,6 +78,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int order = configurationTab.getOrder();
         int pageSize = configurationTab.getPageSize();
         int fullPageSize = configurationTab.getFullPageSize();
+        int loadMorePageSize = configurationTab.getLoadMorePageSize();
         List<String> assetTypes = configurationTab.getAssetTypes();
         Map<String, String> searchFacets = configurationTab.getSearchFacets();
         Map<String, String> titleMap = configurationTab.getTitleMap();
@@ -87,11 +89,13 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
+        String loadMorePageSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
 
         preferences.setValues(assetTypesKey, assetTypes.toArray(new String[assetTypes.size()]));
         preferences.setValue(orderKey, Integer.toString(order));
         preferences.setValue(pageSizeKey, Integer.toString(pageSize));
         preferences.setValue(fullPageSizeKey, Integer.toString(fullPageSize));
+        preferences.setValue(loadMorePageSizeKey, Integer.toString(loadMorePageSize));
 
         // Flush previously entered composed values
         Enumeration<String> prefKeys = preferences.getNames();
@@ -205,6 +209,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
+        String loadMoreSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
         Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
@@ -214,6 +219,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int order = Integer.parseInt(preferences.getValue(orderKey, ZERO));
         int pageSize = Integer.parseInt(preferences.getValue(pageSizeKey, THREE));
         int fullPageSize = Integer.parseInt(preferences.getValue(fullPageSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE)));
+        int loadMorePageSize = Integer.parseInt(preferences.getValue(loadMoreSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE)));
         List<String> assetTypes = Arrays.asList(preferences.getValues(assetTypesKey, EMPTY_ARRAY));
 
         // Composed keys
@@ -238,7 +244,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, titleMap, assetTypes, searchFacets, contentTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetTypes, searchFacets, contentTemplates);
     }
 
 }

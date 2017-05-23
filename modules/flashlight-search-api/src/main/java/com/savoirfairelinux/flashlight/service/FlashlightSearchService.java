@@ -125,4 +125,6 @@ public interface FlashlightSearchService {
 
     public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
+    public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId, int pageOffset) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+
 }

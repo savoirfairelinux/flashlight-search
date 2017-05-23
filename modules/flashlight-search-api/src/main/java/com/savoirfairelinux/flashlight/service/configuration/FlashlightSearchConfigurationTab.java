@@ -14,13 +14,16 @@ import com.liferay.portal.kernel.util.StringPool;
  */
 public class FlashlightSearchConfigurationTab {
 
+    public static final int DEFAULT_ORDER = 0;
     public static final int DEFAULT_PAGE_SIZE = 3;
     public static final int DEFAULT_FULL_PAGE_SIZE = 30;
+    public static final int DEFAULT_LOAD_MORE_PAGE_SIZE = 3;
 
     private String id;
     private int order;
     private int pageSize;
     private int fullPageSize;
+    private int loadMorePageSize;
     private Map<String, String> titleMap;
 
     private List<String> assetTypes;
@@ -31,22 +34,23 @@ public class FlashlightSearchConfigurationTab {
      * Creates an empty configuration tab
      */
     public FlashlightSearchConfigurationTab() {
-        this(generateId(), 0, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
+        this(generateId(), DEFAULT_ORDER, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, DEFAULT_LOAD_MORE_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
      * Creates a new configuration tab with a generated unique ID
      *
      * @param order The tab's appearance order
-     * @param pageSize The amount of results to display per page
-     * @param fullPageSize The amount or results to display per detail/load more page
+     * @param pageSize The amount or results to display when no tab is selected
+     * @param fullPageSize The amount of results to display when a tab is selected
+     * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
      * @param assetTypes The tab's asset types
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
-        this(generateId(), order, pageSize, fullPageSize, titleMap, assetTypes, searchFacets, contentTemplates);
+    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
+        this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetTypes, searchFacets, contentTemplates);
     }
 
     /**
@@ -54,18 +58,20 @@ public class FlashlightSearchConfigurationTab {
      *
      * @param id The tab's unique ID
      * @param order The tab's appearance order
-     * @param pageSize The amount or results to display per page
-     * @param fullPageSize The amount or results to display per detail/load more page
+     * @param pageSize The amount or results to display when no tab is selected
+     * @param fullPageSize The amount of results to display when a tab is selected
+     * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
      * @param assetTypes The tab's asset types
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param contentTemplates The tab's content display templates
      */
-    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
+    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
         this.id = id;
         this.order = order;
         this.pageSize = pageSize;
         this.fullPageSize = fullPageSize;
+        this.loadMorePageSize = loadMorePageSize;
         this.titleMap = Collections.unmodifiableMap(titleMap);
         this.assetTypes = Collections.unmodifiableList(assetTypes);
         this.searchFacets = Collections.unmodifiableMap(searchFacets);
@@ -87,17 +93,24 @@ public class FlashlightSearchConfigurationTab {
     }
 
     /**
-     * @return The amount of results to display per page
+     * @return The amount of results to display when no tab is selected
      */
     public int getPageSize() {
         return pageSize;
     }
 
     /**
-     * @return The amount of results to display per detail/load more page
+     * @return The amount of results to display when a tab is selected
      */
     public int getFullPageSize() {
         return fullPageSize;
+    }
+
+    /**
+     * @return The amount of results to display when calling "load more"
+     */
+    public int getLoadMorePageSize() {
+        return this.loadMorePageSize;
     }
 
     /**

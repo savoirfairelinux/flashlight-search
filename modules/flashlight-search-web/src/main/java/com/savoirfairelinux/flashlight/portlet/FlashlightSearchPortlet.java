@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +24,9 @@ import javax.portlet.PortletURL;
 import javax.portlet.ProcessAction;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
+import javax.portlet.ResourceURL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -55,11 +59,13 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
+import com.savoirfairelinux.flashlight.portlet.json.JSONPayloadFactory;
 import com.savoirfairelinux.flashlight.portlet.template.ViewContextVariable;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
+import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
 
@@ -94,8 +100,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
+    private static final String FORM_FIELD_PAGE_OFFSET = "page-offset";
     private static final String FORM_FIELD_PAGE_SIZE = "page-size";
     private static final String FORM_FIELD_FULL_PAGE_SIZE = "full-page-size";
+    private static final String FORM_FIELD_LOAD_MORE_PAGE_SIZE = "load-more-page-size";
     private static final String FORM_FIELD_SEARCH_FACETS = "search-facets";
     private static final String FORM_FIELD_FACET_CLASS_NAME = "facet-class-name";
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
@@ -109,7 +117,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String SESSION_MESSAGE_CONFIG_SAVED = "configuration.saved";
 
     private static final String ZERO = "0";
-    private static final String THREE = "3";
+    private static final String ONE = "1";
+    private static final String STATUS_CODE_NOT_FOUND = "404";
+    private static final String STATUS_CODE_INTERNAL_ERROR = "500";
+
+    private static final String CHARSET_JSON_UNICODE = "text/json;UTF-8";
+
+    private static final String HTTP_HEADER_CACHE_CONTROL = "Cache-Control";
+    private static final String CACHE_CONTROL_NO_CACHE = "no-cache";
 
     @Reference(unbind = "-")
     private JSONFactory jsonFactory;
@@ -169,14 +184,31 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         HashMap<String, PortletURL> tabUrls = new HashMap<>(tabs.size());
-        for(String tabUuid : tabs.keySet()) {
+        HashMap<String, ResourceURL> loadMoreUrls = new HashMap<>(tabs.size());
+
+        for(Entry<String, FlashlightSearchConfigurationTab> tabEntry : tabs.entrySet()) {
+            String tabUuid = tabEntry.getKey();
+            FlashlightSearchConfigurationTab tab = tabEntry.getValue();
+
+
+            // Tab URLs
             PortletURL tabUrl = response.createRenderURL();
             tabUrl.setParameter(FORM_FIELD_TAB_ID, tabUuid);
             if(!keywords.isEmpty()) {
                 tabUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
             }
-
             tabUrls.put(tabUuid, tabUrl);
+
+            // Put a load more URL only if we performed a search, that we have search results, and that the total search
+            // results is more than a single page can contain
+            if(!keywords.isEmpty() && results.hasSearchResults(tabUuid) && results.getSearchPage(tabUuid).getTotalSearchResults() > tab.getFullPageSize()) {
+                ResourceURL loadMoreUrl = response.createResourceURL();
+                loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
+                loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+                loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
+                loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, ONE);
+                loadMoreUrls.put(tabId, loadMoreUrl);
+            }
         }
 
         Map<String, Object> templateCtx = this.createTemplateContext();
@@ -187,6 +219,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         templateCtx.put(ViewContextVariable.KEYWORD_URL.getVariableName(), keywordUrl);
         templateCtx.put(ViewContextVariable.TAB_URLS.getVariableName(), tabUrls);
+        templateCtx.put(ViewContextVariable.LOAD_MORE_URLS.getVariableName(), loadMoreUrls);
         templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
         templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
@@ -196,6 +229,76 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             this.renderADT(request, response, templateCtx, adtUuid);
         } else {
             this.renderTemplate(request, response, templateCtx, "view.ftl");
+        }
+    }
+
+    @Override
+    public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        PortletResource resource = PortletResource.getResource(request);
+
+        switch(resource) {
+            case LOAD_MORE:
+                this.doLoadMore(request, response);
+            break;
+            default:
+                // Default to JSON response, send 404
+                response.setCharacterEncoding(CHARSET_JSON_UNICODE);
+                response.setProperty(ResourceResponse.HTTP_STATUS_CODE, STATUS_CODE_NOT_FOUND);
+            break;
+        }
+    }
+
+    /**
+     * Performs the "load more" AJAX request
+     *
+     * @param request The resource request
+     * @param response The resource response
+     *
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
+     */
+    public void doLoadMore(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        response.setContentType(CHARSET_JSON_UNICODE);
+        response.setProperty(HTTP_HEADER_CACHE_CONTROL, CACHE_CONTROL_NO_CACHE);
+        response.setProperty(ResourceResponse.EXPIRATION_CACHE, ZERO);
+
+        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        int offset = ParamUtil.getInteger(request, FORM_FIELD_PAGE_OFFSET, 0);
+        if(offset < 0) {
+            offset = 0;
+        }
+
+        FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
+        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
+
+        if(tabs.containsKey(tabId)) {
+            try {
+                SearchResultsContainer container = this.searchService.search(request, response, tabId, offset);
+                JSONPayloadFactory jsonPayloadFactory = new JSONPayloadFactory(this.jsonFactory);
+                if(container.hasSearchResults(tabId)) {
+                    FlashlightSearchConfigurationTab tab = tabs.get(tabId);
+                    SearchPage page = container.getSearchPage(tabId);
+
+                    ResourceURL loadMoreUrl = response.createResourceURL();
+                    loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+                    loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, ParamUtil.get(request, FORM_FIELD_KEYWORDS, StringPool.BLANK));
+                    loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, Integer.toString(offset + 1));
+
+                    JSONObject payload = jsonPayloadFactory.createJSONPayload(tab, page, offset, loadMoreUrl.toString());
+                    response.getWriter().print(payload.toJSONString());
+                } else {
+                    // No search results with the given tab
+                    LOG.debug("A search tab was found, but no pages were returned");
+                    response.setProperty(ResourceResponse.HTTP_STATUS_CODE, STATUS_CODE_NOT_FOUND);
+                }
+            } catch (SearchException e) {
+                // Cannot perform search, return a 500 error
+                LOG.error("Cannot perform search", e);
+                response.setProperty(ResourceResponse.HTTP_STATUS_CODE, STATUS_CODE_INTERNAL_ERROR);
+            }
+        } else {
+            // No tab with given ID. Return 404
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, STATUS_CODE_NOT_FOUND);
         }
     }
 
@@ -347,6 +450,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         int tabOrder;
         int tabPageSize;
         int tabFullPageSize;
+        int tabLoadMorePageSize;
         List<String> assetTypes;
         Map<String, String> searchFacets;
         Map<String, PortletURL> searchFacetsUrls;
@@ -358,6 +462,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             tabOrder = tab.getOrder();
             tabPageSize = tab.getPageSize();
             tabFullPageSize = tab.getFullPageSize();
+            tabLoadMorePageSize = tab.getLoadMorePageSize();
             assetTypes = tab.getAssetTypes();
             searchFacets = tab.getSearchFacets();
 
@@ -378,6 +483,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             tabOrder = tabOrderRange;
             tabPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
             tabFullPageSize = FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE;
+            tabLoadMorePageSize = FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE;
             assetTypes = Collections.emptyList();
             searchFacets = Collections.emptyMap();
             searchFacetsUrls = Collections.emptyMap();
@@ -400,6 +506,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("tabOrder", tabOrder);
         templateCtx.put("tabPageSize", tabPageSize);
         templateCtx.put("tabFullPageSize", tabFullPageSize);
+        templateCtx.put("tabLoadMorePageSize", tabLoadMorePageSize);
         templateCtx.put("tabOrderRange", tabOrderRange);
         templateCtx.put("availableLocales", availableLocales);
         templateCtx.put("availableStructures", availableStructures);
@@ -511,9 +618,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Get raw parameters
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
-        String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, ZERO);
-        String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, THREE);
-        String fullPageSize = ParamUtil.get(request, FORM_FIELD_FULL_PAGE_SIZE, THREE);
+        String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_ORDER));
+        String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE));
+        String fullPageSize = ParamUtil.get(request, FORM_FIELD_FULL_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE));
+        String loadMorePageSize = ParamUtil.get(request, FORM_FIELD_LOAD_MORE_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE));
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SEARCH_FACETS, StringPool.EMPTY_ARRAY);
         String[] selectAssetTypes = ParamUtil.getParameterValues(request, FORM_FIELD_ASSET_TYPES, StringPool.EMPTY_ARRAY);
         HashMap<String, String> validatedContentTemplates = new HashMap<>();
@@ -566,6 +674,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedFullPageSize = FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE;
         }
 
+        int validatedLoadMorePageSize;
+        try {
+            validatedLoadMorePageSize = Integer.parseInt(loadMorePageSize);
+        } catch(NumberFormatException e) {
+            validatedLoadMorePageSize = FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE;
+        }
+
         List<SearchFacet> supportedFacets = this.searchService.getSupportedSearchFacets();
         HashMap<String, String> validatedSelectedFacets = new HashMap<>(selectedFacets.length);
         for (String facet : selectedFacets) {
@@ -591,9 +706,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if (validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
         } else {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetTypes, validatedSelectedFacets, validatedContentTemplates);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 
