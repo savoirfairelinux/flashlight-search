@@ -1,24 +1,12 @@
 package com.savoirfairelinux.flashlight.service.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
-
+import javax.portlet.*;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -27,16 +15,11 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.search.SearchContextFactory;
-import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.search.*;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
-import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
+import com.liferay.portal.kernel.search.hits.HitsProcessorRegistry;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
@@ -47,9 +30,11 @@ import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
+import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
+import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchFacetDisplayHandlerServiceTracker;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
@@ -65,13 +50,10 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchServiceImpl.class);
 
-    private static final List<Class<?>> MANAGED_SEARCH_FACETS;
-    static {
-        ArrayList<Class<?>> searchFacets = new ArrayList<>(2);
-        searchFacets.add(DDMStructureFacet.class);
-        searchFacets.add(AssetEntriesFacet.class);
-        MANAGED_SEARCH_FACETS = Collections.unmodifiableList(searchFacets);
-    }
+    private static final List<String> MANAGED_SEARCH_FACETS = Arrays.asList(
+        DDMStructureFacet.class.getName(),
+        AssetEntriesFacet.class.getName()
+    );
 
     @Reference(unbind = "-")
     private ClassNameLocalService classNameService;
@@ -93,6 +75,12 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     @Reference(unbind = "-")
     private SearchResultProcessorServiceTracker searchResultProcessorServicetracker;
+
+    @Reference(unbind = "-")
+    private HitsProcessorRegistry hitsProcessorRegistry;
+
+    @Reference
+    private SearchFacetDisplayHandlerServiceTracker searchFacetDisplayHandlerServiceTracker;
 
     private ConfigurationStorage storageEngine;
 
@@ -193,12 +181,21 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         List<SearchFacet> liferayFacets = SearchFacetTracker.getSearchFacets();
         ArrayList<SearchFacet> supportedFacets = new ArrayList<>(liferayFacets.size());
         for(SearchFacet f : liferayFacets) {
-            Facet underlyingFacet = f.getFacet();
-            if(underlyingFacet != null && !MANAGED_SEARCH_FACETS.contains(underlyingFacet.getClass())) {
+            String underlyingFacet = f.getFacetClassName();
+            if(underlyingFacet != null && !MANAGED_SEARCH_FACETS.contains(underlyingFacet)) {
                 supportedFacets.add(f);
             }
         }
         return supportedFacets;
+    }
+
+    @Override
+    public String displayTerm(Locale locale, SearchFacet searchFacet, String queryTerm) {
+        SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchFacet.getClass());
+        if (searchFacetDisplayHandler == null) {
+            LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchFacet.getClassName() + "]");
+        }
+        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(locale, searchFacet, queryTerm) : queryTerm;
     }
 
     @Override
@@ -271,14 +268,18 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
                 }
                 return structureKey;
             })
-            .filter(k -> k != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.toSet())
             .toArray(new String[contentTemplates.size()]);
 
         structureFacet.setValues(ddmStructures);
         searchContext.addFacet(structureFacet);
 
+        addConfiguredFacets(searchContext, tab);
+
         Hits hits = searcher.search(searchContext);
+        hitsProcessorRegistry.process(searchContext, hits);
+
         List<SearchResult> searchResults = new ArrayList<>(end - start);
 
         for (Document document : hits.getDocs()) {
@@ -308,7 +309,42 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             }
         }
 
-        return new SearchPage(searchResults, hits.getLength());
+        return new SearchPage(searchResults, hits.getLength(), getConfiguredFacets(searchContext));
+    }
+
+    /**
+     * Get the list of SearchFacet from a searchContext (containing Facets).
+     * @param searchContext an initialized SearchContext.
+     * @return the list of SearchFacet matching searchContext.getFacets().
+     */
+    private List<SearchFacet> getConfiguredFacets(SearchContext searchContext) {
+        Set<String> searchResultFacetsClassNames = searchContext.getFacets().values().stream()
+            .map(facet -> facet.getClass().getName())
+            .collect(Collectors.toSet());
+        return this.getSupportedSearchFacets().stream()
+            .filter(searchFacet -> searchResultFacetsClassNames.contains(searchFacet.getFacetClassName()))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Add the facets from a tab configuration to the actual search request.
+     * @param searchContext the SearchContext to which the facets will be added.
+     * @param tab the current search tab.
+     */
+    private void addConfiguredFacets(SearchContext searchContext, FlashlightSearchConfigurationTab tab) {
+        this.getSupportedSearchFacets().stream()
+            .filter(searchFacet -> tab.getSearchFacets().keySet().contains(searchFacet.getClassName()))
+            .map(searchFacet -> {
+                try {
+                    searchFacet.init(searchContext.getCompanyId(), tab.getSearchFacets().get(searchFacet.getClassName()), searchContext);
+                    return searchFacet.getFacet();
+                } catch (Exception e) {
+                    LOG.warn("Could not initialize search facet [" + searchFacet.getClassName() + "]", e);
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .forEach(searchContext::addFacet);
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
+import java.util.function.BiFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -13,26 +14,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.Portlet;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletURL;
-import javax.portlet.ProcessAction;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import javax.portlet.*;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 import javax.portlet.ResourceURL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
@@ -51,11 +40,7 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.*;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
@@ -157,6 +142,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      */
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        Locale locale = themeDisplay.getLocale();
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
@@ -223,6 +210,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
         templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
+        templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(locale, searchFacet, term));
 
         String adtUuid = config.getAdtUUID();
         if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {

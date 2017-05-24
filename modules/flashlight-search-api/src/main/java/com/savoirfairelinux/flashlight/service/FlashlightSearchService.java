@@ -2,14 +2,9 @@ package com.savoirfairelinux.flashlight.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
-
+import javax.portlet.*;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -121,10 +116,21 @@ public interface FlashlightSearchService {
      */
     public List<SearchFacet> getSupportedSearchFacets();
 
+    /**
+     * Format a facet term in the search result.
+     *
+     * @see com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler
+     *
+     * @param locale the current locale.
+     * @param searchFacet the configured and initialized search facet.
+     * @param queryTerm the current term to format.
+     * @return a user-displayable term, or the raw queryTerm if no formatting is applicable.
+     */
+    public String displayTerm(Locale locale, SearchFacet searchFacet, String queryTerm);
+
     public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
     public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 
     public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId, int pageOffset) throws ReadOnlyException, ValidatorException, IOException, SearchException;
-
 }

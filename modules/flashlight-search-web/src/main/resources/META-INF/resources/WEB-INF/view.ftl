@@ -49,27 +49,60 @@
         <#list searchPages?keys as tab>
             <#if resultsContainer.hasSearchResults(tab) && (! tabId?has_content || tabId == tab.id) >
                 <#assign page = resultsContainer.getSearchPage(tab) />
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <div class="panel-title">
-                            <strong>${tab.getTitle(locale)}</strong> <span>(${page.totalSearchResults})</span>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <ul class="display-style-descriptive tabular-list-group">
-                            <#list page.searchResults as result>
-                                <li class="list-group-item">
-                                    <div class="list-group-item-content">
-                                        <h5>
-                                            <strong>
-                                                <a href="${result.viewUrl!'#'}" title="${result.title}">${result.title}</a>
-                                            </strong>
-                                        </h5>
-                                        ${result.rendering}
+                <#assign showFacets = (tabId?has_content && page.getSearchFacets()?size > 0) />
+
+                <div class="${showFacets?then("row","")}">
+                    <#if showFacets>
+                        <div class="col-md-3">
+                            <#list page.getSearchFacets() as searchFacet>
+                                <#if (searchFacet.facet?has_content && searchFacet.facet.facetCollector.termCollectors?size > 0)>
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="panel-title">
+                                                <strong><@liferay_ui["message"] key="flashlight-facet-${searchFacet.label}" /></strong>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <ul class="list-unstyled">
+                                                <#list searchFacet.facet.facetCollector.termCollectors as termCollector>
+                                                    <#if (termCollector.frequency > 0)>
+                                                        <li>
+                                                            <a href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${termCollector.term}" title="${termCollector.term}">${facetTerm.apply(searchFacet, termCollector.term)} (${termCollector.frequency})</a>
+                                                        </li>
+                                                    </#if>
+                                                </#list>
+                                            </ul>
+                                        </div>
                                     </div>
-                                </li>
+                                </#if>
                             </#list>
-                        </ul>
+                        </div>
+                    </#if>
+
+                    <div class="${showFacets?then("col-md-9","")}">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">
+                                    <strong>${tab.getTitle(locale)}</strong> <span>(${page.totalSearchResults})</span>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <ul class="display-style-descriptive tabular-list-group">
+                                    <#list page.searchResults as result>
+                                        <li class="list-group-item">
+                                            <div class="list-group-item-content">
+                                                <h5>
+                                                    <strong>
+                                                        <a href="${result.viewUrl!'#'}" title="${result.title}">${result.title}</a>
+                                                    </strong>
+                                                </h5>
+                                                ${result.rendering}
+                                            </div>
+                                        </li>
+                                    </#list>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <#if loadMoreUrls[tab.id]??>

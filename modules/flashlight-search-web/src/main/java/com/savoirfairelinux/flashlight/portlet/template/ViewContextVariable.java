@@ -2,10 +2,9 @@ package com.savoirfairelinux.flashlight.portlet.template;
 
 import java.util.Locale;
 import java.util.Map;
-
+import java.util.function.BiFunction;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplateVariable;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
@@ -29,7 +28,8 @@ public enum ViewContextVariable {
     TAB_URLS(           "tabUrls",                                          Map.class,                      "Tab view URL mapping"),
     LOAD_MORE_URLS(     "loadMoreUrls",                                     Map.class,                      "Load more URL mapping"),
     RESULTS_CONTAINER(  "resultsContainer",                                 SearchResultsContainer.class,   "Search results"),
-    TAB_ID(             "tabId",                                            String.class,                   "Selected tab ID");
+    TAB_ID(             "tabId",                                            String.class,                   "Selected tab ID"),
+    FORMAT_FACET_TERM(  "facetTerm",                                        BiFunction.class,               "Format facet term");
 
     private String variableName;
     private Class<?> type;
