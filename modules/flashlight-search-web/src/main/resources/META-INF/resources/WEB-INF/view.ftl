@@ -67,8 +67,9 @@
                                             <ul class="list-unstyled">
                                                 <#list searchFacet.facet.facetCollector.termCollectors as termCollector>
                                                     <#if (termCollector.frequency > 0)>
+                                                        <#assign prettyPrintTerm = facetTerm.apply(searchFacet, termCollector.term) />
                                                         <li>
-                                                            <a href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${termCollector.term}" title="${termCollector.term}">${facetTerm.apply(searchFacet, termCollector.term)} (${termCollector.frequency})</a>
+                                                            <a href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${termCollector.term}" title="${prettyPrintTerm}">${prettyPrintTerm} (${termCollector.frequency})</a>
                                                         </li>
                                                     </#if>
                                                 </#list>

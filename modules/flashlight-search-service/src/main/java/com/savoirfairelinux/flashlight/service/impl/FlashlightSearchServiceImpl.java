@@ -318,11 +318,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @return the list of SearchFacet matching searchContext.getFacets().
      */
     private List<SearchFacet> getConfiguredFacets(SearchContext searchContext) {
-        Set<String> searchResultFacetsClassNames = searchContext.getFacets().values().stream()
-            .map(facet -> facet.getClass().getName())
+        Set<String> searchResultFacetsFieldNames = searchContext.getFacets().values().stream()
+            .map(facet -> facet.getFieldName())
             .collect(Collectors.toSet());
         return this.getSupportedSearchFacets().stream()
-            .filter(searchFacet -> searchResultFacetsClassNames.contains(searchFacet.getFacetClassName()))
+            .filter(searchFacet -> searchResultFacetsFieldNames.contains(searchFacet.getFieldName()))
             .collect(Collectors.toList());
     }
 
