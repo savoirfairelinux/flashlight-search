@@ -1,4 +1,5 @@
 <#include "init.ftl">
+<#assign hasLoadMore = false />
 
 <@liferay_portlet["renderURL"] varImpl="renderURL" />
 <form action="${renderURL}" name="${ns}search" method="GET">
@@ -87,7 +88,7 @@
                                 </div>
                             </div>
                             <div class="panel-body">
-                                <ul class="display-style-descriptive tabular-list-group">
+                                <ul id="${ns}results-container" class="display-style-descriptive tabular-list-group">
                                     <#list page.searchResults as result>
                                         <li class="list-group-item">
                                             <div class="list-group-item-content">
@@ -106,9 +107,76 @@
                     </div>
                 </div>
                 <#if loadMoreUrls[tab.id]??>
-                    <p><a href="${loadMoreUrls[tab.id]}"><@liferay_ui["message"] key="Load more" /></p>
+                    <#assign hasLoadMore = true />
+                    <p><a id="${ns}loadMore" href="${loadMoreUrls[tab.id]}"><@liferay_ui["message"] key="Load more" /></p>
                 </#if>
             </#if>
         </#list>
     </#if>
 </form>
+
+<#if hasLoadMore>
+    <script type="text/javascript">//<!--
+
+        // On DOM load, bind the "load more" functionality
+        document.addEventListener("DOMContentLoaded", function(event) {
+            // Instanciate portlet client-side class with server-provided portlet namespace
+            var portlet = new com_savoirfairelinux_flashlight_portlet.FlashlightSearchPortlet('${ns}');
+
+            // This is the template used to append new search results
+            var resultElementTemplate = '<div class="list-group-item-content"><h5><strong><a href="{{url}}" title="{{title}}">{{title}}</a></strong></h5>{{html}}</div>';
+            var urlRegex = /\{\{\url}\}/g;
+            var titleRegex = /\{\{title\}\}/g;
+            var htmlRegex = /\{\{html\}\}/g;
+
+            // Bind the "load more" event to the "load more" link, using the "click" event and the "href" attribute
+            var loadMoreElement = portlet.getElementById('loadMore');
+            portlet.bindLoadMore(loadMoreElement, 'click', 'href',
+
+                /**
+                 * Load more progressing
+                 */
+                function(progressEvent, element) {},
+
+                /**
+                 * Load more succeedeed
+                 */
+                function(successEvent, element, jsonResponse) {
+                    // Create an HTML element containing the search result and append it to the search results list
+                    var results = jsonResponse.results;
+                    var loadMoreUrl = jsonResponse.loadMoreUrl;
+                    var resultsSize = results.length;
+                    var resultsContainer = portlet.getElementById('results-container');
+
+                    for(var i = 0; i < resultsSize; i++) {
+                        var resultElement = document.createElement('li');
+                        resultElement.setAttribute('class', 'list-group-item');
+                        resultElementTemplate = resultElementTemplate.replace(urlRegex, results[i].url);
+                        resultElementTemplate = resultElementTemplate.replace(titleRegex, results[i].title);
+                        resultElementTemplate = resultElementTemplate.replace(htmlRegex, results[i].html);
+                        resultElement.innerHTML = resultElementTemplate;
+                        resultsContainer.appendChild(resultElement);
+                    }
+
+                    // If the XHR returned no "load more" URLs, we remove the link as it is no longer needed
+                    if(loadMoreUrl === null || loadMoreUrl === '') {
+                        element.parentNode.removeChild(element);
+                    }
+                },
+
+                /**
+                 * Load more failed
+                 */
+                function(errorEvent, element) {},
+
+                /**
+                 * Load more aborted
+                 */
+                function(abortedEvent, element) {}
+
+            );
+
+        });
+
+    //--></script>
+</#if>

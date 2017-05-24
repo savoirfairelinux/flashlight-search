@@ -69,6 +69,7 @@ import com.savoirfairelinux.flashlight.service.util.PatternConstants;
         "com.liferay.portlet.requires-namespaced-parameters=true",
         "com.liferay.portlet.display-category=category.tools",
         "com.liferay.portlet.instanceable=false",
+        "com.liferay.portlet.header-portlet-javascript=/javascript/flashlight.js"
     }
 )
 public class FlashlightSearchPortlet extends TemplatedPortlet {
