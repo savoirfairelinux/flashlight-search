@@ -4,11 +4,11 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import com.liferay.asset.kernel.model.AssetCategory;
-import com.liferay.asset.kernel.service.AssetCategoryService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
@@ -21,16 +21,18 @@ import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
         org.osgi.framework.Constants.SERVICE_RANKING + ":Integer=0"
     }
 )
-public class AssetCategoriesSearchFacetDisplayHandler implements SearchFacetDisplayHandler {
+public class ScopeSearchFacetDisplayHandler implements SearchFacetDisplayHandler {
 
-    private static final Log LOG = LogFactoryUtil.getLog(AssetCategoriesSearchFacetDisplayHandler.class);
+    private static final Log LOG = LogFactoryUtil.getLog(ScopeSearchFacetDisplayHandler.class);
 
     @Reference
-    private AssetCategoryService assetCategoryService;
+    private GroupLocalService groupLocalService;
+
+
 
     @Override
     public String getSearchFacetClassName() {
-        return "com.liferay.portal.search.web.internal.facet.AssetCategoriesSearchFacet";
+        return "com.liferay.portal.search.web.internal.facet.ScopeSearchFacet";
     }
 
     @Override
@@ -38,10 +40,10 @@ public class AssetCategoriesSearchFacetDisplayHandler implements SearchFacetDisp
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         Locale locale = themeDisplay.getLocale();
         try {
-            AssetCategory assetCategory = assetCategoryService.getCategory(Long.parseLong(queryTerm));
-            return assetCategory.getTitle(locale);
+            Group group = groupLocalService.getGroup(Long.parseLong(queryTerm));
+            return group.getDescriptiveName(locale);
         } catch (PortalException e) {
-            LOG.warn("Could not retrieve AssetCategory from id [" + queryTerm + "]", e);
+            LOG.warn("Could not retrieve Scope/Group label from id [" + queryTerm + "]", e);
             return queryTerm;
         }
     }

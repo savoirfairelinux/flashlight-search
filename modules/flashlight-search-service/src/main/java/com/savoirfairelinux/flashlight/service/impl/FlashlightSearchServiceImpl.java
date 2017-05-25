@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -190,12 +191,12 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public String displayTerm(Locale locale, SearchFacet searchFacet, String queryTerm) {
+    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm) {
         SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchFacet.getClass());
         if (searchFacetDisplayHandler == null) {
             LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchFacet.getClassName() + "]");
         }
-        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(locale, searchFacet, queryTerm) : queryTerm;
+        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(request, searchFacet, queryTerm) : queryTerm;
     }
 
     @Override

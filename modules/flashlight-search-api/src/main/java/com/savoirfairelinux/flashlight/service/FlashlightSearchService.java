@@ -2,9 +2,9 @@ package com.savoirfairelinux.flashlight.service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -121,12 +121,12 @@ public interface FlashlightSearchService {
      *
      * @see com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler
      *
-     * @param locale the current locale.
+     * @param request the current request.
      * @param searchFacet the configured and initialized search facet.
      * @param queryTerm the current term to format.
      * @return a user-displayable term, or the raw queryTerm if no formatting is applicable.
      */
-    public String displayTerm(Locale locale, SearchFacet searchFacet, String queryTerm);
+    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm);
 
     public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 

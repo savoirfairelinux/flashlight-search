@@ -144,7 +144,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        Locale locale = themeDisplay.getLocale();
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
@@ -211,7 +210,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
         templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
-        templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(locale, searchFacet, term));
+        templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(httpServletRequest, searchFacet, term));
 
         String adtUuid = config.getAdtUUID();
         if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {

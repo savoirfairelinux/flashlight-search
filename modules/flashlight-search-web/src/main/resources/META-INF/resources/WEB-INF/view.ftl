@@ -103,14 +103,21 @@
                                         </li>
                                     </#list>
                                 </ul>
+                                <#if loadMoreUrls[tab.id]??>
+                                    <#assign hasLoadMore = true />
+                                    <a class="btn btn-block btn-default" id="${ns}loadMore" href="${loadMoreUrls[tab.id]}">
+                                        <@liferay_ui["icon"]
+                                            icon="plus"
+                                            markupView="lexicon"
+                                            message="Load more"
+                                        />
+                                        <@liferay_ui["message"] key="Load more" />
+                                    </a>
+                                </#if>
                             </div>
                         </div>
                     </div>
                 </div>
-                <#if loadMoreUrls[tab.id]??>
-                    <#assign hasLoadMore = true />
-                    <p><a id="${ns}loadMore" href="${loadMoreUrls[tab.id]}"><@liferay_ui["message"] key="Load more" /></p>
-                </#if>
             </#if>
         </#list>
     </#if>
