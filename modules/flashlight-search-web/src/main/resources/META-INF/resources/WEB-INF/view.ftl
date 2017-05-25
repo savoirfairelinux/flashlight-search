@@ -161,10 +161,10 @@
                     for(var i = 0; i < resultsSize; i++) {
                         var resultElement = document.createElement('li');
                         resultElement.setAttribute('class', 'list-group-item');
-                        resultElementTemplate = resultElementTemplate.replace(urlRegex, results[i].url);
-                        resultElementTemplate = resultElementTemplate.replace(titleRegex, results[i].title);
-                        resultElementTemplate = resultElementTemplate.replace(htmlRegex, results[i].html);
-                        resultElement.innerHTML = resultElementTemplate;
+                        var resultElementContent = resultElementTemplate.replace(urlRegex, results[i].url);
+                        resultElementContent = resultElementContent.replace(titleRegex, results[i].title);
+                        resultElementContent = resultElementContent.replace(htmlRegex, results[i].html);
+                        resultElement.innerHTML = resultElementContent;
                         resultsContainer.appendChild(resultElement);
                     }
 

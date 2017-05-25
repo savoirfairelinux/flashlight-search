@@ -1,7 +1,6 @@
 package com.savoirfairelinux.flashlight.portlet;
 
 import java.io.IOException;
-import java.util.function.BiFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -12,16 +11,30 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.portlet.*;
+
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.PortletMode;
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletURL;
+import javax.portlet.ProcessAction;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 import javax.portlet.ResourceURL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
@@ -40,7 +53,11 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.*;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
@@ -94,6 +111,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_FACET_CLASS_NAME = "facet-class-name";
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
     private static final String FORM_FIELD_ASSET_TYPES = "asset-types";
+    private static final String FORM_FIELD_RANDOM_CACHE = "rand";
     private static final Pattern FORM_FIELD_DDM_STRUCTURE_UUID_PATTERN = Pattern.compile("^ddm-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_TITLE_PATTERN = Pattern.compile("^title-" + PatternConstants.LOCALE + "$");
 
@@ -104,6 +122,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String ZERO = "0";
     private static final String ONE = "1";
+
     private static final String STATUS_CODE_NOT_FOUND = "404";
     private static final String STATUS_CODE_INTERNAL_ERROR = "500";
 
@@ -143,7 +162,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      */
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
@@ -194,6 +212,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
                 loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
                 loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
                 loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, ONE);
+                loadMoreUrl.setParameter(FORM_FIELD_RANDOM_CACHE, randomCacheParamValue());
                 loadMoreUrls.put(tabId, loadMoreUrl);
             }
         }
@@ -268,9 +287,11 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
                     SearchPage page = container.getSearchPage(tabId);
 
                     ResourceURL loadMoreUrl = response.createResourceURL();
+                    loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
                     loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
                     loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, ParamUtil.get(request, FORM_FIELD_KEYWORDS, StringPool.BLANK));
                     loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, Integer.toString(offset + 1));
+                    loadMoreUrl.setParameter(FORM_FIELD_RANDOM_CACHE, randomCacheParamValue());
 
                     JSONObject payload = jsonPayloadFactory.createJSONPayload(tab, page, offset, loadMoreUrl.toString());
                     response.getWriter().print(payload.toJSONString());
@@ -816,5 +837,12 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     @Override
     protected DDMTemplateLocalService getDDMTemplateLocalService() {
         return this.ddmTemplateLocalService;
+    }
+
+    /**
+     * @return Returns a random number between 0 and 1000, used to prevent caching of XHR requests
+     */
+    private static final String randomCacheParamValue() {
+        return Integer.toString(ThreadLocalRandom.current().nextInt(1001));
     }
 }

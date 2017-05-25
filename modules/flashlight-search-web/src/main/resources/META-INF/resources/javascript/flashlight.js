@@ -71,7 +71,7 @@ com_savoirfairelinux_flashlight_portlet.FlashlightSearchPortlet.prototype._perfo
     });
 
     xhr.addEventListener("load", function(event) {
-        var jsonObj = JSON.parse(this.responseText);
+        var jsonObj = JSON.parse(event.target.responseText);
         var loadMoreUrl = jsonObj.loadMoreUrl;
         if(loadMoreUrl !== null && loadMoreUrl !== "") {
             element.setAttribute(urlAttribute, loadMoreUrl);
