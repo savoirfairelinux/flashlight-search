@@ -124,18 +124,20 @@
 </form>
 
 <#if hasLoadMore>
-    <script type="text/javascript">//<!--
+    <script type="text/javascript">
 
-        // On DOM load, bind the "load more" functionality
-        document.addEventListener("DOMContentLoaded", function(event) {
+        /**
+         * This method initiates the "load more" functionality
+         */
+        function com_savoirfairelinux_flashlight_portlet_initLoadMore() {
             // Instanciate portlet client-side class with server-provided portlet namespace
             var portlet = new com_savoirfairelinux_flashlight_portlet.FlashlightSearchPortlet('${ns}');
 
             // This is the template used to append new search results
-            var resultElementTemplate = '<div class="list-group-item-content"><h5><strong><a href="{{url}}" title="{{title}}">{{title}}</a></strong></h5>{{html}}</div>';
-            var urlRegex = /\{\{\url}\}/g;
-            var titleRegex = /\{\{title\}\}/g;
-            var htmlRegex = /\{\{html\}\}/g;
+            var resultElementTemplate = '<div class="list-group-item-content"><h5><strong><a href="{{ url }}" title="{{ title }}">{{ title }}</a></strong></h5>{{ html }}</div>';
+            var urlRegex = /\{\{\ *url *}\}/g;
+            var titleRegex = /\{\{ *title *\}\}/g;
+            var htmlRegex = /\{\{ *html *\}\}/g;
 
             // Bind the "load more" event to the "load more" link, using the "click" event and the "href" attribute
             var loadMoreElement = portlet.getElementById('loadMore');
@@ -184,7 +186,21 @@
 
             );
 
-        });
+        }
 
-    //--></script>
+        if(Liferay) {
+            // Liferay Javascript available, use Liferay's events
+            Liferay.Portlet.ready(function(portletId, node) {
+                var choppedNs = '${ns}';
+                choppedNs = choppedNs.substring(1, choppedNs.length - 1);
+                if(portletId === choppedNs) {
+                    com_savoirfairelinux_flashlight_portlet_initLoadMore();
+                }
+            });
+        } else {
+            // Vanilla theme not using Liferay's Javascript
+            document.addEventListener('DOMContentLoaded', com_savoirfairelinux_flashlight_portlet_initLoadMore);
+        }
+
+    </script>
 </#if>
