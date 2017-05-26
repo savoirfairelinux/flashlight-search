@@ -233,7 +233,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      *
      * @param request The portlet request that triggered the search
      * @param response The portlet response that triggered the search
-     * @param offset The search page offset (used with "load more", mainly)
      * @param config The search configuration
      * @param tab The tab in which the search is performed
      * @param searcher The searched used for the search itself
@@ -250,15 +249,22 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         Map<String, String> contentTemplates = tab.getContentTemplates();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
 
-        int endPageSize;
-        if(loadMoreSize == 0) {
-            endPageSize = pageSize;
-        } else {
-            endPageSize = loadMoreSize;
-        }
+        // Note for future reference : * Start is the index, starting at 0, of the first result to return.
+        //                             * End is the number of results to show, starting at the given index
+        int start;
+        int end;
 
-        int start = pageSize * offset;
-        int end = start + endPageSize;
+        if(loadMoreSize <= 0) {
+            start = pageSize * offset;
+            end = start + pageSize;
+        } else {
+            // Load mores cannot start at an offset lesser than 1
+            if(offset < 1) {
+                offset = 1;
+            }
+            start = pageSize + ((offset - 1) * loadMoreSize);
+            end = start + loadMoreSize;
+        }
 
         if(start < 0) {
             start = 0;

@@ -33,7 +33,7 @@ public class SearchPage {
     }
 
     /**
-     * @return The total amount of search results (including this page)
+     * @return The total amount of search results in this page, including the search results outside the current offset
      */
     public int getTotalSearchResults() {
         return this.totalResults;
