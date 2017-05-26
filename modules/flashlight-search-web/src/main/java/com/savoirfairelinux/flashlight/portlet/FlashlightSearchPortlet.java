@@ -175,11 +175,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         SearchResultsContainer results;
         if (!keywords.isEmpty()) {
             try {
-                if (tabId == null) {
-                    results = this.searchService.search(request, response);
-                } else {
-                    results = this.searchService.search(request, response, tabId);
-                }
+                results = this.searchService.search(request, response, tabId, 0, false);
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
@@ -280,7 +276,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         if(tabs.containsKey(tabId)) {
             try {
-                SearchResultsContainer container = this.searchService.search(request, response, tabId, offset);
+                SearchResultsContainer container = this.searchService.search(request, response, tabId, offset, true);
                 JSONPayloadFactory jsonPayloadFactory = new JSONPayloadFactory(this.jsonFactory);
                 if(container.hasSearchResults(tabId)) {
                     FlashlightSearchConfigurationTab tab = tabs.get(tabId);

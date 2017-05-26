@@ -128,9 +128,21 @@ public interface FlashlightSearchService {
      */
     public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm);
 
-    public SearchResultsContainer search(PortletRequest request, PortletResponse response) throws ReadOnlyException, ValidatorException, IOException, SearchException;
-
-    public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId) throws ReadOnlyException, ValidatorException, IOException, SearchException;
-
-    public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId, int pageOffset) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+    /**
+     * Performs a search
+     *
+     * @param request The request that trigerred the search
+     * @param response The response that triggered the search
+     * @param tabId The search tab's ID. May be left null.
+     * @param pageOffset The number of pages from which to start (start at 0)
+     * @param isLoadMore True if the given search is to get more results out of a previous search in the given tab
+     *
+     * @return The search results
+     *
+     * @throws ReadOnlyException If the portlet configuration is read-only
+     * @throws ValidatorException If the portlet configuration is invalid
+     * @throws IOException If the portlet configuration cannot be read
+     * @throws SearchException If the search fails
+     */
+    public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId, int pageOffset, boolean isLoadMore) throws ReadOnlyException, ValidatorException, IOException, SearchException;
 }

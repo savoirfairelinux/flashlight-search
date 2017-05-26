@@ -57,10 +57,11 @@ public class JSONPayloadFactory {
         json.put(FIELD_RESULTS, jsonResults);
 
         int pageSize = tab.getFullPageSize();
+        int loadMoreSize = tab.getLoadMorePageSize();
 
         // If we would have more results after the next offset, put the URL. Otherwize, put nothing.
         String jsonLoadMoreUrl;
-        if(pageSize + (pageSize * (givenOffset + 1)) <= page.getTotalSearchResults()) {
+        if(pageSize + (loadMoreSize * (givenOffset + 1)) <= page.getTotalSearchResults()) {
             jsonLoadMoreUrl = loadMoreUrl;
         } else {
             jsonLoadMoreUrl = StringPool.BLANK;
