@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.*;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
+import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.search.hits.HitsProcessorRegistry;
@@ -42,6 +43,7 @@ import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchF
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
+import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
@@ -194,12 +196,12 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm) {
-        SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchFacet.getClass());
+    public String displayTerm(HttpServletRequest request, SearchResultFacet searchResultFacet, String queryTerm) {
+        SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchResultFacet.getSearchFacetClass());
         if (searchFacetDisplayHandler == null) {
-            LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchFacet.getClassName() + "]");
+            LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchResultFacet.getSearchFacetClass().getName() + "]");
         }
-        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(request, searchFacet, queryTerm) : queryTerm;
+        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(request, searchResultFacet.getFacetConfiguration(), queryTerm) : queryTerm;
     }
 
     @Override
@@ -352,13 +354,13 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @param searchContext an initialized SearchContext.
      * @return the list of SearchFacet matching searchContext.getFacets().
      */
-    private List<SearchFacet> getConfiguredFacets(SearchContext searchContext) {
-        // TODO replace result with an immutable facade DTO created from the processed facets
+    private List<SearchResultFacet> getConfiguredFacets(SearchContext searchContext) {
         Set<String> searchResultFacetsFieldNames = searchContext.getFacets().values().stream()
             .map(facet -> facet.getFieldName())
             .collect(Collectors.toSet());
         return this.getSupportedSearchFacets().stream()
             .filter(searchFacet -> searchResultFacetsFieldNames.contains(searchFacet.getFieldName()))
+            .map(SearchResultFacet::new)
             .collect(Collectors.toList());
     }
 

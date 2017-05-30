@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
+import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 public interface FlashlightSearchService {
@@ -122,11 +123,11 @@ public interface FlashlightSearchService {
      * @see com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler
      *
      * @param request the current request.
-     * @param searchFacet the configured and initialized search facet.
+     * @param searchResultFacet the configured and initialized search facet.
      * @param queryTerm the current term to format.
      * @return a user-displayable term, or the raw queryTerm if no formatting is applicable.
      */
-    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm);
+    public String displayTerm(HttpServletRequest request, SearchResultFacet searchResultFacet, String queryTerm);
 
     /**
      * Performs a search
