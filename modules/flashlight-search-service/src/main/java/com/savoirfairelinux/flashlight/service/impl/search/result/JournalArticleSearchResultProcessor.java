@@ -73,11 +73,13 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
                 try {
                     JournalArticle article = this.journalArticleService.getArticle(groupId, articleId);
                     double version = article.getVersion();
+                    String assetViewURL = getAssetViewURL(request, response, document);
+                    request.setAttribute("flashlightSearchViewURL", assetViewURL);
                     PortletRequestModel portletRequestModel = new PortletRequestModel(request, response);
                     ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
                     JournalArticleDisplay journalContentDisplay = journalContent.getDisplay(groupId, articleId, version, template.getTemplateKey(), Constants.VIEW, searchContext.getLanguageId(), 0, portletRequestModel, themeDisplay);
                     String articleContents = journalContentDisplay.getContent();
-                    result = new SearchResult(articleContents, getAssetViewURL(request, response, document), article.getTitle(searchContext.getLanguageId()));
+                    result = new SearchResult(articleContents, assetViewURL, article.getTitle(searchContext.getLanguageId()));
                 } catch(PortalException e) {
                     throw new SearchResultProcessorException(e, document);
                 }
