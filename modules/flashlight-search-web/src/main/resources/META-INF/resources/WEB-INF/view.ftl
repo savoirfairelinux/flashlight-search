@@ -69,7 +69,11 @@
                                                     <#if (term.frequency > 0)>
                                                         <#assign prettyPrintTerm = facetTerm.apply(searchFacet, term.getTerm()) />
                                                         <li>
-                                                            <a href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${term.term}" title="${prettyPrintTerm}">${prettyPrintTerm} (${term.frequency})</a>
+                                                            <a class="${(term.applied)?then('text-primary', 'text-default')}"
+                                                               href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${term.term}"
+                                                               title="${prettyPrintTerm}">
+                                                                ${prettyPrintTerm} (${term.frequency})
+                                                            </a>
                                                         </li>
                                                     </#if>
                                                 </#list>

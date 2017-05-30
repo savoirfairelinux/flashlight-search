@@ -19,9 +19,11 @@ public class SearchResultFacet {
         this.searchFacetClass = searchFacet.getClass();
         this.label = searchFacet.getLabel();
         this.facetConfiguration = searchFacet.getFacetConfiguration();
-        if(searchFacet.getFacet() !=null) {
+        if (searchFacet.getFacet() != null
+            && searchFacet.getFacet().getFacetCollector() != null
+            && searchFacet.getFacet().getFacetCollector().getTermCollectors() != null) {
             this.terms = searchFacet.getFacet().getFacetCollector().getTermCollectors().stream()
-                .map(SearchResultFacetTerm::new)
+                .map(termCollector -> new SearchResultFacetTerm(searchFacet, termCollector))
                 .collect(Collectors.toList());
         } else {
             this.terms = Collections.emptyList();
