@@ -105,14 +105,14 @@
                                 </ul>
                                 <#if loadMoreUrls[tab.id]??>
                                     <#assign hasLoadMore = true />
-                                    <a class="btn btn-block btn-default" id="${ns}loadMore" href="${loadMoreUrls[tab.id]}">
+                                    <button class="btn btn-block btn-default" type="button" id="${ns}load-more" data-load-more-url="${loadMoreUrls[tab.id]}">
                                         <@liferay_ui["icon"]
                                             icon="plus"
                                             markupView="lexicon"
                                             message="Load more"
                                         />
                                         <@liferay_ui["message"] key="Load more" />
-                                    </a>
+                                    </button>
                                 </#if>
                             </div>
                         </div>
@@ -124,6 +124,16 @@
 </form>
 
 <#if hasLoadMore>
+
+    <script id="${ns}load-more-template" type="text/template">
+        <li class="list-group-item">
+            <div class="list-group-item-content">
+                <h5><strong><a href="{{ url }}" title="{{ title }}">{{ title }}</a></strong></h5>
+                {{ html }}
+            </div>
+        </li>
+    </script>
+
     <script type="text/javascript">
 
         /**
@@ -134,14 +144,14 @@
             var portlet = new com_savoirfairelinux_flashlight_portlet.FlashlightSearchPortlet('${ns}');
 
             // This is the template used to append new search results
-            var resultElementTemplate = '<div class="list-group-item-content"><h5><strong><a href="{{ url }}" title="{{ title }}">{{ title }}</a></strong></h5>{{ html }}</div>';
+            var resultElementTemplate = portlet.getElementById('load-more-template').innerHTML;
             var urlRegex = /\{\{\ *url *}\}/g;
             var titleRegex = /\{\{ *title *\}\}/g;
             var htmlRegex = /\{\{ *html *\}\}/g;
 
             // Bind the "load more" event to the "load more" link, using the "click" event and the "href" attribute
-            var loadMoreElement = portlet.getElementById('loadMore');
-            portlet.bindLoadMore(loadMoreElement, 'click', 'href',
+            var loadMoreElement = portlet.getElementById('load-more');
+            portlet.bindLoadMore(loadMoreElement, 'click', 'data-load-more-url',
 
                 /**
                  * Load more progressing
@@ -157,19 +167,19 @@
                     var loadMoreUrl = jsonResponse.loadMoreUrl;
                     var resultsSize = results.length;
                     var resultsContainer = portlet.getElementById('results-container');
+                    var resultsToInsert = '';
 
                     for(var i = 0; i < resultsSize; i++) {
-                        var resultElement = document.createElement('li');
-                        resultElement.setAttribute('class', 'list-group-item');
                         var resultElementContent = resultElementTemplate.replace(urlRegex, results[i].url);
                         resultElementContent = resultElementContent.replace(titleRegex, results[i].title);
                         resultElementContent = resultElementContent.replace(htmlRegex, results[i].html);
-                        resultElement.innerHTML = resultElementContent;
-                        resultsContainer.appendChild(resultElement);
+                        resultsToInsert += resultElementContent;
                     }
 
+                    resultsContainer.insertAdjacentHTML('beforeend', resultsToInsert);
+
                     // If the XHR returned no "load more" URLs, we remove the link as it is no longer needed
-                    if(loadMoreUrl === null || loadMoreUrl === '') {
+                    if( !loadMoreUrl ) {
                         element.parentNode.removeChild(element);
                     }
                 },
@@ -188,7 +198,7 @@
 
         }
 
-        if(Liferay) {
+        if(typeof Liferay !== 'undefined') {
             // Liferay Javascript available, use Liferay's events
             Liferay.Portlet.ready(function(portletId, node) {
                 var choppedNs = '${ns}';
