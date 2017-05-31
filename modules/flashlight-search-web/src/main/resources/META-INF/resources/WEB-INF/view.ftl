@@ -64,7 +64,20 @@
                                             </div>
                                         </div>
                                         <div class="panel-body">
+                                            <#assign noTermsApplied = true />
+                                            <#list searchFacet.terms as term>
+                                                <#if term.applied >
+                                                    <#assign noTermsApplied = false />
+                                                </#if>
+                                            </#list>
                                             <ul class="list-unstyled">
+                                                <li>
+                                                    <a class="${noTermsApplied?then('text-primary', 'text-default')}"
+                                                       href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}="
+                                                       title="<@liferay_ui["message"] key="All" />">
+                                                        <@liferay_ui["message"] key="All" />
+                                                    </a>
+                                                </li>
                                                 <#list searchFacet.terms as term>
                                                     <#if (term.frequency > 0)>
                                                         <#assign prettyPrintTerm = facetTerm.apply(searchFacet, term.getTerm()) />
