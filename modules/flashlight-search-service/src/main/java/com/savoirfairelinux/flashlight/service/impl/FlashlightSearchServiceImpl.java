@@ -21,7 +21,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.*;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
-import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.search.hits.HitsProcessorRegistry;
@@ -29,7 +28,9 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
@@ -253,6 +254,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         List<String> selectedAssetTypes = tab.getAssetTypes();
         Map<String, String> contentTemplates = tab.getContentTemplates();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
+
+        // Allow the "blank keyword" special case
+        if (BLANK_SPECIAL_KEYWORD.equals(ParamUtil.getString(request, "keywords"))) {
+            searchContext.setKeywords(StringPool.BLANK);
+        }
 
         // Note for future reference : * Start is the index, starting at 0, of the first result to return.
         //                             * End is the number of results to show, starting at the given index

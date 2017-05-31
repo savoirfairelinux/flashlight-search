@@ -20,6 +20,7 @@ import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 public interface FlashlightSearchService {
 
     public static final Class<FlashlightSearchService> ADT_CLASS = FlashlightSearchService.class;
+    public static final String BLANK_SPECIAL_KEYWORD = "FLASHLIGHT_BLANK_KEYWORD";
 
     /**
      * Reads the configuration stored in portlet preferences and returns a model object corresponding to the
