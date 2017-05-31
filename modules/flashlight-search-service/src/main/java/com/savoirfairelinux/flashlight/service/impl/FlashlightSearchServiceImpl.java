@@ -13,11 +13,15 @@ import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.*;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
+import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.search.hits.HitsProcessorRegistry;
@@ -39,6 +43,7 @@ import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchF
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
+import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
@@ -191,12 +196,12 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm) {
-        SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchFacet.getClass());
+    public String displayTerm(HttpServletRequest request, SearchResultFacet searchResultFacet, String queryTerm) {
+        SearchFacetDisplayHandler searchFacetDisplayHandler = searchFacetDisplayHandlerServiceTracker.getSearchFacetDisplayHandlerBySearchFacet(searchResultFacet.getSearchFacetClass());
         if (searchFacetDisplayHandler == null) {
-            LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchFacet.getClassName() + "]");
+            LOG.info("Could not find any SearchFacetDisplayHandler for SearchFacet [" + searchResultFacet.getSearchFacetClass().getName() + "]");
         }
-        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(request, searchFacet, queryTerm) : queryTerm;
+        return searchFacetDisplayHandler != null ? searchFacetDisplayHandler.displayTerm(request, searchResultFacet.getFacetConfiguration(), queryTerm) : queryTerm;
     }
 
     @Override
@@ -349,26 +354,58 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @param searchContext an initialized SearchContext.
      * @return the list of SearchFacet matching searchContext.getFacets().
      */
-    private List<SearchFacet> getConfiguredFacets(SearchContext searchContext) {
+    private List<SearchResultFacet> getConfiguredFacets(SearchContext searchContext) {
         Set<String> searchResultFacetsFieldNames = searchContext.getFacets().values().stream()
             .map(facet -> facet.getFieldName())
             .collect(Collectors.toSet());
         return this.getSupportedSearchFacets().stream()
             .filter(searchFacet -> searchResultFacetsFieldNames.contains(searchFacet.getFieldName()))
+            .map(SearchResultFacet::new)
             .collect(Collectors.toList());
     }
 
     /**
      * Add the facets from a tab configuration to the actual search request.
+     *
      * @param searchContext the SearchContext to which the facets will be added.
-     * @param tab the current search tab.
+     * @param tab           the current search tab.
      */
     private void addConfiguredFacets(SearchContext searchContext, FlashlightSearchConfigurationTab tab) {
         this.getSupportedSearchFacets().stream()
             .filter(searchFacet -> tab.getSearchFacets().keySet().contains(searchFacet.getClassName()))
             .map(searchFacet -> {
                 try {
-                    searchFacet.init(searchContext.getCompanyId(), tab.getSearchFacets().get(searchFacet.getClassName()), searchContext);
+                    // See com.liferay.portal.search.web.internal.portlet.action.SearchConfigurationAction.processAction()
+                    // This formats the facet configuration to a JSON format suitable to
+                    // com.liferay.portal.search.web.facet.SearchFacet.init()
+
+                    JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+                    JSONArray facetsJSONArray = JSONFactoryUtil.createJSONArray();
+
+                    JSONObject facetJSONObject = JSONFactoryUtil.createJSONObject();
+
+                    facetJSONObject.put("className", searchFacet.getFacetClassName());
+                    facetJSONObject.put("data", JSONFactoryUtil.createJSONObject(tab.getSearchFacets().get(searchFacet.getClassName())));
+                    facetJSONObject.put("fieldName", searchFacet.getFieldName());
+                    facetJSONObject.put("id", searchFacet.getId());
+                    facetJSONObject.put("label", searchFacet.getLabel());
+                    facetJSONObject.put("order", searchFacet.getOrder());
+
+                    //boolean displayFacet = ParamUtil.getBoolean(actionRequest, searchFacet.getClassName() + "displayFacet");
+                    boolean displayFacet = true;
+
+                    facetJSONObject.put("static", !displayFacet);
+
+                    //double weight = ParamUtil.getDouble(actionRequest, searchFacet.getClassName() + "weight");
+                    double weight = 1;
+
+                    facetJSONObject.put("weight", weight);
+
+                    facetsJSONArray.put(facetJSONObject);
+
+                    jsonObject.put("facets", facetsJSONArray);
+
+                    searchFacet.init(searchContext.getCompanyId(), jsonObject.toString(), searchContext);
                     return searchFacet.getFacet();
                 } catch (Exception e) {
                     LOG.warn("Could not initialize search facet [" + searchFacet.getClassName() + "]", e);

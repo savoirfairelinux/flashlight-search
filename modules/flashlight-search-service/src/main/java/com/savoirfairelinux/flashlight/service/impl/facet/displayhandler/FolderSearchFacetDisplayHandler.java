@@ -8,10 +8,10 @@ import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.*;
+import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 
 @Component(
@@ -34,7 +34,7 @@ public class FolderSearchFacetDisplayHandler implements SearchFacetDisplayHandle
     }
 
     @Override
-    public String displayTerm(HttpServletRequest request, SearchFacet searchFacet, String queryTerm) {
+    public String displayTerm(HttpServletRequest request, FacetConfiguration facetConfiguration, String queryTerm) {
         String folderName = queryTerm;
         if ("0".equals(queryTerm)) {
             ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);

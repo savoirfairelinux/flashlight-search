@@ -56,7 +56,7 @@
                     <#if showFacets>
                         <div class="col-md-3">
                             <#list page.getSearchFacets() as searchFacet>
-                                <#if (searchFacet.facet?has_content && searchFacet.facet.facetCollector.termCollectors?size > 0)>
+                                <#if (searchFacet.terms?has_content && searchFacet.terms?size > 0)>
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <div class="panel-title">
@@ -65,11 +65,15 @@
                                         </div>
                                         <div class="panel-body">
                                             <ul class="list-unstyled">
-                                                <#list searchFacet.facet.facetCollector.termCollectors as termCollector>
-                                                    <#if (termCollector.frequency > 0)>
-                                                        <#assign prettyPrintTerm = facetTerm.apply(searchFacet, termCollector.term) />
+                                                <#list searchFacet.terms as term>
+                                                    <#if (term.frequency > 0)>
+                                                        <#assign prettyPrintTerm = facetTerm.apply(searchFacet, term.getTerm()) />
                                                         <li>
-                                                            <a href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${termCollector.term}" title="${prettyPrintTerm}">${prettyPrintTerm} (${termCollector.frequency})</a>
+                                                            <a class="${(term.applied)?then('text-primary', 'text-default')}"
+                                                               href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${term.term}"
+                                                               title="${prettyPrintTerm}">
+                                                                ${prettyPrintTerm} (${term.frequency})
+                                                            </a>
                                                         </li>
                                                     </#if>
                                                 </#list>
