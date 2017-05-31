@@ -81,9 +81,13 @@
                                                 <#list searchFacet.terms as term>
                                                     <#if (term.frequency > 0)>
                                                         <#assign prettyPrintTerm = facetTerm.apply(searchFacet, term.getTerm()) />
+                                                        <#assign termUrl = tabUrls[tab.id] />
+                                                        <#list term.urlTerms?keys as termParam>
+                                                            <#assign termUrl = termUrl + '&' + ns + termParam + '=' + term.urlTerms[termParam] />
+                                                        </#list>
                                                         <li>
                                                             <a class="${(term.applied)?then('text-primary', 'text-default')}"
-                                                               href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}=${term.term}"
+                                                               href="${termUrl}"
                                                                title="${prettyPrintTerm}">
                                                                 ${prettyPrintTerm} (${term.frequency})
                                                             </a>
