@@ -29,7 +29,8 @@ public enum ViewContextVariable {
     LOAD_MORE_URLS(     "loadMoreUrls",                                     Map.class,                      "Load more URL mapping"),
     RESULTS_CONTAINER(  "resultsContainer",                                 SearchResultsContainer.class,   "Search results"),
     TAB_ID(             "tabId",                                            String.class,                   "Selected tab ID"),
-    FORMAT_FACET_TERM(  "facetTerm",                                        BiFunction.class,               "Format facet term");
+    FORMAT_FACET_TERM(  "facetTerm",                                        BiFunction.class,               "Format facet term"),
+    JAVASCRIPT_PATH(    "javaScriptPath",                                   String.class,                   "Flashlight JavaScript path");
 
     private String variableName;
     private Class<?> type;
