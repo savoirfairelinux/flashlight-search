@@ -17,6 +17,7 @@ public class SearchPage {
      *
      * @param searchResults The search results contained in this page
      * @param totalSearchResults The total amount of search results (including this page)
+     * @param searchFacets The facets processed from the search results
      */
     public SearchPage(List<SearchResult> searchResults, int totalSearchResults, List<SearchResultFacet> searchFacets) {
         this.totalResults = totalSearchResults;

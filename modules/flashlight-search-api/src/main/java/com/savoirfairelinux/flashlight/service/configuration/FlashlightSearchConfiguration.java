@@ -18,9 +18,8 @@ public class FlashlightSearchConfiguration {
     /**
      * Creates the configuration model
      *
-     * @param selectedAssetTypes The selected asset types. A read-only view of this element will be stored.
-     * @param contentTemplates The selected content templates. A read-only view of this element will be stored.
      * @param adtUUID The ADT's UUID
+     * @param tabs the search groups/tabs configuration
      */
     public FlashlightSearchConfiguration(String adtUUID, List<FlashlightSearchConfigurationTab> tabs) {
         this.adtUUID = adtUUID;
