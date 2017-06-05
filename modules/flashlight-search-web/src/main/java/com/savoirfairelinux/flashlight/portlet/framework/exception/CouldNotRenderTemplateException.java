@@ -10,6 +10,9 @@ public class CouldNotRenderTemplateException extends PortletException {
 
     /**
      * Creates the exception.
+     *
+     * @param message detailed error message
+     * @param cause root cause, will be wrapped in this exception
      */
     public CouldNotRenderTemplateException(String message, Exception cause) {
         super(message, cause);

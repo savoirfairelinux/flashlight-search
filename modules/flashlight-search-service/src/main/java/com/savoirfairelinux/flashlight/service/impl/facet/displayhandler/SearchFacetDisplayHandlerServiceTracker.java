@@ -15,7 +15,7 @@ import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 /**
  * Tracker for SearchFacetDisplayHandler, used to format facets as displayed in the results page.
  *
- * @see SearchFacetDisplayHandler#displayTerm(java.util.Locale, com.liferay.portal.search.web.facet.SearchFacet, java.lang.String)
+ * @see SearchFacetDisplayHandler#displayTerm(javax.servlet.http.HttpServletRequest, com.liferay.portal.kernel.search.facet.config.FacetConfiguration, java.lang.String)
  */
 @Component(immediate = true, service = SearchFacetDisplayHandlerServiceTracker.class)
 public class SearchFacetDisplayHandlerServiceTracker implements ServiceTrackerCustomizer<SearchFacetDisplayHandler, SearchFacetDisplayHandler> {
