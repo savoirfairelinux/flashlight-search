@@ -13,15 +13,17 @@ common_hosts:
   - "10.0.0.35 flashlight-data.vm flashlight-data"
   - "10.0.0.45 www.flashlight.vm flashlight.vm flashlight"
 
+liferay7_virtual_hostname: "www.flashlight.vm"
 liferay7_version:       "7.0-ga1"
-patching_tool_version:  "2.0.5"
+patching_tool_version:  "2.0.6"
+liferay7_enable_debugger: true
 
 liferay7_installers:
   path:             "/vagrant/installers"
   war:              "liferay-dxp-digital-enterprise-7.0-ga1-20160617092557801.war"
   tomcat:           "liferay-dxp-digital-enterprise-tomcat-7.0-ga1-20160617092557801.zip"
   osgi:             "liferay-dxp-digital-enterprise-osgi-7.0-ga1-20160617092557801.zip"
-  patching_tool:    "patching-tool-2.0.5.zip"
+  patching_tool:    "patching-tool-2.0.6.zip"
   license:          "activation-key-development-DXP-liferaytrialSFL.xml"
 
 liferay7_datasource:
@@ -63,4 +65,4 @@ liferay7_es:
   cluster_name: "liferay"
 
 patches:
-  - path: "/vagrant/installers/liferay-fix-pack-de-7-7010.zip"
+  - path: "/vagrant/installers/liferay-fix-pack-de-15-7010.zip"

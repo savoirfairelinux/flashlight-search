@@ -26,11 +26,6 @@
         </dependency>
         <dependency>
             <groupId>com.liferay</groupId>
-            <artifactId>com.liferay.bookmarks.api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.liferay</groupId>
             <artifactId>com.liferay.journal.api</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -39,7 +34,11 @@
             <artifactId>com.liferay.dynamic.data.mapping.api</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.portlet.display.template</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -57,7 +56,20 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <configuration>
                     <instructions>
-                        <Web-ContextPath>/flashlightportlet</Web-ContextPath>
+                        <!--
+                            There is a fix here to make util-bridges work correctly (see org.apache.* Import-Package
+                            directive and Embed-Dependency directive)
+                        -->
+                        <Import-Package>
+                            com.liferay.portal.kernel.service,
+                            javax.portlet,javax.servlet,
+                            org.apache.bsf;resolution:=optional,
+                            org.apache.portals.bridges.common;resolution:=optional,
+                            org.apache.portals.bridges.struts;resolution:=optional,
+                            *
+                        </Import-Package>
+                        <Embed-Dependency>groupId=com.liferay.portal;artifactId=com.liferay.util.bridges</Embed-Dependency>
+                        <Web-ContextPath>/flashlight</Web-ContextPath>
                     </instructions>
                 </configuration>
             </plugin>

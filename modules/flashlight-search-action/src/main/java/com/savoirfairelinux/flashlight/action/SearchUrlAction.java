@@ -16,12 +16,12 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 
 @Component(service = LifecycleAction.class, property = { "key=servlet.service.events.pre" })
 public class SearchUrlAction extends Action {
 
     private static final Log LOG = LogFactoryUtil.getLog(SearchUrlAction.class);
-    private static final String FLASHLIGHT_PORTLET_NAME = "flashlightportlet";
     private static final String FLASHLIGHT_MVC_PATH = "&_%s_mvcPath=search_result.ftl&";
     private static final String FLASHLIGHT_KEYWORDS_PARAM = "_%s_keywords=";
 
@@ -31,14 +31,14 @@ public class SearchUrlAction extends Action {
     @Override
     public void run(HttpServletRequest p_Request, HttpServletResponse p_Response) throws ActionException {
         Layout currentLayout = getCurrentLayoutFromRequest(p_Request);
-        PortletURL flashlightPortlet = PortletURLFactoryUtil.create(p_Request, FLASHLIGHT_PORTLET_NAME, currentLayout,
+        PortletURL flashlightPortlet = PortletURLFactoryUtil.create(p_Request, FlashlightSearchPortletKeys.PORTLET_NAME, currentLayout,
                 PortletRequest.RENDER_PHASE);
 
         if (flashlightPortlet != null) {
             String flashlightUrl = createFlashlightSearchUrl(flashlightPortlet.toString());
             p_Request.setAttribute(OUTPUT_FLASHLIGHT_URL, flashlightUrl);
             p_Request.setAttribute(OUTPUT_FLASHLIGHT_KEYWORD_PARAMETER,
-                    String.format(FLASHLIGHT_KEYWORDS_PARAM, FLASHLIGHT_PORTLET_NAME));
+                    String.format(FLASHLIGHT_KEYWORDS_PARAM, FlashlightSearchPortletKeys.PORTLET_NAME));
         } else {
             LOG.warn("Flashlight portlet not detected.");
         }
@@ -51,7 +51,7 @@ public class SearchUrlAction extends Action {
 
     private String createFlashlightSearchUrl(String p_FlashlightPortletUrl) {
         StringBuilder flashlightUrlBuilder = new StringBuilder(p_FlashlightPortletUrl);
-        flashlightUrlBuilder.append(String.format(FLASHLIGHT_MVC_PATH, FLASHLIGHT_PORTLET_NAME));
+        flashlightUrlBuilder.append(String.format(FLASHLIGHT_MVC_PATH, FlashlightSearchPortletKeys.PORTLET_NAME));
         return flashlightUrlBuilder.toString();
     }
 }

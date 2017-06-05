@@ -23,18 +23,20 @@
         <maven.wagon.ssh.version>2.10</maven.wagon.ssh.version>
         <maven.wagon.file.version>2.10</maven.wagon.file.version>
         <maven.wagon.plugin.version>1.0</maven.wagon.plugin.version>
+        <maven.jgitflow.plugin.version>1.0-m5.1</maven.jgitflow.plugin.version>
 
         <version.bndlib>3.2.0</version.bndlib>
         <version.liferay.ant.bnd>2.0.28</version.liferay.ant.bnd>
 
         <project.build.finalName>${project.artifactId}</project.build.finalName>
         <project.build.extension>jar</project.build.extension>
+
+        <build.number>local-${user.name}</build.number>
     </properties>
 
     <modules>
         <module>modules/flashlight-search-api</module>
         <module>modules/flashlight-search-service</module>
-        <module>modules/flashlight-search-facets</module>
         <module>modules/flashlight-search-web</module>
         <module>modules/flashlight-search-action</module>
     </modules>
@@ -262,25 +264,15 @@
                     <configuration>
                         <finalName>${project.build.finalName}</finalName>
                         <instructions>
+                            <Build-Number>${build.number}</Build-Number>
                             <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                             <Bundle-Version>${project.version}</Bundle-Version>
                             <!-- The Import-Package instruction is wildly guessed from Liferay's bundles -->
-                            <!--
-                                There is a fix here to make util-bridges work correctly (see org.apache.* Import-Package
-                                directive and Embed-Dependency directive)
-                            -->
                             <Import-Package>
-                                com.liferay.portal.kernel.service;version="1.1.0",
+                                com.liferay.portal.kernel.service,
                                 javax.portlet,javax.servlet,
-                                org.apache.bsf;resolution:=optional,
-                                org.apache.portals.bridges.common;resolution:=optional,
-                                org.apache.portals.bridges.struts;resolution:=optional,
                                 *
                             </Import-Package>
-                            <Export-Package >
-                                com.savoirfairelinux.facet
-                            </Export-Package>
-                            <Embed-Dependency>groupId=com.liferay.portal;artifactId=com.liferay.util.bridges</Embed-Dependency>
                             <Embed-StripVersion>true</Embed-StripVersion>
                             <Embed-Directory>lib</Embed-Directory>
                             <_dsannotations>*</_dsannotations>
@@ -295,6 +287,25 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>wagon-maven-plugin</artifactId>
                     <version>${maven.wagon.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>external.atlassian.jgitflow</groupId>
+                    <artifactId>jgitflow-maven-plugin</artifactId>
+                    <version>${maven.jgitflow.plugin.version}</version>
+                    <configuration>
+                        <flowInitContext>
+                            <masterBranchName>master</masterBranchName>
+                            <developBranchName>develop</developBranchName>
+                            <featureBranchPrefix>feature-</featureBranchPrefix>
+                            <releaseBranchPrefix>release-</releaseBranchPrefix>
+                            <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+                            <versionTagPrefix />
+                        </flowInitContext>
+                        <enableSshAgent>true</enableSshAgent>
+                        <allowSnapshots>true</allowSnapshots>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <noDeploy>true</noDeploy>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

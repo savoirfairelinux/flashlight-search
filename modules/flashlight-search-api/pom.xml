@@ -12,6 +12,24 @@
 
     <name>Flashlight Search service API</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.portal.search.web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.journal.api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.dynamic.data.mapping.api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
