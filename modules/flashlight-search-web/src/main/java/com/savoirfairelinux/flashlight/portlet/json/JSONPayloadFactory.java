@@ -34,7 +34,6 @@ public class JSONPayloadFactory {
     /**
      * Creates a search result JSON payload
      *
-     * @param response The resource response currently in effect
      * @param tab The search tab
      * @param page The tab's search page
      * @param givenOffset The search offset that was used during the search
