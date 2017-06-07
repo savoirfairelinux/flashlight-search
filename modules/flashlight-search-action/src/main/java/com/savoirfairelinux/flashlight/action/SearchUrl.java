@@ -11,7 +11,7 @@ import com.liferay.portal.kernel.model.Layout;
 public class SearchUrl {
 
     private Layout layout;
-    private PortletURL url;
+    private String url;
     private RequestParameter[] requestParameters;
     private String keywordsParameter;
 
@@ -23,7 +23,7 @@ public class SearchUrl {
      * @param requestParameters The request parameters that must be sent to call the search portlet
      * @param keywordsParameter The request parameter used to enter keywords
      */
-    public SearchUrl(Layout layout, PortletURL url, RequestParameter[] requestParameters, String keywordsParameter) {
+    public SearchUrl(Layout layout, String url, RequestParameter[] requestParameters, String keywordsParameter) {
         this.layout = layout;
         this.url = url;
         this.requestParameters = requestParameters;
@@ -40,7 +40,7 @@ public class SearchUrl {
     /**
      * @return The URL to access the search portlet's search view
      */
-    public PortletURL getUrl() {
+    public String getUrl() {
         return this.url;
     }
 
@@ -48,7 +48,7 @@ public class SearchUrl {
      * @return The request parameters that must be sent to call the search portlet
      */
     public RequestParameter[] getRequestParameters() {
-        return requestParameters;
+        return this.requestParameters;
     }
 
     /**

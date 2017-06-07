@@ -1,23 +1,11 @@
 package com.savoirfairelinux.flashlight.action;
 
-import static java.lang.String.format;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
-import javax.portlet.PortletMode;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
@@ -30,6 +18,17 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
+import javax.portlet.PortletMode;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
+import static java.lang.String.format;
 
 /**
  * This action is used to insert the possible search URLs in the request attributes. This way, a search box can be
@@ -53,6 +52,8 @@ public class SearchUrlAction extends Action {
 
     private static final String LIFECYCLE_RENDER = "0";
 
+    private static final Log LOG = LogFactoryUtil.getLog(SearchUrlAction.class);
+
     @Reference
     private Portal portal;
 
@@ -71,7 +72,7 @@ public class SearchUrlAction extends Action {
         List<Layout> searchLayouts = this.getSearchLayouts(currentLayout);
         ArrayList<SearchUrl> searchUrls = new ArrayList<>(searchLayouts.size());
         for(Layout searchLayout : searchLayouts) {
-            SearchUrl url = this.generateSearchUrl(request, searchLayout, keywordsParam);
+            SearchUrl url = this.generateSearchUrl(request, themeDisplay, searchLayout, keywordsParam);
             if(url != null) {
                 searchUrls.add(url);
             }
@@ -84,11 +85,12 @@ public class SearchUrlAction extends Action {
      * Returns a list of search URLs to be put in the request attributes
      *
      * @param request The HTTP request
+     * @param themeDisplay The theme display
      * @param layout The current page
      * @param keywordsParam The name of the request parameter containing the search keywords
      * @return A list of search URLs to be put in the request attributes
      */
-    public SearchUrl generateSearchUrl(HttpServletRequest request, Layout layout, String keywordsParam) {
+    public SearchUrl generateSearchUrl(HttpServletRequest request, ThemeDisplay themeDisplay, Layout layout, String keywordsParam) {
         LayoutTypePortlet layoutType = (LayoutTypePortlet) layout.getLayoutType();
         Portlet portletInstance = null;
 
@@ -112,7 +114,15 @@ public class SearchUrlAction extends Action {
                 }
             }
 
-            PortletURL portletUrl = this.portletUrlFactory.create(request, FlashlightSearchPortletKeys.PORTLET_NAME, layout, PortletRequest.RENDER_PHASE);
+            String portletUrl;
+
+            try {
+                portletUrl = this.portal.getLayoutFriendlyURL(layout, themeDisplay);
+            } catch (PortalException e) {
+                portletUrl = StringPool.BLANK;
+                LOG.error(e);
+            }
+
             RequestParameter[] params = new RequestParameter[5];
             params[0] = new RequestParameter(PARAM_PORTLET_ID, FlashlightSearchPortletKeys.PORTLET_NAME);
             params[1] = new RequestParameter(PARAM_PORTLET_LIFECYCLE, LIFECYCLE_RENDER);
