@@ -1,17 +1,42 @@
 package com.savoirfairelinux.flashlight.portlet;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.portlet.*;
+
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.PortletMode;
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletURL;
+import javax.portlet.ProcessAction;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
+import javax.portlet.ResourceURL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
@@ -30,7 +55,11 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.*;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
@@ -60,12 +89,16 @@ import com.savoirfairelinux.flashlight.service.util.PatternConstants;
         "com.liferay.portlet.requires-namespaced-parameters=true",
         "com.liferay.portlet.display-category=category.tools",
         "com.liferay.portlet.instanceable=false",
-        "com.liferay.portlet.header-portlet-javascript=/javascript/flashlight.js"
+        "com.liferay.portlet.header-portlet-javascript=" + FlashlightSearchPortlet.PATH_JAVASCRIPT
     }
 )
 public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final Log LOG = LogFactoryUtil.getLog(FlashlightSearchPortlet.class);
+
+    public static final String PATH_JAVASCRIPT = "/javascript/flashlight.js";
+
+    private static final String FORMAT_JAVASCRIPT_PATH = "%s%s";
 
     private static final String ACTION_NAME_SAVE_TAB = "saveTab";
     private static final String ACTION_NAME_SAVE_GLOBAL = "saveGlobal";
@@ -193,6 +226,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         PortletURL keywordUrl = response.createRenderURL();
         keywordUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
 
+        String javascriptUrl = format(FORMAT_JAVASCRIPT_PATH, request.getContextPath(), PATH_JAVASCRIPT);
+
         templateCtx.put(ViewContextVariable.KEYWORD_URL.getVariableName(), keywordUrl);
         templateCtx.put(ViewContextVariable.TAB_URLS.getVariableName(), tabUrls);
         templateCtx.put(ViewContextVariable.LOAD_MORE_URLS.getVariableName(), loadMoreUrls);
@@ -200,6 +235,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
         templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
         templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchResultFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(httpServletRequest, searchFacet, term));
+        templateCtx.put(ViewContextVariable.JAVASCRIPT_PATH.getVariableName(), javascriptUrl);
 
         String adtUuid = config.getAdtUUID();
         if (adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {
