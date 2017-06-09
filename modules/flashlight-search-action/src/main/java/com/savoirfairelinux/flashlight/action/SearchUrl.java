@@ -1,7 +1,5 @@
 package com.savoirfairelinux.flashlight.action;
 
-import javax.portlet.PortletURL;
-
 import com.liferay.portal.kernel.model.Layout;
 
 /**
