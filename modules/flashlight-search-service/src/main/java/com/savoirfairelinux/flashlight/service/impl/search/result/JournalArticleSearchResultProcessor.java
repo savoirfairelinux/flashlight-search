@@ -84,9 +84,9 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
     @Override
     public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
-        Map<String, String> contentTemplates = tab.getContentTemplates();
+        Map<String, String> templates = tab.getJournalArticleTemplates();
         DDMStructureFacet structureFacet = new DDMStructureFacet(searchContext);
-        String[] ddmStructures = contentTemplates.keySet()
+        String[] ddmStructures = templates.keySet()
             .stream()
             .map(structureUuid -> {
                 String structureKey;
@@ -101,7 +101,7 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
             })
             .filter(Objects::nonNull)
             .collect(Collectors.toSet())
-            .toArray(new String[contentTemplates.size()]);
+            .toArray(new String[templates.size()]);
 
         structureFacet.setValues(ddmStructures);
 
@@ -112,7 +112,7 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
     public SearchResult process(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, Document document) throws SearchResultProcessorException {
         long groupId = Long.parseLong(document.get(Field.GROUP_ID));
         String articleId = document.get(Field.ARTICLE_ID);
-        Map<String, String> contentTemplates = configurationTab.getContentTemplates();
+        Map<String, String> templates = configurationTab.getJournalArticleTemplates();
         String structureKey = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName()).getValue();
 
         DDMStructure structure;
@@ -124,11 +124,11 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
         }
 
         String structureUuid = structure.getUuid();
-        if(!contentTemplates.containsKey(structureUuid)) {
+        if(!templates.containsKey(structureUuid)) {
             throw new SearchResultProcessorException(document, "No configured template to render given document");
         }
 
-        String templateUuid = contentTemplates.get(structureUuid);
+        String templateUuid = templates.get(structureUuid);
         DDMTemplate template = structure.getTemplates().stream().filter(t -> t.getUuid().equals(templateUuid)).findFirst().orElse(null);
         if(template == null) {
             throw new SearchResultProcessorException(document, "Cannot find template with UUID " + templateUuid + " for the document's structure");

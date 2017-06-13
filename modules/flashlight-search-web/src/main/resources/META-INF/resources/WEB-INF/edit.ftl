@@ -46,7 +46,8 @@
                 <tbody>
                 <#list tabs?keys as tabId>
                     <#assign tab = tabs[tabId] />
-                    <#assign contentTemplates = tab.getContentTemplates() />
+                    <#assign contentTemplates = tab.journalArticleTemplates />
+                    <#assign dlFileEntryTypeTemplates = tab.getDLFileEntryTypeTemplates() />
                     <#assign editTabUrl = editTabUrls[tabId] />
                     <#assign deleteTabUrl = deleteTabUrls[tabId] />
                     <tr>
@@ -66,6 +67,14 @@
                                         </#if>
                                     </#list>
                                 </#list>
+                                <#list availableDlFileEntryTypeTemplates?keys as dlFileEntryType>
+                                    <#assign templates = availableDlFileEntryTypeTemplatesUuidIndex[dlFileEntryType.uuid] />
+                                    <#list templates as template>
+                                        <#if dlFileEntryTypeTemplates[dlFileEntryType.uuid]?? && dlFileEntryTypeTemplates[dlFileEntryType.uuid] == template.uuid>
+                                            <li><a href="${editTabUrl}">${dlFileEntryType.getName(locale)} => ${template.getName(locale)}</a></li>
+                                        </#if>
+                                    </#list>
+                                </#list>
                             </ul>
                         </td>
                         <td>
@@ -79,7 +88,10 @@
                 </tbody>
             </table>
         </#if>
-        <p><a href="${createTabUrl}"><@liferay_ui["message"] key="Create a new tab" /></a></p>
+
+        <#list createTabUrls?keys as assetType>
+            <p><a class="btn btn-default" href="${createTabUrls[assetType]}"><@liferay_ui["message"] key="Create a ${assetType} tab" arguments="${assetType}" /></a></p>
+        </#list>
     </fieldset>
 
     <div class="form-group">

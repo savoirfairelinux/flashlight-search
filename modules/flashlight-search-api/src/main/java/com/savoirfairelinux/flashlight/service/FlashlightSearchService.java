@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
+
+import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -98,6 +100,15 @@ public interface FlashlightSearchService {
     public Map<String, List<DDMStructure>> getDDMStructures(long groupId) throws PortalException;
 
     /**
+     * Returns the list of file entry type templates that are visible to the given site and its parents
+     *
+     * @param groupId The site from which to start the search for file entry templates
+     * @return A list of file entry templates, accessible from the given context. They are indexed by DLFileEntryType.
+     * @throws PortalException If an error occurs while fetching the data
+     */
+    public Map<DLFileEntryType, List<DDMTemplate>> getFileEntryTypes(PermissionChecker permissionChecker, long groupId) throws PortalException;
+
+    /**
      * Returns the list of application display templates that can be used with the Flashlight search portlet
      *
      * @param permissionChecker The current context's permission checker
@@ -147,4 +158,5 @@ public interface FlashlightSearchService {
      * @throws SearchException If the search fails
      */
     public SearchResultsContainer search(PortletRequest request, PortletResponse response, String tabId, int pageOffset, boolean isLoadMore) throws ReadOnlyException, ValidatorException, IOException, SearchException;
+
 }

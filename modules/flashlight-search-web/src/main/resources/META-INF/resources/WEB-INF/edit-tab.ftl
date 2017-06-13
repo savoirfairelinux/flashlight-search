@@ -9,7 +9,7 @@
         <input type="hidden" name="${ns}tab-id" value="${tabId}" />
         <input type="hidden" name="${ns}edit-mode" value="tab" />
     </#if>
-
+    <input type="hidden" name="${ns}asset-type" value="${assetType}" />
     <input type="hidden" name="${ns}redirect-url" value="${redirectUrl}" />
 
     <fieldset class="fieldset">
@@ -48,77 +48,37 @@
 
     <fieldset class="fieldset">
         <legend><@liferay_ui["message"] key="Facet configuration" /></legend>
-
-        <div class="form-group input-checkbox-wrapper">
-            <label class="control-label"><@liferay_ui["message"] key="Asset types" /></label>
-            <ul>
-                <#list supportedAssetTypes as assetType>
-                    <li>
-                        <#if assetTypes?seq_contains(assetType)>
-                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" checked="checked" value="${assetType}" />
-                        <#else>
-                            <input type="checkbox" id="${ns}asset-types-${assetType}" name="${ns}asset-types" value="${assetType}" />
-                        </#if>
-                        <label for="${ns}asset-types-${assetType}">${assetType}</label>
-                    </li>
-                </#list>
-            </ul>
-        </div>
-
         <div class="form-group input-checkbox-wrapper">
             <table class="table table-bordered">
                 <summary><@liferay_ui["message"] key="Search facets" /></summary>
                 <thead>
                     <tr><th><@liferay_ui["message"] key="Facet" /></th><th><@liferay_ui["message"] key="Action" /></th></tr>
                 </thead>
-            <#list supportedSearchFacets as supportedFacet>
-                <#assign facetClassName = supportedFacet.class.name />
-                <tr>
-                    <td>
-                        <#if searchFacets[facetClassName]??>
-                            <input type="checkbox" id="${ns}search-facets-${facetClassName}" name="${ns}search-facets" checked="checked" value="${facetClassName}" />
-                        <#else>
-                            <input type="checkbox" id="${ns}search-facets-${facetClassName}" name="${ns}search-facets" value="${facetClassName}" />
-                        </#if>
-                        <label for="${ns}search-facets-${facetClassName}">${supportedFacet.title}</label>
-                    </td>
-                    <td>
-                        <#if searchFacetUrls[facetClassName]??>
-                            <a href="${searchFacetUrls[facetClassName]}"><@liferay_ui["message"] key="configure" /></a>
-                        </#if>
-                    </td>
-                </tr>
-            </#list>
+                <#list supportedSearchFacets as supportedFacet>
+                    <#assign facetClassName = supportedFacet.class.name />
+                    <tr>
+                        <td>
+                            <#if searchFacets[facetClassName]??>
+                                <input type="checkbox" id="${ns}search-facets-${facetClassName}" name="${ns}search-facets" checked="checked" value="${facetClassName}" />
+                            <#else>
+                                <input type="checkbox" id="${ns}search-facets-${facetClassName}" name="${ns}search-facets" value="${facetClassName}" />
+                            </#if>
+                            <label for="${ns}search-facets-${facetClassName}">${supportedFacet.title}</label>
+                        </td>
+                        <td>
+                            <#if searchFacetUrls[facetClassName]??>
+                                <a href="${searchFacetUrls[facetClassName]}"><@liferay_ui["message"] key="configure" /></a>
+                            </#if>
+                        </td>
+                    </tr>
+                </#list>
             </table>
         </div>
     </fieldset>
 
-    <fieldset class="fieldet">
-        <legend><@liferay_ui["message"] key="Rendering" /></legend>
-        <#list availableStructures?keys as className>
-            <#assign clStructures = availableStructures[className] />
-            <div class="form-group">
-                <p><strong>${className}</strong></p>
-                <#list clStructures as structure>
-                    <#if structure.templates?has_content>
-                        <div class="form-group input-select-wrapper">
-                            <label class="control-label" for="${ns}ddm-${structure.uuid}">${structure.getName(locale)}</label>
-                            <select class="form-control" id="${ns}ddm-${structure.uuid}" name="${ns}ddm-${structure.uuid}">
-                                <option value=""><@liferay_ui["message"] key="Disabled" /></option>
-                                <#list structure.templates as template>
-                                    <#if contentTemplates[structure.uuid]?? && contentTemplates[structure.uuid] == template.uuid>
-                                        <option value="${template.uuid}" selected="selected">${template.getName(locale)}</option>
-                                    <#else>
-                                        <option value="${template.uuid}">${template.getName(locale)}</option>
-                                    </#if>
-                                </#list>
-                            </select>
-                        </div>
-                    </#if>
-                </#list>
-            </div>
-        </#list>
-    </fieldset>
+    <#if assetTypeEditViews[assetType]??>
+        <#include assetTypeEditViews[assetType]>
+    </#if>
 
     <div class="form-group">
         <input class="btn btn-default" type="submit" value="<@liferay_ui['message'] key='Submit' />" />

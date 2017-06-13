@@ -22,6 +22,8 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
+import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -63,6 +65,7 @@ import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.DLFileEntryTypeFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchFacetDisplayHandlerServiceTracker;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
+import com.savoirfairelinux.flashlight.service.impl.search.result.template.DLFileEntryTypeTemplateHandler;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
@@ -86,6 +89,9 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     @Reference
     private ClassNameLocalService classNameService;
+
+    @Reference
+    private DLFileEntryTypeLocalService dlFileEntryTypeService;
 
     @Reference
     private DDMStructureLocalService ddmStructureService;
@@ -167,37 +173,27 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
-        HashMap<Group, List<DDMTemplate>> adts = new HashMap<>();
+    public Map<DLFileEntryType, List<DDMTemplate>> getFileEntryTypes(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        List<DLFileEntryType> fileEntryTypes = this.dlFileEntryTypeService.getFileEntryTypes(this.portal.getCurrentAndAncestorSiteGroupIds(groupId));
+        HashMap<DLFileEntryType, List<DDMTemplate>> fileEntryTypeTemplateMapping = new HashMap<>(fileEntryTypes.size());
 
-        long[] currentGroupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupId);
-        long classNameId = this.classNameService.getClassNameId(FlashlightSearchService.ADT_CLASS);
-        long userId = permissionChecker.getUserId();
-        for(long currentGroupId : currentGroupIds) {
-            List<DDMTemplate> groupTemplates = this.ddmTemplateService.getTemplates(currentGroupId, classNameId)
-                .stream()
-                .filter(template -> {
-                    // See DDMTemplatePermission.java in Liferay's source code for the inspirational stuff
-                    String modelResourceName = DDMTemplate.class.getName();
-                    long companyId = template.getCompanyId();
-                    long templateId = template.getTemplateId();
-                    String actionKey = ActionKeys.VIEW;
+        for(DLFileEntryType fileEntryType : fileEntryTypes) {
+            Map<Group, List<DDMTemplate>> templatesByGroup = this.getDLFileEntryTypeTemplates(permissionChecker, groupId);
+            List<DDMTemplate> templates = new ArrayList<>();
 
-                    return (
-                        permissionChecker.hasOwnerPermission(companyId, modelResourceName, templateId, userId, actionKey) ||
-                        permissionChecker.hasPermission(companyId, modelResourceName, templateId, actionKey)
-                    );
-                })
-                .collect(Collectors.toList());
-
-            // If we have templates to show, put it in the map
-            if(!groupTemplates.isEmpty()) {
-                Group group = this.groupService.getGroup(currentGroupId);
-                adts.put(group, groupTemplates);
+            for(List<DDMTemplate> groupTemplates : templatesByGroup.values()) {
+                templates.addAll(groupTemplates);
             }
+
+            fileEntryTypeTemplateMapping.put(fileEntryType, templates);
         }
 
-        return adts;
+        return fileEntryTypeTemplateMapping;
+    }
+
+    @Override
+    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(FlashlightSearchService.ADT_CLASS));
     }
 
     @Override
@@ -257,6 +253,61 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     /**
+     * Returns the DL File Entry types templates
+     *
+     * @param permissionChecker The current context's permission checker
+     * @param groupId The current site ID
+     * @return A list of templates indexed by file entry types
+     *
+     * @throws PortalException If an error occurs while searching templates
+     */
+    private Map<Group, List<DDMTemplate>> getDLFileEntryTypeTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(DLFileEntryTypeTemplateHandler.class));
+    }
+
+    /**
+     * Returns the DL File Entry types templates
+     *
+     * @param permissionChecker The current context's permission checker
+     * @param groupId The current site ID
+     * @param classNameId The template's classNameId
+     * @return A list of templates indexed by file entry types
+     *
+     * @throws PortalException If an error occurs while searching templates
+     */
+    private Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId, long classNameId) throws PortalException {
+        HashMap<Group, List<DDMTemplate>> adts = new HashMap<>();
+
+        long[] currentGroupIds = this.portal.getCurrentAndAncestorSiteGroupIds(groupId);
+        long userId = permissionChecker.getUserId();
+        for(long currentGroupId : currentGroupIds) {
+            List<DDMTemplate> groupTemplates = this.ddmTemplateService.getTemplates(currentGroupId, classNameId)
+                .stream()
+                .filter(template -> {
+                    // See DDMTemplatePermission.java in Liferay's source code for the inspirational stuff
+                    String modelResourceName = DDMTemplate.class.getName();
+                    long companyId = template.getCompanyId();
+                    long templateId = template.getTemplateId();
+                    String actionKey = ActionKeys.VIEW;
+
+                    return (
+                        permissionChecker.hasOwnerPermission(companyId, modelResourceName, templateId, userId, actionKey) ||
+                        permissionChecker.hasPermission(companyId, modelResourceName, templateId, actionKey)
+                    );
+                })
+                .collect(Collectors.toList());
+
+            // If we have templates to show, put it in the map
+            if(!groupTemplates.isEmpty()) {
+                Group group = this.groupService.getGroup(currentGroupId);
+                adts.put(group, groupTemplates);
+            }
+        }
+
+        return adts;
+    }
+
+    /**
      * Performs a search for a single configuration tab
      *
      * @param request The portlet request that triggered the search
@@ -273,7 +324,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @throws SearchException If an error occurs during search
      */
     private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher, int offset, int pageSize, int loadMoreSize) throws SearchException {
-        List<String> selectedAssetTypes = tab.getAssetTypes();
+        String selectedAssetType = tab.getAssetType();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
 
         // Allow the "blank keyword" special case
@@ -315,16 +366,16 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         searchContext.setEnd(end);
 
         AssetEntriesFacet assetEntriesFacet = new AssetEntriesFacet(searchContext);
-        searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
+        String[] assetEntryClassNames = new String[1];
+        assetEntryClassNames[0] = selectedAssetType;
+        searchContext.setEntryClassNames(assetEntryClassNames);
         searchContext.addFacet(assetEntriesFacet);
 
-        for(String selectedAssetType : selectedAssetTypes) {
-            SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(selectedAssetType);
-            if(processor != null) {
-                Facet facet = processor.getFacet(searchContext, config, tab);
-                if(facet != null) {
-                    searchContext.addFacet(facet);
-                }
+        SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(selectedAssetType);
+        if(processor != null) {
+            Facet facet = processor.getFacet(searchContext, config, tab);
+            if(facet != null) {
+                searchContext.addFacet(facet);
             }
         }
 
