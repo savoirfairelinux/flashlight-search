@@ -1,13 +1,27 @@
 package com.savoirfairelinux.flashlight.service.impl;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-import javax.portlet.*;
+
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+import javax.portlet.ReadOnlyException;
+import javax.portlet.ValidatorException;
 import javax.servlet.http.HttpServletRequest;
+
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -19,8 +33,14 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.*;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.SearchContextFactory;
+import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
+import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManager;
 import com.liferay.portal.kernel.search.hits.HitsProcessorRegistry;
@@ -40,6 +60,7 @@ import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
+import com.savoirfairelinux.flashlight.service.impl.facet.DLFileEntryTypeFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchFacetDisplayHandlerServiceTracker;
 import com.savoirfairelinux.flashlight.service.impl.search.result.SearchResultProcessorServiceTracker;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
@@ -59,31 +80,32 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     private static final List<String> MANAGED_SEARCH_FACETS = Arrays.asList(
         DDMStructureFacet.class.getName(),
-        AssetEntriesFacet.class.getName()
+        AssetEntriesFacet.class.getName(),
+        DLFileEntryTypeFacet.class.getName()
     );
 
-    @Reference(unbind = "-")
+    @Reference
     private ClassNameLocalService classNameService;
 
-    @Reference(unbind = "-")
+    @Reference
     private DDMStructureLocalService ddmStructureService;
 
-    @Reference(unbind = "-")
+    @Reference
     private DDMTemplateLocalService ddmTemplateService;
 
-    @Reference(unbind = "-")
+    @Reference
     private GroupLocalService groupService;
 
-    @Reference(unbind = "-")
+    @Reference
     private Portal portal;
 
     @Reference(unbind = "-")
     private FacetedSearcherManager facetedSearcherManager;
 
-    @Reference(unbind = "-")
+    @Reference
     private SearchResultProcessorServiceTracker searchResultProcessorServicetracker;
 
-    @Reference(unbind = "-")
+    @Reference
     private HitsProcessorRegistry hitsProcessorRegistry;
 
     @Reference
@@ -252,7 +274,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      */
     private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher, int offset, int pageSize, int loadMoreSize) throws SearchException {
         List<String> selectedAssetTypes = tab.getAssetTypes();
-        Map<String, String> contentTemplates = tab.getContentTemplates();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
 
         // Allow the "blank keyword" special case
@@ -297,28 +318,17 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         searchContext.setEntryClassNames(selectedAssetTypes.toArray(new String[selectedAssetTypes.size()]));
         searchContext.addFacet(assetEntriesFacet);
 
-        DDMStructureFacet structureFacet = new DDMStructureFacet(searchContext);
-        String[] ddmStructures = contentTemplates.keySet()
-            .stream()
-            .map(structureUuid -> {
-                String structureKey;
-                List<DDMStructure> structures = this.ddmStructureService.getDDMStructuresByUuidAndCompanyId(structureUuid, searchContext.getCompanyId());
-                if(structures.size() == 1) {
-                    structureKey = structures.get(0).getStructureKey();
-                } else {
-                    // Ambiguous or unavailable structure
-                    structureKey = null;
+        for(String selectedAssetType : selectedAssetTypes) {
+            SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(selectedAssetType);
+            if(processor != null) {
+                Facet facet = processor.getFacet(searchContext, config, tab);
+                if(facet != null) {
+                    searchContext.addFacet(facet);
                 }
-                return structureKey;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet())
-            .toArray(new String[contentTemplates.size()]);
+            }
+        }
 
-        structureFacet.setValues(ddmStructures);
-        searchContext.addFacet(structureFacet);
-
-        addConfiguredFacets(searchContext, tab);
+        this.addConfiguredFacets(searchContext, tab);
 
         Hits hits = searcher.search(searchContext);
         this.hitsProcessorRegistry.process(searchContext, hits);
@@ -327,20 +337,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
         for (Document document : hits.getDocs()) {
             String assetType = document.getField(Field.ENTRY_CLASS_NAME).getValue();
-            long scopeGroupId = Long.parseLong(document.getField(Field.SCOPE_GROUP_ID).getValue());
-            String ddmStructureKey = document.getField(DocumentField.DDM_STRUCTURE_KEY.getName()).getValue();
             SearchResult processedDocument;
 
             try {
-                DDMStructure structure = this.searchStructure(scopeGroupId, assetType, ddmStructureKey);
-
-                if(contentTemplates.containsKey(structure.getUuid())) {
-                    processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, structure, document);
-                } else {
-                    LOG.debug("Template not defined for given document - skipping");
-                    processedDocument = null;
-                }
-            } catch (SearchResultProcessorException | PortalException e) {
+                processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, document);
+            } catch (SearchResultProcessorException e) {
                 LOG.error("Cannot process document", e);
                 processedDocument = null;
             }
@@ -438,32 +439,17 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      *
      * @throws SearchResultProcessorException Thrown if an active processor was unable to process the document
      */
-    private SearchResult processDocument(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, DDMStructure structure, Document document) throws SearchResultProcessorException {
+    private SearchResult processDocument(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, Document document) throws SearchResultProcessorException {
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
         SearchResult result;
 
         if(processor != null) {
-            result = processor.process(request, response, searchContext, tab, structure, document);
+            result = processor.process(request, response, searchContext, tab, document);
         } else {
             result = null;
         }
 
         return result;
     }
-
-    /**
-     * Search a DDM structure in the given group ID and its ancestors
-     *
-     * @param groupId The group ID from which to start the search
-     * @param assetType The asset type on which the structure must be applied
-     * @param structureKey The structure key
-     * @return The DDM structure or null if none found or unavailable
-     * @throws PortalException If the structure is not found
-     */
-    private DDMStructure searchStructure(long groupId, String assetType, String structureKey) throws PortalException {
-        long classNameId = this.classNameService.getClassNameId(assetType);
-        return this.ddmStructureService.getStructure(groupId, classNameId, structureKey, true);
-    }
-
 
 }
