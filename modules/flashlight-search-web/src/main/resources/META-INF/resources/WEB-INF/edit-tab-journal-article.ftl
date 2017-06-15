@@ -1,12 +1,11 @@
 <fieldset class="fieldet">
-    <legend><@liferay_ui["message"] key="Journal article rendering" /></legend>
+    <legend><@liferay_ui["message"] key="fieldset.journal.article" /></legend>
     <#list availableJournalArticleStructures?keys as className>
         <#assign clStructures = availableJournalArticleStructures[className] />
         <div class="form-group">
-            <p><strong>${className}</strong></p>
             <#list clStructures as structure>
                 <#if structure.templates?has_content>
-                    <div class="form-group input-select-wrapper">
+                    <div class="form-group">
                         <label class="control-label" for="${ns}journal-article-template-${structure.uuid}">${structure.getName(locale)}</label>
                         <select class="form-control" id="${ns}journal-article-template-${structure.uuid}" name="${ns}journal-article-template-${structure.uuid}">
                             <option value=""><@liferay_ui["message"] key="Disabled" /></option>

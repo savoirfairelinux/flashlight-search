@@ -13,7 +13,7 @@
                        type="text"
                        size="30"
                        name="${ns}keywords"
-                       placeholder="<@liferay_ui['message'] key='search' />"
+                       placeholder="<@liferay_ui['message'] key='action.search' />"
                        value="${keywords}">
             </div>
             <div class="lfr-ddm-field-group lfr-ddm-field-group-inline field-wrapper">
@@ -21,7 +21,7 @@
                         type="submit"
                         name="${ns}submit">
                     <i class="icon-search"></i>
-                    <span class="lfr-btn-label"><@liferay_ui['message'] key='search' /></span>
+                    <span class="lfr-btn-label"><@liferay_ui['message'] key='action.search' /></span>
                 </button>
             </div>
         </div>
@@ -34,7 +34,7 @@
             <div class="nav-tabs-scrollbar">
                 <ul class="nav nav-tabs nav-tabs-default">
                     <li role="presentation" class="${tabId?has_content?then('','active')}">
-                        <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="flashlight-all-results" /> (${resultsContainer.totalSearchResults})</a>
+                        <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="tab.all" /> (${resultsContainer.totalSearchResults})</a>
                     </li>
                     <#list searchPages?keys as tab>
                         <#if resultsContainer.hasSearchResults(tab)>
@@ -60,7 +60,7 @@
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <div class="panel-title">
-                                                <strong><@liferay_ui["message"] key="flashlight-facet-${searchFacet.label}" /></strong>
+                                                <strong><@liferay_ui["message"] key="facet.${searchFacet.label}" /></strong>
                                             </div>
                                         </div>
                                         <div class="panel-body">
@@ -74,8 +74,8 @@
                                                 <li>
                                                     <a class="${noTermsApplied?then('text-primary', 'text-default')}"
                                                        href="${tabUrls[tab.id]}&${ns}${searchFacet.fieldName}="
-                                                       title="<@liferay_ui["message"] key="All" />">
-                                                        <@liferay_ui["message"] key="All" />
+                                                       title="<@liferay_ui["message"] key="tab.all" />">
+                                                        <@liferay_ui["message"] key="tab.all" />
                                                     </a>
                                                 </li>
                                                 <#list searchFacet.terms as term>
@@ -132,7 +132,7 @@
                                             markupView="lexicon"
                                             message="Load more"
                                         />
-                                        <@liferay_ui["message"] key="Load more" />
+                                        <@liferay_ui["message"] key="action.load.more" />
                                     </button>
                                 </#if>
                             </div>

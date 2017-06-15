@@ -1,8 +1,13 @@
 <#include "init.ftl" />
 
-<@liferay_ui["success"] key="configuration.saved" message="Configuration saved" />
+<@liferay_ui["success"] key="configuration.saved" message="message.configuration.saved" />
 
-<p><a href="${editGlobalUrl}"><@liferay_ui["message"] key="Back to global configuration" /></a></p>
+<header class="header-toolbar">
+    <div class="toolbar-group-content">
+        <a href="${editGlobalUrl}" title="<@liferay_ui['message'] key='action.back.to.global.conf' />"><span class="icon-angle-left"></span> <@liferay_ui["message"] key="action.back.to.global.conf" /></a>
+
+    </div>
+</header>
 
 <form action="${saveTabUrl}" method="POST" name="${ns}tab-form">
     <#if tabId?? && tabId != "">
@@ -13,9 +18,14 @@
     <input type="hidden" name="${ns}redirect-url" value="${redirectUrl}" />
 
     <fieldset class="fieldset">
-        <legend><@liferay_ui["message"] key="Tab information" /></legend>
-        <div class="form-group input-select-wrapper">
-            <label for="${ns}tab-order"><@liferay_ui["message"] key="Tab order" /></label>
+        <legend><@liferay_ui["message"] key="fieldset.tab.info" /></legend>
+
+        <div class="form-group">
+            <input class="btn btn-block btn-primary" type="submit" value="<@liferay_ui['message'] key='button.save' />" />
+        </div>
+
+        <div class="form-group">
+            <label for="${ns}tab-order"><@liferay_ui["message"] key="label.tab.order" /></label>
             <select class="form-control" id="${ns}tab-order" name="${ns}tab-order">
                 <#list 1..tabOrderRange as i>
                     <#if i == tabOrder>
@@ -27,32 +37,32 @@
             </select>
         </div>
         <#list availableLocales as availableLocale>
-            <div class="form-group input-text-wrapper">
+            <div class="form-group">
                 <label for="${ns}title-${availableLocale}">${availableLocale.getDisplayName(locale)}</label>
-                <input type="text" id="${ns}title-${availableLocale}" name="${ns}title-${availableLocale}" value="${titleMap[availableLocale]!''}" />
+                <input class="form-control" type="text" id="${ns}title-${availableLocale}" name="${ns}title-${availableLocale}" value="${titleMap[availableLocale]!''}" />
             </div>
         </#list>
-        <div class="form-group input-text-wrapper">
-            <label for="${ns}page-size"><@liferay_ui["message"] key="Page size" /></label>
-            <input type="text" id="${ns}page-size" name="${ns}page-size" value="${tabPageSize}" />
+        <div class="form-group">
+            <label for="${ns}page-size"><@liferay_ui["message"] key="label.page.size" /></label>
+            <input class="form-control" type="text" id="${ns}page-size" name="${ns}page-size" value="${tabPageSize}" />
         </div>
-        <div class="form-group input-text-wrapper">
-            <label for="${ns}full-page-size"><@liferay_ui["message"] key="Detailed page size" /></label>
-            <input type="text" id="${ns}full-page-size" name="${ns}full-page-size" value="${tabFullPageSize}" />
+        <div class="form-group">
+            <label for="${ns}full-page-size"><@liferay_ui["message"] key="label.page.size.full" /></label>
+            <input class="form-control" type="text" id="${ns}full-page-size" name="${ns}full-page-size" value="${tabFullPageSize}" />
         </div>
-        <div class="form-group input-text-wrapper">
-            <label for="${ns}load-more-page-size"><@liferay_ui["message"] key="Load more page size" /></label>
-            <input type="text" id="${ns}load-more-page-size" name="${ns}load-more-page-size" value="${tabLoadMorePageSize}" />
+        <div class="form-group">
+            <label for="${ns}load-more-page-size"><@liferay_ui["message"] key="label.page.size.load.more" /></label>
+            <input class="form-control" type="text" id="${ns}load-more-page-size" name="${ns}load-more-page-size" value="${tabLoadMorePageSize}" />
         </div>
     </fieldset>
 
     <fieldset class="fieldset">
-        <legend><@liferay_ui["message"] key="Facet configuration" /></legend>
-        <div class="form-group input-checkbox-wrapper">
+        <legend><@liferay_ui["message"] key="fieldset.facets" /></legend>
+        <div class="form-group">
             <table class="table table-bordered">
-                <summary><@liferay_ui["message"] key="Search facets" /></summary>
+                <summary><@liferay_ui["message"] key="table.facet.conf" /></summary>
                 <thead>
-                    <tr><th><@liferay_ui["message"] key="Facet" /></th><th><@liferay_ui["message"] key="Action" /></th></tr>
+                    <tr><th><@liferay_ui["message"] key="table.facets.head.facet" /></th><th><@liferay_ui["message"] key="table.facets.head.action" /></th></tr>
                 </thead>
                 <#list supportedSearchFacets as supportedFacet>
                     <#assign facetClassName = supportedFacet.class.name />
@@ -67,7 +77,7 @@
                         </td>
                         <td>
                             <#if searchFacetUrls[facetClassName]??>
-                                <a href="${searchFacetUrls[facetClassName]}"><@liferay_ui["message"] key="configure" /></a>
+                                <a class="btn btn-default" href="${searchFacetUrls[facetClassName]}"><@liferay_ui["message"] key="action.configure" /></a>
                             </#if>
                         </td>
                     </tr>
@@ -81,7 +91,7 @@
     </#if>
 
     <div class="form-group">
-        <input class="btn btn-default" type="submit" value="<@liferay_ui['message'] key='Submit' />" />
+        <input class="btn btn-block btn-primary" type="submit" value="<@liferay_ui['message'] key='button.save' />" />
     </div>
 
 </form>

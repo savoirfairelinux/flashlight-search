@@ -9,11 +9,11 @@
     <fieldset class="fieldset">
         <legend><@liferay_ui["message"] key="Appearance" /></legend>
 
-        <div class="form-group input-select-wrapper">
-            <label class="control-label" for="${ns}adt-uuid"><@liferay_ui["message"] key="Application display template" /></label>
+        <div class="form-group">
+            <label for="${ns}adt-uuid"><@liferay_ui["message"] key="label.adt" /></label>
             <select class="form-control" id="${ns}adt-uuid" name="${ns}adt-uuid">
-                <optgroup label="<@liferay_ui['message'] key='Default' />">
-                    <option value=""><@liferay_ui["message"] key="No ADT" /></option>
+                <optgroup label="<@liferay_ui['message'] key='adt.default' />">
+                    <option value=""><@liferay_ui["message"] key="adt.none" /></option>
                 </optgroup>
                 <#list applicationDisplayTemplates?keys as key>
                     <optgroup label="${key}">
@@ -37,10 +37,10 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th><@liferay_ui["message"] key="Order" /></th>
-                        <th><@liferay_ui["message"] key="Title" /></th>
-                        <th><@liferay_ui["message"] key="Structures" /></th>
-                        <th><@liferay_ui["message"] key="Actions" /></th>
+                        <th><@liferay_ui["message"] key="table.tabs.head.order" /></th>
+                        <th><@liferay_ui["message"] key="table.tabs.head.title" /></th>
+                        <th><@liferay_ui["message"] key="table.tabs.head.mapping" /></th>
+                        <th><@liferay_ui["message"] key="table.tabs.head.actions" /></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,7 +61,7 @@
                                         <#if structure.templates?has_content>
                                             <#list structure.templates as template>
                                                 <#if contentTemplates[structure.uuid]?? && contentTemplates[structure.uuid] == template.uuid>
-                                                    <li><a href="${editTabUrl}">${structure.getName(locale)} => ${template.getName(locale)}</a></li>
+                                                    <li><a href="${editTabUrl}">${structure.getName(locale)} <span class="icon-arrow-right"></span> ${template.getName(locale)}</a></li>
                                                 </#if>
                                             </#list>
                                         </#if>
@@ -71,17 +71,20 @@
                                     <#assign templates = availableDlFileEntryTypeTemplatesUuidIndex[dlFileEntryType.uuid] />
                                     <#list templates as template>
                                         <#if dlFileEntryTypeTemplates[dlFileEntryType.uuid]?? && dlFileEntryTypeTemplates[dlFileEntryType.uuid] == template.uuid>
-                                            <li><a href="${editTabUrl}">${dlFileEntryType.getName(locale)} => ${template.getName(locale)}</a></li>
+                                            <li><a href="${editTabUrl}">${dlFileEntryType.getName(locale)} <span class="icon-arrow-right"></span> ${template.getName(locale)}</a></li>
                                         </#if>
                                     </#list>
                                 </#list>
                             </ul>
                         </td>
                         <td>
-                            <ul>
-                                <li><a href="${editTabUrl}"><@liferay_ui["message"] key="Edit" /></a></li>
-                                <li><a href="${deleteTabUrl}"><@liferay_ui["message"] key="Delete" /></a></li>
-                            </ul>
+                            <div class="toolbar-group-content">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-cog"></span></a>
+                                <ul class="dropdown-menu dropdown-menu-right">
+                                    <li><a href="${editTabUrl}"><@liferay_ui["message"] key="action.edit" /></a></li>
+                                    <li><a href="${deleteTabUrl}"><@liferay_ui["message"] key="action.delete" /></a></li>
+                                </ul>
+                            <div>
                         </td>
                     </tr>
                 </#list>
@@ -89,13 +92,19 @@
             </table>
         </#if>
 
-        <#list createTabUrls?keys as assetType>
-            <p><a class="btn btn-default" href="${createTabUrls[assetType]}"><@liferay_ui["message"] key="Create a ${assetType} tab" arguments="${assetType}" /></a></p>
-        </#list>
+        <div class="form-group btn-group dropdown">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" type="button"><@liferay_ui["message"] key="button.create.tab" /> <span class="caret"></span></button>
+
+            <ul class="dropdown-menu" role="menu">
+            <#list createTabUrls?keys as assetType>
+                <li><a href="${createTabUrls[assetType]}"><@liferay_ui["message"] key="asset.type.${assetType}" /></a></li>
+            </#list>
+            </ul>
+        </div>
     </fieldset>
 
     <div class="form-group">
-        <input class="btn btn-default" type="submit" value="<@liferay_ui['message'] key='Submit' />" />
+        <input class="btn btn-block btn-primary" type="submit" value="<@liferay_ui['message'] key='button.save' />" />
     </div>
 
 </form>
