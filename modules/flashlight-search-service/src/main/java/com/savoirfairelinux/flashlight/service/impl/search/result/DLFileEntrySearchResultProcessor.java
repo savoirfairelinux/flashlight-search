@@ -16,6 +16,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
 import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.document.library.kernel.util.DL;
@@ -23,6 +24,8 @@ import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.search.Document;
@@ -55,6 +58,8 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 )
 public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
 
+    private static final Log LOG = LogFactoryUtil.getLog(DLFileEntrySearchResultProcessor.class);
+
     @Reference
     private DLFileEntryTypeLocalService dlFileEntryTypeService;
 
@@ -77,8 +82,19 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
         DLFileEntryTypeFacet facet = new DLFileEntryTypeFacet(searchContext);
         Map<String, String> fileEntryTypes = tab.getDLFileEntryTypeTemplates();
         long companyId = searchContext.getCompanyId();
-
         ArrayList<Long> fileEntryTypeIds = new ArrayList<>(fileEntryTypes.size());
+
+        // Again, special case for the default file entry type, which has pretty much all fields set to zero except the
+        // UUID.
+        try {
+            DLFileEntryType basicDocument = this.dlFileEntryTypeService.getFileEntryType(DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT);
+            if(fileEntryTypes.containsKey(basicDocument.getUuid())) {
+                fileEntryTypeIds.add(DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT);
+            }
+        } catch(PortalException e) {
+            LOG.warn("Cannot obtain basic document UUID", e);
+        }
+
         for(String fileEntryTypeUuid : fileEntryTypes.keySet()) {
             List<DLFileEntryType> companyFileEntryTypes = this.dlFileEntryTypeService.getDLFileEntryTypesByUuidAndCompanyId(fileEntryTypeUuid, companyId);
             if(companyFileEntryTypes.size() == 1) {

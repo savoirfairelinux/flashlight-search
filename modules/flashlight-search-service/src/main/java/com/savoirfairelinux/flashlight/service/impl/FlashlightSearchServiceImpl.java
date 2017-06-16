@@ -23,6 +23,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
@@ -177,14 +178,16 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         List<DLFileEntryType> fileEntryTypes = this.dlFileEntryTypeService.getFileEntryTypes(this.portal.getCurrentAndAncestorSiteGroupIds(groupId));
         HashMap<DLFileEntryType, List<DDMTemplate>> fileEntryTypeTemplateMapping = new HashMap<>(fileEntryTypes.size());
 
+        Map<Group, List<DDMTemplate>> templatesByGroup = this.getDLFileEntryTypeTemplates(permissionChecker, groupId);
+        List<DDMTemplate> templates = new ArrayList<>();
+        for(List<DDMTemplate> groupTemplates : templatesByGroup.values()) {
+            templates.addAll(groupTemplates);
+        }
+
+        // Put the default file entry type in there (because getFileEntryTypes won't do it)
+        fileEntryTypeTemplateMapping.put(this.dlFileEntryTypeService.getDLFileEntryType(DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT), templates);
+
         for(DLFileEntryType fileEntryType : fileEntryTypes) {
-            Map<Group, List<DDMTemplate>> templatesByGroup = this.getDLFileEntryTypeTemplates(permissionChecker, groupId);
-            List<DDMTemplate> templates = new ArrayList<>();
-
-            for(List<DDMTemplate> groupTemplates : templatesByGroup.values()) {
-                templates.addAll(groupTemplates);
-            }
-
             fileEntryTypeTemplateMapping.put(fileEntryType, templates);
         }
 
