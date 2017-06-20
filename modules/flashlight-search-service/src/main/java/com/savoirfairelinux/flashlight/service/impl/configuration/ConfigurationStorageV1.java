@@ -29,14 +29,18 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final String CONF_KEY_FORMAT_PAGE_SIZE = "%s[page-size]";
     private static final String CONF_KEY_FORMAT_FULL_PAGE_SIZE = "%s[full-page-size]";
     private static final String CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE = "%s[load-more-page-size]";
-    private static final String CONF_KEY_FORMAT_ASSET_TYPES = "%s[asset-types]";
+    private static final String CONF_KEY_FORMAT_ASSET_TYPE = "%s[asset-type]";
 
     private static final String CONF_KEY_FORMAT_SEARCH_FACET = "%s[search-facet-%s]";
-    private static final String CONF_KEY_FORMAT_DDM = "%s[ddm-%s]";
+    private static final String CONF_KEY_FORMAT_JOURNAL_ARTICLE_TEMPLATE = "%s[journal-article-template-%s]";
+    private static final String CONF_KEY_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATE = "%s[dl-file-entry-type-template-%s]";
     private static final String CONF_KEY_FORMAT_TITLE = "%s[title-%s]";
 
-    private static final String CONF_KEY_PATTERN_FORMAT_DDM = "^%s\\[ddm-" + PatternConstants.UUID + "\\]$";
-    private static final int CONF_KEY_PATTERN_FORMAT_DDM_GROUP_UUID = 1;
+    private static final String CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES = "^%s\\[journal-article-template-" + PatternConstants.UUID + "\\]$";
+    private static final int CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES_GROUP_UUID = 1;
+
+    private static final String CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES = "^%s\\[dl-file-entry-type-template-" + PatternConstants.UUID + "\\]$";
+    private static final int CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES_GROUP_UUID = 1;
 
     private static final String CONF_KEY_PATTERN_FORMAT_TITLE = "^%s\\[title-" + PatternConstants.LOCALE + "\\]$";
     private static final int CONF_KEY_PATTERN_FORMAT_TITLE_GROUP_LOCALE = 1;
@@ -79,19 +83,20 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int pageSize = configurationTab.getPageSize();
         int fullPageSize = configurationTab.getFullPageSize();
         int loadMorePageSize = configurationTab.getLoadMorePageSize();
-        List<String> assetTypes = configurationTab.getAssetTypes();
+        String assetType = configurationTab.getAssetType();
         Map<String, String> searchFacets = configurationTab.getSearchFacets();
         Map<String, String> titleMap = configurationTab.getTitleMap();
-        Map<String, String> contentTemplates = configurationTab.getContentTemplates();
+        Map<String, String> journalArticleTemplates = configurationTab.getJournalArticleTemplates();
+        Map<String, String> dlFileEntryTemplates = configurationTab.getDLFileEntryTypeTemplates();
 
         // Write singular values
-        String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
+        String assetTypeKey = format(CONF_KEY_FORMAT_ASSET_TYPE, tabId);
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
         String loadMorePageSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
 
-        preferences.setValues(assetTypesKey, assetTypes.toArray(new String[assetTypes.size()]));
+        preferences.setValue(assetTypeKey, assetType);
         preferences.setValue(orderKey, Integer.toString(order));
         preferences.setValue(pageSizeKey, Integer.toString(pageSize));
         preferences.setValue(fullPageSizeKey, Integer.toString(fullPageSize));
@@ -99,16 +104,18 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         // Flush previously entered composed values
         Enumeration<String> prefKeys = preferences.getNames();
-        Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
+        Pattern journalArticleTemplateKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES, tabId));
+        Pattern dlFileEntryTemplateKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
         Pattern searchFacetConfigPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         while(prefKeys.hasMoreElements()) {
             String key = prefKeys.nextElement();
-            Matcher ddmMatcher = ddmKeyPattern.matcher(key);
+            Matcher jouranlArticleTemplateMatcher = journalArticleTemplateKeyPattern.matcher(key);
+            Matcher dlFileEntryTemplateMatcher = dlFileEntryTemplateKeyPattern.matcher(key);
             Matcher titleMatcher = titleKeyPattern.matcher(key);
             Matcher searchFacetConfigMatcher = searchFacetConfigPattern.matcher(key);
 
-            if(ddmMatcher.matches() || titleMatcher.matches()) {
+            if(jouranlArticleTemplateMatcher.matches() || dlFileEntryTemplateMatcher.matches() || titleMatcher.matches()) {
                 // Always re-write DDM and title fields
                 preferences.reset(key);
             } else if(searchFacetConfigMatcher.matches()) {
@@ -120,9 +127,14 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             }
         }
 
-        // Write the DDM templates
-        for(Entry<String, String> templateMapping : contentTemplates.entrySet()) {
-            preferences.setValue(format(CONF_KEY_FORMAT_DDM, tabId, templateMapping.getKey()), templateMapping.getValue());
+        // Write the Journal Article display templates
+        for(Entry<String, String> journalTemplateMapping : journalArticleTemplates.entrySet()) {
+            preferences.setValue(format(CONF_KEY_FORMAT_JOURNAL_ARTICLE_TEMPLATE, tabId, journalTemplateMapping.getKey()), journalTemplateMapping.getValue());
+        }
+
+        // Write the DL File Entry display templates
+        for(Entry<String, String> dlTemplateMapping : dlFileEntryTemplates.entrySet()) {
+            preferences.setValue(format(CONF_KEY_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATE, tabId, dlTemplateMapping.getKey()), dlTemplateMapping.getValue());
         }
 
         // Write the search facets
@@ -153,7 +165,6 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             preferences.setValues(CONF_KEY_TABS, registeredTabs);
         }
 
-
         preferences.store();
     }
 
@@ -175,22 +186,33 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         preferences.setValues(CONF_KEY_TABS, tabIds.toArray(new String[tabIds.size()]));
 
         // Then, flush out any singular value
-        String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
+        String assetTypeKey = format(CONF_KEY_FORMAT_ASSET_TYPE, tabId);
         String orderKey = format(CONF_KEY_FORMAT_ORDER, tabId);
+        String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
+        String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
+        String loadMoreSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
 
         preferences.reset(orderKey);
-        preferences.reset(assetTypesKey);
+        preferences.reset(assetTypeKey);
+        preferences.reset(pageSizeKey);
+        preferences.reset(fullPageSizeKey);
+        preferences.reset(loadMoreSizeKey);
 
         // Finally, flush out composed values
         Enumeration<String> prefKeys = preferences.getNames();
-        Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
+        Pattern journalArticleTemplatesKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES, tabId));
+        Pattern dlFileEntryTemplatesKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
+        Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
+
         while(prefKeys.hasMoreElements()) {
             String key = prefKeys.nextElement();
-            boolean ddmMatches = ddmKeyPattern.matcher(key).matches();
+            boolean journalArticleTemplatesMatches = journalArticleTemplatesKeyPattern.matcher(key).matches();
+            boolean dlFileEntryTemplatesMatches = dlFileEntryTemplatesKeyPattern.matcher(key).matches();
             boolean titleMatches = titleKeyPattern.matcher(key).matches();
+            boolean searchFacetMatches = searchFacetPattern.matcher(key).matches();
 
-            if(ddmMatches || titleMatches) {
+            if(journalArticleTemplatesMatches || dlFileEntryTemplatesMatches || titleMatches || searchFacetMatches) {
                 preferences.reset(key);
             }
         }
@@ -210,9 +232,10 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
         String loadMoreSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
-        String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPES, tabId);
+        String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPE, tabId);
         Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
-        Pattern ddmKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DDM, tabId));
+        Pattern journalArticleTemplatesPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES, tabId));
+        Pattern dlFileEntryTemplatesPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES, tabId));
         Pattern titleKeyPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_TITLE, tabId));
 
         // Singular keys
@@ -220,22 +243,26 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int pageSize = Integer.parseInt(preferences.getValue(pageSizeKey, THREE));
         int fullPageSize = Integer.parseInt(preferences.getValue(fullPageSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE)));
         int loadMorePageSize = Integer.parseInt(preferences.getValue(loadMoreSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE)));
-        List<String> assetTypes = Arrays.asList(preferences.getValues(assetTypesKey, EMPTY_ARRAY));
+        String assetType = preferences.getValue(assetTypesKey, StringPool.BLANK);
 
         // Composed keys
         Enumeration<String> prefKeys = preferences.getNames();
-        HashMap<String, String> contentTemplates = new HashMap<>();
+        HashMap<String, String> journalArticleTemplates = new HashMap<>();
+        HashMap<String, String> dlFileEntryTemplates = new HashMap<>();
         HashMap<String, String> searchFacets = new HashMap<>();
         HashMap<String, String> titleMap = new HashMap<>();
 
         while(prefKeys.hasMoreElements()) {
             String key = prefKeys.nextElement();
-            Matcher ddmKeyMatcher = ddmKeyPattern.matcher(key);
+            Matcher journalArticleTemplateKeyMatcher = journalArticleTemplatesPattern.matcher(key);
+            Matcher dlFileEntryTemplateKeyMatcher = dlFileEntryTemplatesPattern.matcher(key);
             Matcher titleKeyMatcher = titleKeyPattern.matcher(key);
             Matcher searchFacetMatcher = searchFacetPattern.matcher(key);
 
-            if(ddmKeyMatcher.matches()) {
-                contentTemplates.put(ddmKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_DDM_GROUP_UUID), preferences.getValue(key, StringPool.BLANK));
+            if(journalArticleTemplateKeyMatcher.matches()) {
+                journalArticleTemplates.put(journalArticleTemplateKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES_GROUP_UUID), preferences.getValue(key, StringPool.BLANK));
+            } else if(dlFileEntryTemplateKeyMatcher.matches()) {
+                dlFileEntryTemplates.put(dlFileEntryTemplateKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES_GROUP_UUID), preferences.getValue(key, StringPool.BLANK));
             } else if(titleKeyMatcher.matches()) {
                 titleMap.put(titleKeyMatcher.group(CONF_KEY_PATTERN_FORMAT_TITLE_GROUP_LOCALE), preferences.getValue(key, StringPool.BLANK));
             } else if(searchFacetMatcher.matches()) {
@@ -244,7 +271,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetTypes, searchFacets, contentTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, searchFacets, journalArticleTemplates, dlFileEntryTemplates);
     }
 
 }

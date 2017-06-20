@@ -10,7 +10,8 @@ public enum DocumentField {
     /**
      * A document's DDM structure key, if the document type supports it
      */
-    DDM_STRUCTURE_KEY("ddmStructureKey");
+    DDM_STRUCTURE_KEY("ddmStructureKey"),
+    FILE_ENTRY_TYPE_ID("fileEntryTypeId");
 
     private String name;
 
