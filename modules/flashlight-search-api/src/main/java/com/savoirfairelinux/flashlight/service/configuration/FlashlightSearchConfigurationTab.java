@@ -1,7 +1,6 @@
 package com.savoirfairelinux.flashlight.service.configuration;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -26,15 +25,16 @@ public class FlashlightSearchConfigurationTab {
     private int loadMorePageSize;
     private Map<String, String> titleMap;
 
-    private List<String> assetTypes;
+    private String assetType;
     private Map<String, String> searchFacets;
-    private Map<String, String> contentTemplates;
+    private Map<String, String> journalArticleTemplates;
+    private Map<String, String> dlFileEntryTypeTemplates;
 
     /**
      * Creates an empty configuration tab
      */
     public FlashlightSearchConfigurationTab() {
-        this(generateId(), DEFAULT_ORDER, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, DEFAULT_LOAD_MORE_PAGE_SIZE, Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
+        this(generateId(), DEFAULT_ORDER, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, DEFAULT_LOAD_MORE_PAGE_SIZE, Collections.emptyMap(), StringPool.BLANK, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -45,12 +45,13 @@ public class FlashlightSearchConfigurationTab {
      * @param fullPageSize The amount of results to display when a tab is selected
      * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
-     * @param assetTypes The tab's asset types
+     * @param assetType The tab's asset type
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
-     * @param contentTemplates The tab's content display templates
+     * @param journalArticleTemplates The tab's Journal Article display templates
+     * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
      */
-    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
-        this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetTypes, searchFacets, contentTemplates);
+    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates) {
+        this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, searchFacets, journalArticleTemplates, dlFileEntryTypeTemplates);
     }
 
     /**
@@ -62,48 +63,50 @@ public class FlashlightSearchConfigurationTab {
      * @param fullPageSize The amount of results to display when a tab is selected
      * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
-     * @param assetTypes The tab's asset types
+     * @param assetType The tab's asset type
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
-     * @param contentTemplates The tab's content display templates
+     * @param journalArticleTemplates The tab's Journal Article display templates
+     * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
      */
-    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, List<String> assetTypes, Map<String, String> searchFacets, Map<String, String> contentTemplates) {
+    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates) {
         this.id = id;
         this.order = order;
         this.pageSize = pageSize;
         this.fullPageSize = fullPageSize;
         this.loadMorePageSize = loadMorePageSize;
         this.titleMap = Collections.unmodifiableMap(titleMap);
-        this.assetTypes = Collections.unmodifiableList(assetTypes);
+        this.assetType = assetType;
         this.searchFacets = Collections.unmodifiableMap(searchFacets);
-        this.contentTemplates = Collections.unmodifiableMap(contentTemplates);
+        this.journalArticleTemplates = Collections.unmodifiableMap(journalArticleTemplates);
+        this.dlFileEntryTypeTemplates = Collections.unmodifiableMap(dlFileEntryTypeTemplates);
     }
 
     /**
      * @return The tab's unique ID
      */
     public String getId() {
-        return id;
+        return this.id;
     }
 
     /**
      * @return The tab's appearance order
      */
     public int getOrder() {
-        return order;
+        return this.order;
     }
 
     /**
      * @return The amount of results to display when no tab is selected
      */
     public int getPageSize() {
-        return pageSize;
+        return this.pageSize;
     }
 
     /**
      * @return The amount of results to display when a tab is selected
      */
     public int getFullPageSize() {
-        return fullPageSize;
+        return this.fullPageSize;
     }
 
     /**
@@ -117,7 +120,7 @@ public class FlashlightSearchConfigurationTab {
      * @return The tab's localized title map
      */
     public Map<String, String> getTitleMap() {
-        return titleMap;
+        return this.titleMap;
     }
 
     /**
@@ -143,8 +146,8 @@ public class FlashlightSearchConfigurationTab {
     /**
      * @return The tab's selected asset types
      */
-    public List<String> getAssetTypes() {
-        return assetTypes;
+    public String getAssetType() {
+        return this.assetType;
     }
 
     /**
@@ -155,10 +158,17 @@ public class FlashlightSearchConfigurationTab {
     }
 
     /**
-     * @return The tab's content display templates
+     * @return The tab's Journal Article content display templates
      */
-    public Map<String, String> getContentTemplates() {
-        return contentTemplates;
+    public Map<String, String> getJournalArticleTemplates() {
+        return this.journalArticleTemplates;
+    }
+
+    /**
+     * @return The tab's DL File Entry type display templates
+     */
+    public Map<String, String> getDLFileEntryTypeTemplates() {
+        return this.dlFileEntryTypeTemplates;
     }
 
     /**
