@@ -33,9 +33,11 @@
         <div class="nav-tabs-scroll">
             <div class="nav-tabs-scrollbar">
                 <ul class="nav nav-tabs nav-tabs-default">
-                    <li role="presentation" class="${tabId?has_content?then('','active')}">
-                        <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="tab.all" /> (${resultsContainer.totalSearchResults})</a>
-                    </li>
+                    <#if searchPages?size gt 1>
+                        <li role="presentation" class="${tabId?has_content?then('','active')}">
+                            <a href="${keywordUrl}" role="tab"><@liferay_ui["message"] key="tab.all" /> (${resultsContainer.totalSearchResults})</a>
+                        </li>
+                    </#if>
                     <#list searchPages?keys as tab>
                         <#if resultsContainer.hasSearchResults(tab)>
                             <li role="presentation" class="${(tabId?has_content && tabId == tab.id)?then("active","")}">

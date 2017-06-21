@@ -23,6 +23,7 @@ import static java.lang.String.format;
 public class ConfigurationStorageV1 implements ConfigurationStorage {
 
     private static final String CONF_KEY_ADT_UUID = "adt-uuid";
+    private static final String CONF_KEY_DO_SEARCH_ON_STARTUP = "do-search-on-startup";
     private static final String CONF_KEY_TABS = "tabs";
 
     private static final String CONF_KEY_FORMAT_ORDER = "%s[order]";
@@ -57,6 +58,9 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         // Get the ADT UUID
         String adtUUID = preferences.getValue(CONF_KEY_ADT_UUID, StringPool.BLANK);
 
+        // Perform a search on startup?
+        boolean doSearchOnStartup = preferences.getValue(CONF_KEY_DO_SEARCH_ON_STARTUP, StringPool.FALSE).equals(StringPool.TRUE);
+
         // Get the tabs
         String[] tabIds = preferences.getValues(CONF_KEY_TABS, EMPTY_ARRAY);
         int tabIdsLength = tabIds.length;
@@ -67,12 +71,13 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             tabs.add(this.readTabConfiguration(preferences, tabIds[i]));
         }
 
-        return new FlashlightSearchConfiguration(adtUUID, tabs);
+        return new FlashlightSearchConfiguration(adtUUID, doSearchOnStartup, tabs);
     }
 
     @Override
-    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
         preferences.setValue(CONF_KEY_ADT_UUID, adtUuid);
+        preferences.setValue(CONF_KEY_DO_SEARCH_ON_STARTUP, Boolean.toString(doSearchOnStartup));
         preferences.store();
     }
 

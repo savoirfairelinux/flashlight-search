@@ -51,9 +51,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
@@ -131,8 +129,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.storageEngine.saveADT(adtUuid, preferences);
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.storageEngine.saveGlobalSettings(adtUuid, doSearchOnStartup, preferences);
     }
 
     @Override
@@ -329,11 +327,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     private SearchPage search(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, FacetedSearcher searcher, int offset, int pageSize, int loadMoreSize) throws SearchException {
         String selectedAssetType = tab.getAssetType();
         SearchContext searchContext = SearchContextFactory.getInstance(this.portal.getHttpServletRequest(request));
-
-        // Allow the "blank keyword" special case
-        if (BLANK_SPECIAL_KEYWORD.equals(ParamUtil.getString(request, "keywords"))) {
-            searchContext.setKeywords(StringPool.BLANK);
-        }
 
         // Note for future reference : * Start is the index, starting at 0, of the first result to return.
         //                             * End is the number of results to show, starting at the given index

@@ -13,16 +13,19 @@ import java.util.Map;
 public class FlashlightSearchConfiguration {
 
     private String adtUUID;
+    private boolean doSearchOnStartup;
     private Map<String, FlashlightSearchConfigurationTab> tabs;
 
     /**
      * Creates the configuration model
      *
      * @param adtUUID The ADT's UUID
+     * @param doSearchOnStartup True to perform a search as soon as the search page is visited
      * @param tabs the search groups/tabs configuration
      */
-    public FlashlightSearchConfiguration(String adtUUID, List<FlashlightSearchConfigurationTab> tabs) {
+    public FlashlightSearchConfiguration(String adtUUID, boolean doSearchOnStartup, List<FlashlightSearchConfigurationTab> tabs) {
         this.adtUUID = adtUUID;
+        this.doSearchOnStartup = doSearchOnStartup;
         this.tabs = new LinkedHashMap<>(tabs.size());
         tabs.stream()
             .sorted(Comparator.comparing(FlashlightSearchConfigurationTab::getOrder))
@@ -40,10 +43,17 @@ public class FlashlightSearchConfiguration {
     }
 
     /**
+     * @return True to perform a search on startup
+     */
+    public boolean doSearchOnStartup() {
+        return this.doSearchOnStartup;
+    }
+
+    /**
      * @return The search configuration tabs, sorted in order, indexed by ID
      */
     public Map<String, FlashlightSearchConfigurationTab> getTabs() {
-        return tabs;
+        return this.tabs;
     }
 
 }

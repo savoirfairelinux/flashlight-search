@@ -7,7 +7,19 @@
     <input type="hidden" name="${ns}redirect-url" value="${editGlobalUrl}" />
 
     <fieldset class="fieldset">
-        <legend><@liferay_ui["message"] key="Appearance" /></legend>
+        <legend><@liferay_ui["message"] key="fieldset.behavior" /></legend>
+        <div class="form-group">
+            <label for="${ns}do-search-on-startup"><@liferay_ui["message"] key="label.do.search.startup" /></label>
+            <#assign startupChecked = "" />
+            <#if doSearchOnStartup>
+                <#assign startupChecked = " checked=\"checked\"" />
+            </#if>
+            <input type="checkbox" id="${ns}do-search-on-startup" name="${ns}do-search-on-startup"${startupChecked} />
+        </div>
+    </fieldset>
+
+    <fieldset class="fieldset">
+        <legend><@liferay_ui["message"] key="fieldset.appearance" /></legend>
 
         <div class="form-group">
             <label for="${ns}adt-uuid"><@liferay_ui["message"] key="label.adt" /></label>
