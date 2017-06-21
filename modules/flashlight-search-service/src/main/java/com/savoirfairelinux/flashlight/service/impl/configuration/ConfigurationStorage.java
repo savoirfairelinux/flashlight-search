@@ -37,16 +37,17 @@ public interface ConfigurationStorage {
     public FlashlightSearchConfiguration readConfiguration(PortletPreferences preferences);
 
     /**
-     * Saves the application display template settings
+     * Saves the application's global settings
      *
      * @param adtUuid The ADT's UUID
+     * @param doSearchOnStartup True to perform a search as soon as the portlet is displayed
      * @param preferences The portlet preferences
      *
      * @throws ReadOnlyException If the configuration is read only
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Writes the given configuration tab model into the configuration. No format validation is performed at this level.

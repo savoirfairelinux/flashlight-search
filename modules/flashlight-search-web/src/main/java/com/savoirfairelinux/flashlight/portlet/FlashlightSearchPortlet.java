@@ -116,6 +116,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_KEYWORDS = "keywords";
     private static final String FORM_FIELD_EDIT_MODE = "edit-mode";
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
+    private static final String FORM_FIELD_DO_SEARCH_ON_STARTUP = "do-search-on-startup";
     private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
     private static final String FORM_FIELD_PAGE_OFFSET = "page-offset";
@@ -181,15 +182,20 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
+        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         String keywords = searchContext.getKeywords();
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+
+        if(tabs.size() == 1) {
+            tabId = tabs.keySet().iterator().next();
+        }
 
         if (!PATTERN_UUID.matcher(tabId).matches()) {
             tabId = null;
         }
 
         SearchResultsContainer results;
-        if (!keywords.isEmpty()) {
+        if (!keywords.isEmpty() || config.doSearchOnStartup()) {
             try {
                 results = this.searchService.search(request, response, tabId, 0, false);
             } catch (SearchException e) {
@@ -199,7 +205,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             results = new SearchResultsContainer(Collections.emptyMap());
         }
 
-        Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         HashMap<String, PortletURL> tabUrls = new HashMap<>(tabs.size());
         HashMap<String, ResourceURL> loadMoreUrls = new HashMap<>(tabs.size());
 
@@ -370,6 +375,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         String adtUuid = config.getAdtUUID();
+        boolean doSearchOnStartup = config.doSearchOnStartup();
 
         PortletURL editGlobalUrl = response.createRenderURL();
         editGlobalUrl.setPortletMode(PortletMode.EDIT);
@@ -438,6 +444,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("createTabUrls", createTabUrls);
         templateCtx.put("saveGlobalUrl", saveGlobalUrl);
         templateCtx.put("adtUuid", adtUuid);
+        templateCtx.put("doSearchOnStartup", doSearchOnStartup);
         templateCtx.put("applicationDisplayTemplates", applicationDisplayTemplates);
         templateCtx.put("availableStructures", availableStructures);
         templateCtx.put("availableDlFileEntryTypeTemplates", availableDlFileEntryTypeTemplates);
@@ -651,10 +658,12 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     public void actionSaveGlobal(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         String adtUuid = ParamUtil.get(request, FORM_FIELD_ADT_UUID, StringPool.BLANK);
+        boolean doSearchOnStartup = ParamUtil.getBoolean(request, FORM_FIELD_DO_SEARCH_ON_STARTUP, false);
+
         if (!PATTERN_UUID.matcher(adtUuid).matches()) {
             adtUuid = StringPool.BLANK;
         }
-        this.searchService.saveADT(adtUuid, request.getPreferences());
+        this.searchService.saveGlobalSettings(adtUuid, doSearchOnStartup, request.getPreferences());
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
         if (!redirectUrl.isEmpty()) {

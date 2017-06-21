@@ -22,7 +22,6 @@ import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 public interface FlashlightSearchService {
 
     public static final Class<FlashlightSearchService> ADT_CLASS = FlashlightSearchService.class;
-    public static final String BLANK_SPECIAL_KEYWORD = "FLASHLIGHT_BLANK_KEYWORD";
 
     /**
      * Reads the configuration stored in portlet preferences and returns a model object corresponding to the
@@ -43,13 +42,14 @@ public interface FlashlightSearchService {
      * Saves the application display template into the configuration
      *
      * @param adtUuid The ADT's UUID
+     * @param doSearchOnStartup True to perform a search as soon as the portlet is displayed
      * @param preferences The portlet preferences
      *
      * @throws ReadOnlyException If the configuration is read only
      * @throws ValidatorException If the configuration is invalid
      * @throws IOException If the configuration fails to save
      */
-    public void saveADT(String adtUuid, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException;
 
     /**
      * Writes the given configuration tab model into the configuration. No format validation is performed at this level.
