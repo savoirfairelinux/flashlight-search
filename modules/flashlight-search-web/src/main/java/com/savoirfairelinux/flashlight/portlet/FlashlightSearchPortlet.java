@@ -185,6 +185,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         String keywords = searchContext.getKeywords();
         String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        boolean performedSearch = false;
 
         if(tabs.size() == 1) {
             tabId = tabs.keySet().iterator().next();
@@ -198,6 +199,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         if (!keywords.isEmpty() || config.doSearchOnStartup()) {
             try {
                 results = this.searchService.search(request, response, tabId, 0, false);
+                performedSearch = true;
             } catch (SearchException e) {
                 throw new PortletException(e);
             }
@@ -223,7 +225,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
             // Put a load more URL only if we performed a search, that we have search results, and that the total search
             // results is more than a single page can contain
-            if(!keywords.isEmpty() && results.hasSearchResults(tabUuid) && results.getSearchPage(tabUuid).getTotalSearchResults() > tab.getFullPageSize()) {
+            if(performedSearch && results.hasSearchResults(tabUuid) && results.getSearchPage(tabUuid).getTotalSearchResults() > tab.getFullPageSize()) {
                 ResourceURL loadMoreUrl = response.createResourceURL();
                 loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
                 loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
