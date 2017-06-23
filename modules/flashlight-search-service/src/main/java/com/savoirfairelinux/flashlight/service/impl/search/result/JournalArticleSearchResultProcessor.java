@@ -5,20 +5,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.portlet.PortletMode;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
-import javax.portlet.WindowState;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
-import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
-import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -33,7 +30,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
-import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.portlet.PortletURLFactory;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
@@ -42,15 +39,17 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.impl.DocumentField;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
+import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
+import com.savoirfairelinux.flashlight.service.portlet.PortletRequestParameter;
+import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
@@ -66,12 +65,21 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 )
 public class JournalArticleSearchResultProcessor implements SearchResultProcessor {
 
+    @SuppressWarnings("unused")
+    private static final Log LOG = LogFactoryUtil.getLog(JournalArticleSearchResultProcessor.class);
+
     private static final String ASSET_TYPE = JournalArticle.class.getName();
 
-    private static final Log LOG = LogFactoryUtil.getLog(JournalArticleSearchResultProcessor.class);
+    private static final String LIFECYCLE_RENDER = "0";
+
+    @Reference
+    private AssetEntryLocalService assetEntryService;
 
     @Reference
     private DDMStructureLocalService ddmStructureService;
+
+    @Reference
+    private Http http;
 
     @Reference
     private JournalArticleLocalService journalArticleService;
@@ -81,6 +89,12 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
     @Reference
     private ClassNameLocalService classNameService;
+
+    @Reference
+    private Portal portal;
+
+    @Reference
+    private PortletURLFactory portletUrlFactory;
 
     @Override
     public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
@@ -109,7 +123,7 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
     }
 
     @Override
-    public SearchResult process(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, Document document) throws SearchResultProcessorException {
+    public SearchResult process(Document document, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab) throws SearchResultProcessorException {
         long groupId = Long.parseLong(document.get(Field.GROUP_ID));
         String articleId = document.get(Field.ARTICLE_ID);
         Map<String, String> templates = configurationTab.getJournalArticleTemplates();
@@ -136,12 +150,12 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
         SearchResult result;
         try {
+            ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
             JournalArticle article = this.journalArticleService.getArticle(groupId, articleId);
             double version = article.getVersion();
-            String assetViewURL = getAssetViewURL(request, response, document);
+            String assetViewURL = this.getAssetViewURL(document, request, response, themeDisplay.getLayout(), configurationTab.getId(), searchContext.getKeywords());
             request.setAttribute("flashlightSearchViewURL", assetViewURL);
             PortletRequestModel portletRequestModel = new PortletRequestModel(request, response);
-            ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
             JournalArticleDisplay journalContentDisplay = journalContent.getDisplay(groupId, articleId, version, template.getTemplateKey(), Constants.VIEW, searchContext.getLanguageId(), 0, portletRequestModel, themeDisplay);
             String articleContents = journalContentDisplay.getContent();
             result = new SearchResult(articleContents, assetViewURL, article.getTitle(searchContext.getLanguageId()));
@@ -157,74 +171,43 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
         return ASSET_TYPE;
     }
 
+    /**
+     * Gets the search result's view URL
+     *
+     * @param document The searched document
+     * @param request The request
+     * @param response The response
+     * @param currentLayout The current page
+     * @param tabId The search tab ID
+     *
+     * @return The search result URL
+     */
+    private String getAssetViewURL(Document document, PortletRequest request, PortletResponse response, Layout currentLayout, String tabId, String keywords) {
+        String className = document.get(Field.ENTRY_CLASS_NAME);
+        long classPK = GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK));
+        String currentUrl = this.portal.getCurrentURL(request);
+        String returnedUrl;
 
-    private String getAssetViewURL(PortletRequest renderRequest, PortletResponse renderResponse, Document document) {
+        if(ASSET_TYPE.equals(className) && classPK > 0) {
+            try {
+                PortletURL viewInPortletUrlObj = this.portletUrlFactory.create(request, FlashlightSearchPortletKeys.PORTLET_NAME, currentLayout, LIFECYCLE_RENDER);
+                viewInPortletUrlObj.setParameter(PortletRequestParameter.VIEW_MODE.getName(), ViewMode.VIEW_JOURNAL.getParamValue());
+                viewInPortletUrlObj.setParameter(Field.ENTRY_CLASS_PK, Long.toString(classPK));
+                viewInPortletUrlObj.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
+                viewInPortletUrlObj.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
+                String viewInPortletUrl = viewInPortletUrlObj.toString();
 
-        String className = document.get("entryClassName");
-        int classPK = GetterUtil.getInteger(document.get("entryClassPK"));
-        try {
-            String currentURL = PortalUtil.getCurrentURL(renderRequest);
-            ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
-
-            PortletURL viewContentURL = PortletURLFactoryUtil.create(renderRequest,
-                "com_liferay_portal_search_web_portlet_SearchPortlet", themeDisplay.getLayout(),
-                PortletRequest.RENDER_PHASE);
-
-            viewContentURL.setParameter("mvcPath", "/view_content.jsp");
-            viewContentURL.setParameter("redirect", currentURL);
-            viewContentURL.setPortletMode(PortletMode.VIEW);
-            viewContentURL.setWindowState(WindowState.MAXIMIZED);
-
-            if (Validator.isNull(className) || (classPK <= 0)) {
-                return viewContentURL.toString();
+                AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(className);
+                AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(classPK);
+                returnedUrl = assetRenderer.getURLViewInContext((LiferayPortletRequest) request, (LiferayPortletResponse) response, viewInPortletUrl);
+            } catch(Exception e) {
+                returnedUrl = currentUrl;
             }
-
-            AssetEntry assetEntry = AssetEntryLocalServiceUtil.getEntry(className, classPK);
-
-            AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil
-                .getAssetRendererFactoryByClassName(className);
-
-            if (assetRendererFactory == null) {
-                return viewContentURL.toString();
-            }
-
-            viewContentURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
-            viewContentURL.setParameter("type", assetRendererFactory.getType());
-
-            AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(classPK);
-
-            String viewURL = assetRenderer.getURLViewInContext((LiferayPortletRequest) renderRequest,
-                (LiferayPortletResponse) renderResponse, viewContentURL.toString());
-
-            return checkViewURL(assetEntry, true, viewURL, currentURL, themeDisplay);
-        } catch (Exception e) {
-            LOG.error("Unable to get search result  view URL for class " + className + " with primary key " + classPK,
-                e);
-
-            return "";
-        }
-    }
-
-    private String checkViewURL(AssetEntry assetEntry, boolean viewInContext, String viewURL, String currentURL,
-                                ThemeDisplay themeDisplay) {
-
-        if (Validator.isNull(viewURL)) {
-            return viewURL;
+        } else {
+            returnedUrl = currentUrl;
         }
 
-        viewURL = HttpUtil.setParameter(viewURL, "inheritRedirect", viewInContext);
-
-        Layout layout = themeDisplay.getLayout();
-
-        String assetEntryLayoutUuid = assetEntry.getLayoutUuid();
-
-        if (!viewInContext
-            || (Validator.isNotNull(assetEntryLayoutUuid) && !assetEntryLayoutUuid.equals(layout.getUuid()))) {
-
-            viewURL = HttpUtil.setParameter(viewURL, "redirect", currentURL);
-        }
-
-        return viewURL;
+        return returnedUrl;
     }
 
 }

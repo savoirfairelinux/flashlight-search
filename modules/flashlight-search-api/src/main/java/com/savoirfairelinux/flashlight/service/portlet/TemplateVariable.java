@@ -1,7 +1,7 @@
-package com.savoirfairelinux.flashlight.portlet.framework;
+package com.savoirfairelinux.flashlight.service.portlet;
 
 /**
- * List of variables available from the FreeMarker templates
+ * List of variables available from the portlet's rendering templates
  */
 public enum TemplateVariable {
 

@@ -10,14 +10,14 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.Portlet;
-import com.liferay.portal.kernel.portlet.PortletURLFactory;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
+import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -56,9 +56,6 @@ public class SearchUrlAction extends Action {
 
     @Reference
     private Portal portal;
-
-    @Reference
-    private PortletURLFactory portletUrlFactory;
 
     @Reference
     private LayoutLocalService layoutService;

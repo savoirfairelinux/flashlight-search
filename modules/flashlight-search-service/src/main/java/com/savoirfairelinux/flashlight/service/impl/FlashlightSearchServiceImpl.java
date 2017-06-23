@@ -69,6 +69,7 @@ import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
+import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateHandler;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
@@ -172,6 +173,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
+    public Map<Group, List<DDMTemplate>> getJournalArticleViewTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(JournalArticleViewTemplateHandler.class));
+    }
+
+    @Override
     public Map<DLFileEntryType, List<DDMTemplate>> getFileEntryTypes(PermissionChecker permissionChecker, long groupId) throws PortalException {
         List<DLFileEntryType> fileEntryTypes = this.dlFileEntryTypeService.getFileEntryTypes(this.portal.getCurrentAndAncestorSiteGroupIds(groupId));
         HashMap<DLFileEntryType, List<DDMTemplate>> fileEntryTypeTemplateMapping = new HashMap<>(fileEntryTypes.size());
@@ -193,7 +199,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+    public Map<Group, List<DDMTemplate>> getPortletApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
         return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(FlashlightSearchService.ADT_CLASS));
     }
 
@@ -387,7 +393,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             SearchResult processedDocument;
 
             try {
-                processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, document);
+                processedDocument = this.processDocument(document, assetType, request, response, searchContext, config, tab);
             } catch (SearchResultProcessorException e) {
                 LOG.error("Cannot process document", e);
                 processedDocument = null;
@@ -473,25 +479,25 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     /**
      * Transforms a document in a search result
      *
+     * @param document The document itself
+     * @param assetType The document's asset type
      * @param request The portlet request that triggered the search
      * @param response The portlet response that triggered the search
      * @param searchContext The search context
      * @param configuration The search configuration
      * @param tab The tab in which the search is performed
-     * @param assetType The document's asset type
      * @param structure The document's DDM structure
-     * @param document The document itself
      *
      * @return A search result or null if no processor can handle the document
      *
      * @throws SearchResultProcessorException Thrown if an active processor was unable to process the document
      */
-    private SearchResult processDocument(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, Document document) throws SearchResultProcessorException {
+    private SearchResult processDocument(Document document, String assetType, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) throws SearchResultProcessorException {
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
         SearchResult result;
 
         if(processor != null) {
-            result = processor.process(request, response, searchContext, tab, document);
+            result = processor.process(document, request, response, searchContext, tab);
         } else {
             result = null;
         }

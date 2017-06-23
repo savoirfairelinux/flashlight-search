@@ -113,7 +113,7 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
     }
 
     @Override
-    public SearchResult process(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, Document searchResultDocument) throws SearchResultProcessorException {
+    public SearchResult process(Document searchResultDocument, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab) throws SearchResultProcessorException {
         long fileEntryTypeId = Long.parseLong(searchResultDocument.get(DocumentField.FILE_ENTRY_TYPE_ID.getName()));
         SearchResult result;
 
