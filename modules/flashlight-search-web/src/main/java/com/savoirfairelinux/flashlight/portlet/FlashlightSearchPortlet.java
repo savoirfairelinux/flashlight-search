@@ -1,41 +1,17 @@
 package com.savoirfairelinux.flashlight.portlet;
 
-import static java.lang.String.format;
-
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.Portlet;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletURL;
-import javax.portlet.ProcessAction;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.ResourceRequest;
-import javax.portlet.ResourceResponse;
-import javax.portlet.ResourceURL;
+import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRenderer;
@@ -63,11 +39,7 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.*;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
@@ -85,6 +57,8 @@ import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
 import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateContextVariable;
 import com.savoirfairelinux.flashlight.service.portlet.template.ViewContextVariable;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
+
+import static java.lang.String.format;
 
 @Component(
     service = Portlet.class,
@@ -220,21 +194,21 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         String keywords = searchContext.getKeywords();
-        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
+        String currentTabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         boolean performedSearch = false;
 
         if(tabs.size() == 1) {
-            tabId = tabs.keySet().iterator().next();
+            currentTabId = tabs.keySet().iterator().next();
         }
 
-        if (!PATTERN_UUID.matcher(tabId).matches()) {
-            tabId = null;
+        if (!PATTERN_UUID.matcher(currentTabId).matches()) {
+            currentTabId = null;
         }
 
         SearchResultsContainer results;
         if (!keywords.isEmpty() || config.doSearchOnStartup()) {
             try {
-                results = this.searchService.search(request, response, tabId, 0, false);
+                results = this.searchService.search(request, response, currentTabId, 0, false);
                 performedSearch = true;
             } catch (SearchException e) {
                 throw new PortletException(e);
@@ -264,11 +238,11 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             if(performedSearch && results.hasSearchResults(tabUuid) && results.getSearchPage(tabUuid).getTotalSearchResults() > tab.getFullPageSize()) {
                 ResourceURL loadMoreUrl = response.createResourceURL();
                 loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
-                loadMoreUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
+                loadMoreUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabUuid);
                 loadMoreUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
                 loadMoreUrl.setParameter(PortletRequestParameter.PAGE_OFFSET.getName(), ONE);
                 loadMoreUrl.setParameter(PortletRequestParameter.RANDOM_CACHE.getName(), randomCacheParamValue());
-                loadMoreUrls.put(tabId, loadMoreUrl);
+                loadMoreUrls.put(tabUuid, loadMoreUrl);
             }
         }
 
@@ -285,7 +259,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put(ViewContextVariable.LOAD_MORE_URLS.getVariableName(), loadMoreUrls);
         templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
-        templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
+        templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), currentTabId);
         templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchResultFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(httpServletRequest, searchFacet, term));
         templateCtx.put(ViewContextVariable.JAVASCRIPT_PATH.getVariableName(), javascriptUrl);
 
