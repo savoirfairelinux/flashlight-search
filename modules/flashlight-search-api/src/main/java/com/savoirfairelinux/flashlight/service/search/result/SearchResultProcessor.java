@@ -1,8 +1,8 @@
 package com.savoirfairelinux.flashlight.service.search.result;
 
+import java.util.Collection;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.facet.Facet;
@@ -17,7 +17,7 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
  */
 public interface SearchResultProcessor {
 
-    public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab);
+    public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab);
 
     /**
      * Creates a search result model representing the given search result document

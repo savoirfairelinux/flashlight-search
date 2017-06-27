@@ -1,17 +1,12 @@
 package com.savoirfairelinux.flashlight.service.impl.search.result;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
-
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
@@ -37,14 +32,11 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.Constants;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Http;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.*;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.impl.DocumentField;
+import com.savoirfairelinux.flashlight.service.impl.facet.ClassNameIdFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
@@ -97,7 +89,7 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
     private PortletURLFactory portletUrlFactory;
 
     @Override
-    public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
+    public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
         Map<String, String> templates = tab.getJournalArticleTemplates();
         DDMStructureFacet structureFacet = new DDMStructureFacet(searchContext);
         String[] ddmStructures = templates.keySet()
@@ -119,7 +111,10 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
         structureFacet.setValues(ddmStructures);
 
-        return structureFacet;
+        ClassNameIdFacet classNameIdFacet = new ClassNameIdFacet(searchContext);
+        classNameIdFacet.setValues(new int[]{0});
+
+        return Arrays.asList(new Facet[]{structureFacet, classNameIdFacet});
     }
 
     @Override
