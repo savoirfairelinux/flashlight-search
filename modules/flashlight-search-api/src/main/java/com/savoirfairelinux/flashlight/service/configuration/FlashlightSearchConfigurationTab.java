@@ -53,6 +53,8 @@ public class FlashlightSearchConfigurationTab {
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param journalArticleTemplates The tab's Journal Article display templates
      * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
+     * @param sortBy The field to sort the search results by, set to StringPool.BLANK to ignore sorting.
+     * @param sortReverse true to reverse the sort order
      */
     public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, String journalArticleViewTemplate, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates, String sortBy, boolean sortReverse) {
         this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, journalArticleViewTemplate, searchFacets, journalArticleTemplates, dlFileEntryTypeTemplates, sortBy, sortReverse);
@@ -72,6 +74,8 @@ public class FlashlightSearchConfigurationTab {
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param journalArticleTemplates The tab's Journal Article display templates
      * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
+     * @param sortBy The field to sort the search results by, set to StringPool.BLANK to ignore sorting.
+     * @param sortReverse true to reverse the sort order
      */
     public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, String journalArticleViewTemplate, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates, String sortBy, boolean sortReverse) {
         this.id = id;
@@ -166,7 +170,7 @@ public class FlashlightSearchConfigurationTab {
     }
 
     /**
-     * @return <c>true</c> to reverse the sort order.
+     * @return true to reverse the sort order.
      */
     public boolean isSortReverse() {
         return sortReverse;
