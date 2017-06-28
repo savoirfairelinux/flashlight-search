@@ -18,23 +18,26 @@ public class FlashlightSearchConfigurationTab {
     public static final int DEFAULT_FULL_PAGE_SIZE = 30;
     public static final int DEFAULT_LOAD_MORE_PAGE_SIZE = 3;
 
-    private String id;
-    private int order;
-    private int pageSize;
-    private int fullPageSize;
-    private int loadMorePageSize;
-    private Map<String, String> titleMap;
+    private final String id;
+    private final int order;
+    private final int pageSize;
+    private final int fullPageSize;
+    private final int loadMorePageSize;
+    private final Map<String, String> titleMap;
 
-    private String assetType;
-    private Map<String, String> searchFacets;
-    private Map<String, String> journalArticleTemplates;
-    private Map<String, String> dlFileEntryTypeTemplates;
+    private final String assetType;
+    private final String journalArticleViewTemplate;
+    private final String sortBy;
+    private final boolean sortReverse;
+    private final Map<String, String> searchFacets;
+    private final Map<String, String> journalArticleTemplates;
+    private final Map<String, String> dlFileEntryTypeTemplates;
 
     /**
      * Creates an empty configuration tab
      */
     public FlashlightSearchConfigurationTab() {
-        this(generateId(), DEFAULT_ORDER, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, DEFAULT_LOAD_MORE_PAGE_SIZE, Collections.emptyMap(), StringPool.BLANK, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
+        this(generateId(), DEFAULT_ORDER, DEFAULT_PAGE_SIZE, DEFAULT_FULL_PAGE_SIZE, DEFAULT_LOAD_MORE_PAGE_SIZE, Collections.emptyMap(), StringPool.BLANK, StringPool.BLANK, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), StringPool.BLANK, false);
     }
 
     /**
@@ -46,12 +49,13 @@ public class FlashlightSearchConfigurationTab {
      * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
      * @param assetType The tab's asset type
+     * @param journalArticleViewTemplate The template used to render a journal article search result in the portlet
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param journalArticleTemplates The tab's Journal Article display templates
      * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
      */
-    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates) {
-        this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, searchFacets, journalArticleTemplates, dlFileEntryTypeTemplates);
+    public FlashlightSearchConfigurationTab(int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, String journalArticleViewTemplate, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates, String sortBy, boolean sortReverse) {
+        this(generateId(), order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, journalArticleViewTemplate, searchFacets, journalArticleTemplates, dlFileEntryTypeTemplates, sortBy, sortReverse);
     }
 
     /**
@@ -64,11 +68,12 @@ public class FlashlightSearchConfigurationTab {
      * @param loadMorePageSize The amount of results to display per call to "load more"
      * @param titleMap The tab's localized title map
      * @param assetType The tab's asset type
+     * @param journalArticleViewTemplate The template used to render a journal article search result in the portlet
      * @param searchFacets The tab's search facets and their JSON configuration, indexed by class name
      * @param journalArticleTemplates The tab's Journal Article display templates
      * @param dlFileEntryTypeTemplates The tab's DL File Entry type display templates
      */
-    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates) {
+    public FlashlightSearchConfigurationTab(String id, int order, int pageSize, int fullPageSize, int loadMorePageSize, Map<String, String> titleMap, String assetType, String journalArticleViewTemplate, Map<String, String> searchFacets, Map<String, String> journalArticleTemplates, Map<String, String> dlFileEntryTypeTemplates, String sortBy, boolean sortReverse) {
         this.id = id;
         this.order = order;
         this.pageSize = pageSize;
@@ -76,9 +81,12 @@ public class FlashlightSearchConfigurationTab {
         this.loadMorePageSize = loadMorePageSize;
         this.titleMap = Collections.unmodifiableMap(titleMap);
         this.assetType = assetType;
+        this.journalArticleViewTemplate = journalArticleViewTemplate;
         this.searchFacets = Collections.unmodifiableMap(searchFacets);
         this.journalArticleTemplates = Collections.unmodifiableMap(journalArticleTemplates);
         this.dlFileEntryTypeTemplates = Collections.unmodifiableMap(dlFileEntryTypeTemplates);
+        this.sortBy = sortBy;
+        this.sortReverse = sortReverse;
     }
 
     /**
@@ -148,6 +156,24 @@ public class FlashlightSearchConfigurationTab {
      */
     public String getAssetType() {
         return this.assetType;
+    }
+
+    /**
+     * @return The tab's sort field, or StringPool.BLANK if no sorting is set.
+     */
+    public String getSortBy() {
+        return sortBy;
+    }
+
+    /**
+     * @return <c>true</c> to reverse the sort order.
+     */
+    public boolean isSortReverse() {
+        return sortReverse;
+    }
+
+    public String getJournalArticleViewTemplate() {
+        return this.journalArticleViewTemplate;
     }
 
     /**

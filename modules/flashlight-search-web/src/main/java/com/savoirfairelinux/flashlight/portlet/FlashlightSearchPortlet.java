@@ -1,45 +1,28 @@
 package com.savoirfairelinux.flashlight.portlet;
 
-import static java.lang.String.format;
-
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.Portlet;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletURL;
-import javax.portlet.ProcessAction;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.ResourceRequest;
-import javax.portlet.ResourceResponse;
-import javax.portlet.ResourceURL;
+import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
+import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
+import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.kernel.model.AssetRenderer;
+import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
+import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -47,6 +30,7 @@ import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
@@ -55,24 +39,26 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.*;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
 import com.savoirfairelinux.flashlight.portlet.json.JSONPayloadFactory;
-import com.savoirfairelinux.flashlight.portlet.template.ViewContextVariable;
-import com.savoirfairelinux.flashlight.service.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
+import com.savoirfairelinux.flashlight.service.portlet.EditMode;
+import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
+import com.savoirfairelinux.flashlight.service.portlet.PortletRequestParameter;
+import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
+import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateContextVariable;
+import com.savoirfairelinux.flashlight.service.portlet.template.ViewContextVariable;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
+
+import static java.lang.String.format;
 
 @Component(
     service = Portlet.class,
@@ -103,8 +89,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final Map<String, String> ASSET_TYPE_EDIT_VIEWS;
     static {
         HashMap<String, String> editViews = new HashMap<>(2);
-        editViews.put("com.liferay.journal.model.JournalArticle", "edit-tab-journal-article.ftl");
-        editViews.put("com.liferay.document.library.kernel.model.DLFileEntry", "edit-tab-dl-file-entry.ftl");
+        editViews.put(JournalArticle.class.getName(), "edit-tab-journal-article.ftl");
+        editViews.put(DLFileEntry.class.getName(), "edit-tab-dl-file-entry.ftl");
         ASSET_TYPE_EDIT_VIEWS = Collections.unmodifiableMap(editViews);
     }
 
@@ -113,13 +99,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String ACTION_NAME_SAVE_FACET_CONFIG = "saveFacetConfig";
     private static final String ACTION_NAME_DELETE_TAB = "deleteTab";
 
-    private static final String FORM_FIELD_KEYWORDS = "keywords";
-    private static final String FORM_FIELD_EDIT_MODE = "edit-mode";
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final String FORM_FIELD_DO_SEARCH_ON_STARTUP = "do-search-on-startup";
-    private static final String FORM_FIELD_TAB_ID = "tab-id";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
-    private static final String FORM_FIELD_PAGE_OFFSET = "page-offset";
     private static final String FORM_FIELD_PAGE_SIZE = "page-size";
     private static final String FORM_FIELD_FULL_PAGE_SIZE = "full-page-size";
     private static final String FORM_FIELD_LOAD_MORE_PAGE_SIZE = "load-more-page-size";
@@ -127,7 +109,22 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_FACET_CLASS_NAME = "facet-class-name";
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
     private static final String FORM_FIELD_ASSET_TYPE = "asset-type";
-    private static final String FORM_FIELD_RANDOM_CACHE = "rand";
+    private static final String FORM_FIELD_JOURNAL_ARTICLE_VIEW_TEMPLATE = "journal-article-view-template";
+    private static final String FORM_FIELD_SORT_BY = "sort-by";
+    private static final List<String> FORM_FIELD_SORT_BY_AVAILABLE_FIELDS = Arrays.asList(
+        "ratings",
+        "createDate",
+        "modified",
+        "viewCount",
+        "articleId",
+        "publishDate",
+        "priority",
+        "title",
+        "expirationDate",
+        "displayDate"
+    );
+    private static final String FORM_FIELD_SORT_REVERSE = "sort-reverse";
+
     private static final Pattern FORM_FIELD_JOURNAL_TEMPLATE_UUID_PATTERN = Pattern.compile("^journal-article-template-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_DL_FILE_ENTRY_TYPE_TEMPLATE_UUID_PATTERN = Pattern.compile("^dl-file-entry-type-template-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_TITLE_PATTERN = Pattern.compile("^title-" + PatternConstants.LOCALE + "$");
@@ -164,10 +161,38 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private TemplateManager templateManager;
 
     @Reference
+    private AssetEntryLocalService assetEntryService;
+
+    @Reference
     private DDMTemplateLocalService ddmTemplateLocalService;
 
     @Reference
     private PortletDisplayTemplate portletDisplayTemplate;
+
+    /**
+     * Routes between search results and single asset view
+     *
+     * @param request  The request
+     * @param response The response
+     * @throws PortletException If something goes wrong
+     * @throws IOException      If something goes wrong
+     */
+    @Override
+    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+        String viewModeParam = ParamUtil.getString(request, PortletRequestParameter.VIEW_MODE.getName(), StringPool.BLANK);
+        ViewMode viewMode = ViewMode.getViewMode(viewModeParam);
+        switch(viewMode) {
+            case RESULTS:
+                this.doViewResults(request, response);
+            break;
+            case VIEW_JOURNAL:
+                this.doViewJournal(request, response);
+            break;
+            default:
+                this.doViewResults(request, response);
+            break;
+        }
+    }
 
     /**
      * Displays the search view (both search fields and search results)
@@ -177,28 +202,27 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @throws PortletException If something goes wrong
      * @throws IOException      If something goes wrong
      */
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+    public void doViewResults(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
         String keywords = searchContext.getKeywords();
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String currentTabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         boolean performedSearch = false;
 
         if(tabs.size() == 1) {
-            tabId = tabs.keySet().iterator().next();
+            currentTabId = tabs.keySet().iterator().next();
         }
 
-        if (!PATTERN_UUID.matcher(tabId).matches()) {
-            tabId = null;
+        if (!PATTERN_UUID.matcher(currentTabId).matches()) {
+            currentTabId = null;
         }
 
         SearchResultsContainer results;
         if (!keywords.isEmpty() || config.doSearchOnStartup()) {
             try {
-                results = this.searchService.search(request, response, tabId, 0, false);
+                results = this.searchService.search(request, response, currentTabId, 0, false);
                 performedSearch = true;
             } catch (SearchException e) {
                 throw new PortletException(e);
@@ -217,9 +241,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
             // Tab URLs
             PortletURL tabUrl = response.createRenderURL();
-            tabUrl.setParameter(FORM_FIELD_TAB_ID, tabUuid);
+            tabUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabUuid);
             if(!keywords.isEmpty()) {
-                tabUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
+                tabUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
             }
             tabUrls.put(tabUuid, tabUrl);
 
@@ -228,19 +252,19 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             if(performedSearch && results.hasSearchResults(tabUuid) && results.getSearchPage(tabUuid).getTotalSearchResults() > tab.getFullPageSize()) {
                 ResourceURL loadMoreUrl = response.createResourceURL();
                 loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
-                loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
-                loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
-                loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, ONE);
-                loadMoreUrl.setParameter(FORM_FIELD_RANDOM_CACHE, randomCacheParamValue());
-                loadMoreUrls.put(tabId, loadMoreUrl);
+                loadMoreUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabUuid);
+                loadMoreUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
+                loadMoreUrl.setParameter(PortletRequestParameter.PAGE_OFFSET.getName(), ONE);
+                loadMoreUrl.setParameter(PortletRequestParameter.RANDOM_CACHE.getName(), randomCacheParamValue());
+                loadMoreUrls.put(tabUuid, loadMoreUrl);
             }
         }
 
-        Map<String, Object> templateCtx = this.createTemplateContext();
+        Map<String, Object> templateCtx = new HashMap<>(9);
         templateCtx.put(ViewContextVariable.NAMESPACE.getVariableName(), response.getNamespace());
 
         PortletURL keywordUrl = response.createRenderURL();
-        keywordUrl.setParameter(FORM_FIELD_KEYWORDS, keywords);
+        keywordUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
 
         String javascriptUrl = format(FORMAT_JAVASCRIPT_PATH, request.getContextPath(), PATH_JAVASCRIPT);
 
@@ -249,7 +273,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put(ViewContextVariable.LOAD_MORE_URLS.getVariableName(), loadMoreUrls);
         templateCtx.put(ViewContextVariable.RESULTS_CONTAINER.getVariableName(), results);
         templateCtx.put(ViewContextVariable.KEYWORDS.getVariableName(), keywords);
-        templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), tabId);
+        templateCtx.put(ViewContextVariable.TAB_ID.getVariableName(), currentTabId);
         templateCtx.put(ViewContextVariable.FORMAT_FACET_TERM.getVariableName(), (BiFunction<SearchResultFacet, String, String>) (searchFacet, term) -> searchService.displayTerm(httpServletRequest, searchFacet, term));
         templateCtx.put(ViewContextVariable.JAVASCRIPT_PATH.getVariableName(), javascriptUrl);
 
@@ -261,6 +285,87 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
     }
 
+    /**
+     * Views a single journal article in the window
+     *
+     * @param request The request
+     * @param response The response
+     *
+     * @throws PortletException
+     * @throws IOException
+     */
+    public void doViewJournal(RenderRequest request, RenderResponse response) throws PortletException, IOException {
+        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        PermissionChecker permissionChecker = themeDisplay.getPermissionChecker();
+        Class<JournalArticle> journalArticleClass = JournalArticle.class;
+        Map<String, FlashlightSearchConfigurationTab> configTabs = this.searchService.readConfiguration(request.getPreferences()).getTabs();
+
+        long classPK = ParamUtil.getLong(request, Field.ENTRY_CLASS_PK, 0l);
+        String tabId = ParamUtil.getString(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
+        String keywords = ParamUtil.getString(request, PortletRequestParameter.KEYWORDS.getName(), StringPool.BLANK);
+
+        AssetRendererFactory<JournalArticle> factory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClass(journalArticleClass);
+        FlashlightSearchConfigurationTab configurationTab;
+        AssetRenderer<JournalArticle> renderer;
+        AssetEntry entry;
+
+        if(PATTERN_UUID.matcher(tabId).matches() && configTabs.containsKey(tabId)) {
+            configurationTab = configTabs.get(tabId);
+        } else {
+            throw new PortletException("No configuration tab found with ID \"" + tabId + "\"");
+        }
+
+        if(classPK > 0) {
+            try {
+                renderer = factory.getAssetRenderer(classPK);
+                entry = this.assetEntryService.getEntry(journalArticleClass.getName(), classPK);
+            } catch (PortalException e) {
+                throw new PortletException("Cannot obtain asset renderer or asset entry", e);
+            }
+        } else {
+            throw new PortletException("No asset sent");
+        }
+
+        try {
+            if(renderer.hasViewPermission(permissionChecker)) {
+                // We have an asset render, an asset entry and the permissions to render. Go!
+
+                // Create the "back URL" to go to the search results
+                PortletURL backUrl = response.createRenderURL();
+                backUrl.setParameter(PortletRequestParameter.VIEW_MODE.getName(), ViewMode.RESULTS.getParamValue());
+                backUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
+                backUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), keywords);
+
+                HashMap<String, Object> ctx = new HashMap<>(4);
+                ctx.put(JournalArticleViewTemplateContextVariable.ASSET_RENDERER_FACTORY.getVariableName(), factory);
+                ctx.put(JournalArticleViewTemplateContextVariable.ASSET_RENDERER.getVariableName(), renderer);
+                ctx.put(JournalArticleViewTemplateContextVariable.ASSET_ENTRY.getVariableName(), entry);
+                ctx.put(JournalArticleViewTemplateContextVariable.REDIRECT.getVariableName(), backUrl.toString());
+
+                String adtUuid = configurationTab.getJournalArticleViewTemplate();
+                if(adtUuid != null && PATTERN_UUID.matcher(adtUuid).matches()) {
+                    this.renderADT(request, response, ctx, adtUuid);
+                } else {
+                    this.renderTemplate(request, response, ctx, "view-journal-article.ftl");
+                }
+            } else {
+                throw new PortletException("Permission denied to Journal Article with classPK \"" + classPK + "\"");
+            }
+        } catch(PortalException e) {
+            throw new PortletException("Cannot render article", e);
+        }
+
+    }
+
+    /**
+     * Routes between portlet resources
+     *
+     * @param request  The request
+     * @param response The response
+     *
+     * @throws PortletException If something goes wrong
+     * @throws IOException      If something goes wrong
+     */
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
         PortletResource resource = PortletResource.getResource(request);
@@ -291,8 +396,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         response.setProperty(HTTP_HEADER_CACHE_CONTROL, CACHE_CONTROL_NO_CACHE);
         response.setProperty(ResourceResponse.EXPIRATION_CACHE, ZERO);
 
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
-        int offset = ParamUtil.getInteger(request, FORM_FIELD_PAGE_OFFSET, 0);
+        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
+        int offset = ParamUtil.getInteger(request, PortletRequestParameter.PAGE_OFFSET.getName(), 0);
         if(offset < 0) {
             offset = 0;
         }
@@ -310,10 +415,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
                     ResourceURL loadMoreUrl = response.createResourceURL();
                     loadMoreUrl.setResourceID(PortletResource.LOAD_MORE.getResourceId());
-                    loadMoreUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
-                    loadMoreUrl.setParameter(FORM_FIELD_KEYWORDS, ParamUtil.get(request, FORM_FIELD_KEYWORDS, StringPool.BLANK));
-                    loadMoreUrl.setParameter(FORM_FIELD_PAGE_OFFSET, Integer.toString(offset + 1));
-                    loadMoreUrl.setParameter(FORM_FIELD_RANDOM_CACHE, randomCacheParamValue());
+                    loadMoreUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
+                    loadMoreUrl.setParameter(PortletRequestParameter.KEYWORDS.getName(), ParamUtil.get(request, PortletRequestParameter.KEYWORDS.getName(), StringPool.BLANK));
+                    loadMoreUrl.setParameter(PortletRequestParameter.PAGE_OFFSET.getName(), Integer.toString(offset + 1));
+                    loadMoreUrl.setParameter(PortletRequestParameter.RANDOM_CACHE.getName(), randomCacheParamValue());
 
                     JSONObject payload = jsonPayloadFactory.createJSONPayload(tab, page, offset, loadMoreUrl.toString());
                     response.getWriter().print(payload.toJSONString());
@@ -344,7 +449,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     @Override
     public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         // Very, very simple routing. That's all we need, folks.
-        String editModeParam = ParamUtil.get(request, FORM_FIELD_EDIT_MODE, StringPool.BLANK);
+        String editModeParam = ParamUtil.get(request, PortletRequestParameter.EDIT_MODE.getName(), StringPool.BLANK);
         EditMode editMode = EditMode.getEditMode(editModeParam);
 
         switch(editMode) {
@@ -387,7 +492,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         for(String assetType : supportedAssetTypes) {
             PortletURL createTabUrl = response.createRenderURL();
             createTabUrl.setPortletMode(PortletMode.EDIT);
-            createTabUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.TAB.getParamValue());
+            createTabUrl.setParameter(PortletRequestParameter.EDIT_MODE.getName(), EditMode.TAB.getParamValue());
             createTabUrl.setParameter(FORM_FIELD_ASSET_TYPE, assetType);
             createTabUrls.put(assetType, createTabUrl);
         }
@@ -401,20 +506,20 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         HashMap<String, PortletURL> deleteTabUrls = new HashMap<>(tabs.size());
         tabs.keySet().forEach(tabId -> {
             PortletURL editUrl = response.createRenderURL();
-            editUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.TAB.getParamValue());
-            editUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+            editUrl.setParameter(PortletRequestParameter.EDIT_MODE.getName(), EditMode.TAB.getParamValue());
+            editUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
             editTabUrls.put(tabId, editUrl);
 
             PortletURL deleteUrl = response.createActionURL();
             deleteUrl.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_DELETE_TAB);
-            deleteUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+            deleteUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
             deleteUrl.setParameter(FORM_FIELD_REDIRECT_URL, editGlobalUrl.toString());
             deleteTabUrls.put(tabId, deleteUrl);
         });
 
         Map<String, List<DDMTemplate>> applicationDisplayTemplates;
         try {
-            Map<Group, List<DDMTemplate>> applicationDisplayTemplatesByGroup = this.searchService.getApplicationDisplayTemplates(permissionChecker, groupId);
+            Map<Group, List<DDMTemplate>> applicationDisplayTemplatesByGroup = this.searchService.getPortletApplicationDisplayTemplates(permissionChecker, groupId);
             applicationDisplayTemplates = new LinkedHashMap<>(applicationDisplayTemplatesByGroup.size());
             for (Map.Entry<Group, List<DDMTemplate>> entry : applicationDisplayTemplatesByGroup.entrySet()) {
                 applicationDisplayTemplates.put(entry.getKey().getName(locale), entry.getValue());
@@ -440,7 +545,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
         Map<String, List<DDMTemplate>> availableDlFileEntryTypeTemplatesUuidIndex = indexDlFileEntryTypeTemplatesByUuid(availableDlFileEntryTypeTemplates);
 
-        Map<String, Object> templateCtx = this.createTemplateContext();
+        HashMap<String, Object> templateCtx = new HashMap<>(14);
         templateCtx.put("ns", response.getNamespace());
         templateCtx.put("editGlobalUrl", editGlobalUrl);
         templateCtx.put("createTabUrls", createTabUrls);
@@ -468,11 +573,12 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      */
     public void doEditTab(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        PermissionChecker permissionChecker = themeDisplay.getPermissionChecker();
         long scopeGroupId = themeDisplay.getScopeGroupId();
 
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         FlashlightSearchConfigurationTab tab;
         if (tabs.containsKey(tabId)) {
             tab = tabs.get(tabId);
@@ -491,9 +597,16 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             throw new PortletException("Unable to retrieve DDM structures", e);
         }
 
+        Map<Group, List<DDMTemplate>> availableJournalArticleViewTemplates;
+        try {
+            availableJournalArticleViewTemplates = this.searchService.getJournalArticleViewTemplates(permissionChecker, scopeGroupId);
+        } catch (PortalException e) {
+            throw new PortletException("Unable to retreive Journal Article search result ADTs", e);
+        }
+
         Map<DLFileEntryType, List<DDMTemplate>> availableDlFileEntryTemplates;
         try {
-            availableDlFileEntryTemplates = this.searchService.getFileEntryTypes(themeDisplay.getPermissionChecker(), scopeGroupId);
+            availableDlFileEntryTemplates = this.searchService.getFileEntryTypes(permissionChecker, scopeGroupId);
         } catch (PortalException e) {
             throw new PortletException("Unable to retrieve DL File entry types", e);
         }
@@ -513,6 +626,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         int tabFullPageSize;
         int tabLoadMorePageSize;
         String assetType;
+        String journalArticleViewTemplate;
+        String sortBy;
+        boolean sortReverse;
         Map<String, String> searchFacets;
         Map<String, PortletURL> searchFacetsUrls;
         Map<String, String> journalArticleTemplates;
@@ -526,13 +642,16 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             tabFullPageSize = tab.getFullPageSize();
             tabLoadMorePageSize = tab.getLoadMorePageSize();
             assetType = tab.getAssetType();
+            journalArticleViewTemplate = tab.getJournalArticleViewTemplate();
             searchFacets = tab.getSearchFacets();
+            sortBy = tab.getSortBy();
+            sortReverse = tab.isSortReverse();
 
             searchFacetsUrls = new HashMap<>(searchFacets.size());
             for(String facetClassName : searchFacets.keySet()) {
                 PortletURL facetUrl = response.createRenderURL();
-                facetUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.FACET.getParamValue());
-                facetUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+                facetUrl.setParameter(PortletRequestParameter.EDIT_MODE.getName(), EditMode.FACET.getParamValue());
+                facetUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
                 facetUrl.setParameter(FORM_FIELD_FACET_CLASS_NAME, facetClassName);
                 searchFacetsUrls.put(facetClassName, facetUrl);
             }
@@ -540,8 +659,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             journalArticleTemplates = tab.getJournalArticleTemplates();
             dlFileEntryTypeTemplates = tab.getDLFileEntryTypeTemplates();
             titleMap = tab.getTitleMap();
-            redirectUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.TAB.getParamValue());
-            redirectUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+            redirectUrl.setParameter(PortletRequestParameter.EDIT_MODE.getName(), EditMode.TAB.getParamValue());
+            redirectUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
         } else {
             tabOrder = tabOrderRange;
             tabPageSize = FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE;
@@ -551,7 +670,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             if(!PATTERN_CLASS_NAME.matcher(assetType).matches()) {
                 assetType = StringPool.BLANK;
             }
+            journalArticleViewTemplate = ParamUtil.get(request, FORM_FIELD_JOURNAL_ARTICLE_VIEW_TEMPLATE, StringPool.BLANK);
+            if(!PATTERN_UUID.matcher(journalArticleViewTemplate).matches()) {
+                journalArticleViewTemplate = StringPool.BLANK;
+            }
             searchFacets = Collections.emptyMap();
+            sortBy = StringPool.BLANK;
+            sortReverse = false;
             searchFacetsUrls = Collections.emptyMap();
             journalArticleTemplates = Collections.emptyMap();
             dlFileEntryTypeTemplates = Collections.emptyMap();
@@ -561,7 +686,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         List<String> supportedAssetTypes = this.searchService.getSupportedAssetTypes();
         List<SearchFacet> supportedSearchFacets = this.searchService.getSupportedSearchFacets();
 
-        Map<String, Object> templateCtx = this.createTemplateContext();
+        HashMap<String, Object> templateCtx = new HashMap<>(24);
         // Base template data
         templateCtx.put("ns", response.getNamespace());
         templateCtx.put("editGlobalUrl", editGlobalURL.toString());
@@ -580,14 +705,19 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("availableDlFileEntryTypeTemplates", availableDlFileEntryTemplates);
         templateCtx.put("availableDlFileEntryTypeTemplatesUuidIndex", availableDlFileEntryTemplatesUuuidIndex);
         templateCtx.put("supportedAssetTypes", supportedAssetTypes);
+        templateCtx.put("availableJournalArticleViewTemplates", availableJournalArticleViewTemplates);
         templateCtx.put("supportedSearchFacets", supportedSearchFacets);
         templateCtx.put("assetType", assetType);
+        templateCtx.put("journalArticleViewTemplate", journalArticleViewTemplate);
         templateCtx.put("assetTypeEditViews", ASSET_TYPE_EDIT_VIEWS);
         templateCtx.put("searchFacets", searchFacets);
         templateCtx.put("searchFacetUrls", searchFacetsUrls);
         templateCtx.put("journalArticleTemplates", journalArticleTemplates);
         templateCtx.put("dlFileEntryTypeTemplates", dlFileEntryTypeTemplates);
         templateCtx.put("titleMap", titleMap);
+        templateCtx.put("sortByAvailableFields", FORM_FIELD_SORT_BY_AVAILABLE_FIELDS);
+        templateCtx.put("sortBy", sortBy);
+        templateCtx.put("sortReverse", sortReverse);
         this.renderTemplate(request, response, templateCtx, "edit-tab.ftl");
     }
 
@@ -601,7 +731,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @throws PortletException If something goes wrong
      */
     public void doEditFacet(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        String tabId = ParamUtil.getString(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String tabId = ParamUtil.getString(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         String facetClassName = ParamUtil.getString(request, FORM_FIELD_FACET_CLASS_NAME, StringPool.BLANK);
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         SearchFacet targetFacet = this.getSearchFacetFromRequest(tabId, facetClassName, config);
@@ -625,11 +755,11 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             }
 
             // Now we assemble our own view that includes the JSP configuration
-            Map<String, Object> templateCtx = this.createTemplateContext();
+            HashMap<String, Object> templateCtx = new HashMap<>(8);
 
             PortletURL editTabUrl = response.createRenderURL();
-            editTabUrl.setParameter(FORM_FIELD_EDIT_MODE, EditMode.TAB.getParamValue());
-            editTabUrl.setParameter(FORM_FIELD_TAB_ID, tabId);
+            editTabUrl.setParameter(PortletRequestParameter.EDIT_MODE.getName(), EditMode.TAB.getParamValue());
+            editTabUrl.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
 
             PortletURL saveFacetConfigUrl = response.createActionURL();
             saveFacetConfigUrl.setParameter(ActionRequest.ACTION_NAME, ACTION_NAME_SAVE_FACET_CONFIG);
@@ -690,13 +820,17 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     public void actionSaveTab(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         // Get raw parameters
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         String tabOrder = ParamUtil.get(request, FORM_FIELD_TAB_ORDER, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_ORDER));
         String pageSize = ParamUtil.get(request, FORM_FIELD_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_PAGE_SIZE));
         String fullPageSize = ParamUtil.get(request, FORM_FIELD_FULL_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_FULL_PAGE_SIZE));
         String loadMorePageSize = ParamUtil.get(request, FORM_FIELD_LOAD_MORE_PAGE_SIZE, Integer.toString(FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE));
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SEARCH_FACETS, StringPool.EMPTY_ARRAY);
-        String selectAssetType = ParamUtil.get(request, FORM_FIELD_ASSET_TYPE, StringPool.BLANK);
+        String selectedAssetType = ParamUtil.get(request, FORM_FIELD_ASSET_TYPE, StringPool.BLANK);
+        String selectedJournalArticleViewTemplate = ParamUtil.get(request, FORM_FIELD_JOURNAL_ARTICLE_VIEW_TEMPLATE, StringPool.BLANK);
+        String sortBy = ParamUtil.get(request, FORM_FIELD_SORT_BY, StringPool.BLANK);
+        String sortReverse = ParamUtil.get(request, FORM_FIELD_SORT_REVERSE, StringPool.FALSE);
+
         HashMap<String, String> validatedJournalArticleTemplates = new HashMap<>();
         HashMap<String, String> validatedDlFileEntryTemplates = new HashMap<>();
         HashMap<String, String> validatedTitleMap = new HashMap<>();
@@ -760,6 +894,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedLoadMorePageSize = FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE;
         }
 
+        String validatedSortBy = StringPool.BLANK;
+        if (FORM_FIELD_SORT_BY_AVAILABLE_FIELDS.contains(sortBy)) {
+            validatedSortBy = sortBy;
+        }
+
+        boolean validatedSortReverse = ("on".equals(sortReverse));
+
         List<SearchFacet> supportedFacets = this.searchService.getSupportedSearchFacets();
         HashMap<String, String> validatedSelectedFacets = new HashMap<>(selectedFacets.length);
         for (String facet : selectedFacets) {
@@ -776,18 +917,25 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
 
         String validatedAssetType;
-        if (PATTERN_CLASS_NAME.matcher(selectAssetType).matches()) {
-            validatedAssetType = selectAssetType;
+        if (PATTERN_CLASS_NAME.matcher(selectedAssetType).matches()) {
+            validatedAssetType = selectedAssetType;
         } else {
             validatedAssetType = StringPool.BLANK;
+        }
+
+        String validatedJournalArticleViewTemplate;
+        if(PATTERN_UUID.matcher(selectedJournalArticleViewTemplate).matches()) {
+            validatedJournalArticleViewTemplate = selectedJournalArticleViewTemplate;
+        } else {
+            validatedJournalArticleViewTemplate = StringPool.BLANK;
         }
 
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if (validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates, validatedSortBy, validatedSortReverse);
         } else {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates, validatedSortBy, validatedSortReverse);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 
@@ -800,7 +948,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     @ProcessAction(name = ACTION_NAME_SAVE_FACET_CONFIG)
     public void actionSaveFacetConfig(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         String facetClassName = ParamUtil.get(request, FORM_FIELD_FACET_CLASS_NAME, StringPool.BLANK);
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
         PortletPreferences preferences = request.getPreferences();
@@ -826,7 +974,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      */
     @ProcessAction(name = ACTION_NAME_DELETE_TAB)
     public void actionDeleteTab(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-        String tabId = ParamUtil.get(request, FORM_FIELD_TAB_ID, StringPool.BLANK);
+        String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         String redirectUrl = ParamUtil.get(request, FORM_FIELD_REDIRECT_URL, StringPool.BLANK);
 
         if (tabId != null && PATTERN_UUID.matcher(tabId).matches()) {

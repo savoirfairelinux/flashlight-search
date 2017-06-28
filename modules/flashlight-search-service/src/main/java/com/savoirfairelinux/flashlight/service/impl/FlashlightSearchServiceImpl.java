@@ -1,27 +1,13 @@
 package com.savoirfairelinux.flashlight.service.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
+import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
-
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
@@ -36,12 +22,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.search.SearchContextFactory;
-import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.search.*;
 import com.liferay.portal.kernel.search.facet.AssetEntriesFacet;
 import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
@@ -52,6 +33,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
@@ -69,6 +51,7 @@ import com.savoirfairelinux.flashlight.service.model.SearchPage;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
+import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateHandler;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
@@ -172,6 +155,11 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
+    public Map<Group, List<DDMTemplate>> getJournalArticleViewTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+        return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(JournalArticleViewTemplateHandler.class));
+    }
+
+    @Override
     public Map<DLFileEntryType, List<DDMTemplate>> getFileEntryTypes(PermissionChecker permissionChecker, long groupId) throws PortalException {
         List<DLFileEntryType> fileEntryTypes = this.dlFileEntryTypeService.getFileEntryTypes(this.portal.getCurrentAndAncestorSiteGroupIds(groupId));
         HashMap<DLFileEntryType, List<DDMTemplate>> fileEntryTypeTemplateMapping = new HashMap<>(fileEntryTypes.size());
@@ -193,7 +181,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
+    public Map<Group, List<DDMTemplate>> getPortletApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException {
         return this.getApplicationDisplayTemplates(permissionChecker, groupId, this.classNameService.getClassNameId(FlashlightSearchService.ADT_CLASS));
     }
 
@@ -369,13 +357,14 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(selectedAssetType);
         if(processor != null) {
-            Facet facet = processor.getFacet(searchContext, config, tab);
-            if(facet != null) {
+            Collection<Facet> facets = processor.getFacets(searchContext, config, tab);
+            for (Facet facet : facets) {
                 searchContext.addFacet(facet);
             }
         }
 
         this.addConfiguredFacets(searchContext, tab);
+        this.setSorting(searchContext, tab);
 
         Hits hits = searcher.search(searchContext);
         this.hitsProcessorRegistry.process(searchContext, hits);
@@ -387,7 +376,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
             SearchResult processedDocument;
 
             try {
-                processedDocument = this.processDocument(request, response, searchContext, config, tab, assetType, document);
+                processedDocument = this.processDocument(document, assetType, request, response, searchContext, config, tab);
             } catch (SearchResultProcessorException e) {
                 LOG.error("Cannot process document", e);
                 processedDocument = null;
@@ -401,6 +390,17 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         }
 
         return new SearchPage(searchResults, hits.getLength(), getConfiguredFacets(searchContext));
+    }
+
+    /**
+     * Setup sorting, if confirured for this tab.
+     * @param searchContext the current SearchContext.
+     * @param tab the current tab configuration.
+     */
+    private void setSorting(SearchContext searchContext, FlashlightSearchConfigurationTab tab) {
+        if (!StringPool.BLANK.equals(tab.getSortBy())) {
+            searchContext.setSorts(new Sort(tab.getSortBy() + "_sortable", tab.isSortReverse()));
+        }
     }
 
     /**
@@ -473,25 +473,24 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     /**
      * Transforms a document in a search result
      *
+     * @param document The document itself
+     * @param assetType The document's asset type
      * @param request The portlet request that triggered the search
      * @param response The portlet response that triggered the search
      * @param searchContext The search context
      * @param configuration The search configuration
      * @param tab The tab in which the search is performed
-     * @param assetType The document's asset type
-     * @param structure The document's DDM structure
-     * @param document The document itself
      *
      * @return A search result or null if no processor can handle the document
      *
      * @throws SearchResultProcessorException Thrown if an active processor was unable to process the document
      */
-    private SearchResult processDocument(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab, String assetType, Document document) throws SearchResultProcessorException {
+    private SearchResult processDocument(Document document, String assetType, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) throws SearchResultProcessorException {
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(assetType);
         SearchResult result;
 
         if(processor != null) {
-            result = processor.process(request, response, searchContext, tab, document);
+            result = processor.process(document, request, response, searchContext, tab);
         } else {
             result = null;
         }

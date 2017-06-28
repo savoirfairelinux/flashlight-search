@@ -1,19 +1,12 @@
 package com.savoirfairelinux.flashlight.service.impl.search.result;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
@@ -78,7 +71,7 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
     private static final String ASSET_TYPE = DLFileEntry.class.getName();
 
     @Override
-    public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
+    public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
         DLFileEntryTypeFacet facet = new DLFileEntryTypeFacet(searchContext);
         Map<String, String> fileEntryTypes = tab.getDLFileEntryTypeTemplates();
         long companyId = searchContext.getCompanyId();
@@ -109,11 +102,11 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
         }
 
         facet.setValues(ids);
-        return facet;
+        return Collections.singletonList(facet);
     }
 
     @Override
-    public SearchResult process(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, Document searchResultDocument) throws SearchResultProcessorException {
+    public SearchResult process(Document searchResultDocument, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab) throws SearchResultProcessorException {
         long fileEntryTypeId = Long.parseLong(searchResultDocument.get(DocumentField.FILE_ENTRY_TYPE_ID.getName()));
         SearchResult result;
 

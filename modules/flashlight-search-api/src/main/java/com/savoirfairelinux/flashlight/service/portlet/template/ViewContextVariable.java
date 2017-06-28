@@ -1,25 +1,14 @@
-package com.savoirfairelinux.flashlight.portlet.template;
+package com.savoirfairelinux.flashlight.service.portlet.template;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.savoirfairelinux.flashlight.portlet.framework.TemplateVariable;
+
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
 /**
  * Contains the variables exposed in the portlet's view (and, by extention, its ADTs)
  */
 public enum ViewContextVariable {
-
-    // From the framework
-    LOCALE(             TemplateVariable.LOCALE.getVariableName(),          Locale.class,                   "Current locale"),
-    THEME_DISPLAY(      TemplateVariable.THEME_DISPLAY.getVariableName(),   ThemeDisplay.class,             "ThemeDisplay"),
-    REQUEST(            TemplateVariable.REQUEST.getVariableName(),         PortletRequest.class,           "Portlet request"),
-    RESPONSE(           TemplateVariable.RESPONSE.getVariableName(),        PortletResponse.class,          "Portlet response"),
-    USER_INFO(          TemplateVariable.USER_INFO.getVariableName(),       Map.class,                      "User info map"),
 
     // From the portlet itself
     NAMESPACE(          "ns",                                               String.class,                   "Portlet namespace"),

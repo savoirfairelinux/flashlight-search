@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.service;
+package com.savoirfairelinux.flashlight.service.portlet;
 
 /**
  * Contains metadata about the portlet

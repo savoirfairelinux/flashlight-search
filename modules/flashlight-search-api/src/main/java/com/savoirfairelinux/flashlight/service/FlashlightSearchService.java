@@ -100,10 +100,24 @@ public interface FlashlightSearchService {
     public Map<String, List<DDMStructure>> getDDMStructures(long groupId) throws PortalException;
 
     /**
+     * Returns the list of Application Display templates that are used to render journal article search results inside
+     * the portlet
+     *
+     * @param permissionChecker The current context's permission checker
+     * @param groupId The current site ID
+     * @return Application Display Templates that are used to render journal articles search results
+     *
+     * @throws PortalException If an error occurs while fetching the data
+     */
+    public Map<Group, List<DDMTemplate>> getJournalArticleViewTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
+
+    /**
      * Returns the list of file entry type templates that are visible to the given site and its parents
      *
+     * @param permissionChecker The current context's permission checker
      * @param groupId The site from which to start the search for file entry templates
      * @return A list of file entry templates, accessible from the given context. They are indexed by DLFileEntryType.
+     *
      * @throws PortalException If an error occurs while fetching the data
      */
     public Map<DLFileEntryType, List<DDMTemplate>> getFileEntryTypes(PermissionChecker permissionChecker, long groupId) throws PortalException;
@@ -117,7 +131,7 @@ public interface FlashlightSearchService {
      *
      * @throws PortalException If an error occurs while fetching the templates
      */
-    public Map<Group, List<DDMTemplate>> getApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
+    public Map<Group, List<DDMTemplate>> getPortletApplicationDisplayTemplates(PermissionChecker permissionChecker, long groupId) throws PortalException;
 
     /**
      * @return A list of asset types that the search engine supports
