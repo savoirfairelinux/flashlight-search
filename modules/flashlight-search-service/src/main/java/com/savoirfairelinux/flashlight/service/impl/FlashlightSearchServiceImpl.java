@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
@@ -363,6 +364,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         }
 
         this.addConfiguredFacets(searchContext, tab);
+        this.setSorting(searchContext, tab);
 
         Hits hits = searcher.search(searchContext);
         this.hitsProcessorRegistry.process(searchContext, hits);
@@ -388,6 +390,17 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         }
 
         return new SearchPage(searchResults, hits.getLength(), getConfiguredFacets(searchContext));
+    }
+
+    /**
+     * Setup sorting, if confirured for this tab.
+     * @param searchContext the current SearchContext.
+     * @param tab the current tab configuration.
+     */
+    private void setSorting(SearchContext searchContext, FlashlightSearchConfigurationTab tab) {
+        if (!StringPool.BLANK.equals(tab.getSortBy())) {
+            searchContext.setSorts(new Sort(tab.getSortBy() + "_sortable", tab.isSortReverse()));
+        }
     }
 
     /**
@@ -467,7 +480,6 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
      * @param searchContext The search context
      * @param configuration The search configuration
      * @param tab The tab in which the search is performed
-     * @param structure The document's DDM structure
      *
      * @return A search result or null if no processor can handle the document
      *

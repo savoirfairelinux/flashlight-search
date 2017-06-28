@@ -38,6 +38,9 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
     private static final String CONF_KEY_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATE = "%s[dl-file-entry-type-template-%s]";
     private static final String CONF_KEY_FORMAT_TITLE = "%s[title-%s]";
 
+    private static final String CONF_KEY_FORMAT_SORT_BY = "%s[sort-by]";
+    private static final String CONF_KEY_FORMAT_SORT_REVERSE = "%s[sort-reverse]";
+
     private static final String CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES = "^%s\\[journal-article-template-" + PatternConstants.UUID + "\\]$";
     private static final int CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES_GROUP_UUID = 1;
 
@@ -89,6 +92,9 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int pageSize = configurationTab.getPageSize();
         int fullPageSize = configurationTab.getFullPageSize();
         int loadMorePageSize = configurationTab.getLoadMorePageSize();
+        String sortBy = configurationTab.getSortBy();
+        boolean sortReverse = configurationTab.isSortReverse();
+
         String assetType = configurationTab.getAssetType();
         String journalArticleViewTemplate = configurationTab.getJournalArticleViewTemplate();
         Map<String, String> searchFacets = configurationTab.getSearchFacets();
@@ -103,6 +109,8 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
         String loadMorePageSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
+        String sortByKey = format(CONF_KEY_FORMAT_SORT_BY, tabId);
+        String sortReverseKey = format(CONF_KEY_FORMAT_SORT_REVERSE, tabId);
 
         preferences.setValue(assetTypeKey, assetType);
         preferences.setValue(journalArticleViewTemplateKey, journalArticleViewTemplate);
@@ -110,6 +118,9 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         preferences.setValue(pageSizeKey, Integer.toString(pageSize));
         preferences.setValue(fullPageSizeKey, Integer.toString(fullPageSize));
         preferences.setValue(loadMorePageSizeKey, Integer.toString(loadMorePageSize));
+        preferences.setValue(sortByKey, sortBy);
+        preferences.setValue(sortReverseKey, Boolean.toString(sortReverse));
+
 
         // Flush previously entered composed values
         Enumeration<String> prefKeys = preferences.getNames();
@@ -201,6 +212,8 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String pageSizeKey = format(CONF_KEY_FORMAT_PAGE_SIZE, tabId);
         String fullPageSizeKey = format(CONF_KEY_FORMAT_FULL_PAGE_SIZE, tabId);
         String loadMoreSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
+        String sortByKey = format(CONF_KEY_FORMAT_SORT_BY, tabId);
+        String sortReverseKey = format(CONF_KEY_FORMAT_SORT_REVERSE, tabId);
 
         preferences.reset(orderKey);
         preferences.reset(assetTypeKey);
@@ -208,6 +221,8 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         preferences.reset(pageSizeKey);
         preferences.reset(fullPageSizeKey);
         preferences.reset(loadMoreSizeKey);
+        preferences.reset(sortByKey);
+        preferences.reset(sortReverseKey);
 
         // Finally, flush out composed values
         Enumeration<String> prefKeys = preferences.getNames();
@@ -245,6 +260,8 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         String loadMoreSizeKey = format(CONF_KEY_FORMAT_LOAD_MORE_PAGE_SIZE, tabId);
         String assetTypesKey = format(CONF_KEY_FORMAT_ASSET_TYPE, tabId);
         String journalArticleViewTemplateKey = format(CONF_KEY_FORMAT_JOURNAL_ARTICLE_VIEW_TEMPLATE, tabId);
+        String sortByKey = format(CONF_KEY_FORMAT_SORT_BY, tabId);
+        String sortReverseKey = format(CONF_KEY_FORMAT_SORT_REVERSE, tabId);
         Pattern searchFacetPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_SEARCH_FACET, tabId));
         Pattern journalArticleTemplatesPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_JOURNAL_ARTICLE_TEMPLATES, tabId));
         Pattern dlFileEntryTemplatesPattern = Pattern.compile(format(CONF_KEY_PATTERN_FORMAT_DL_FILE_ENTRY_TYPE_TEMPLATES, tabId));
@@ -257,6 +274,8 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
         int loadMorePageSize = Integer.parseInt(preferences.getValue(loadMoreSizeKey, String.valueOf(FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE)));
         String assetType = preferences.getValue(assetTypesKey, StringPool.BLANK);
         String journalArticleViewTemplate = preferences.getValue(journalArticleViewTemplateKey, StringPool.BLANK);
+        String sortBy = preferences.getValue(sortByKey, StringPool.BLANK);
+        boolean sortReverse = Boolean.parseBoolean(preferences.getValue(sortReverseKey, StringPool.FALSE));
 
         // Composed keys
         Enumeration<String> prefKeys = preferences.getNames();
@@ -284,7 +303,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         }
 
-        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, journalArticleViewTemplate, searchFacets, journalArticleTemplates, dlFileEntryTemplates);
+        return new FlashlightSearchConfigurationTab(tabId, order, pageSize, fullPageSize, loadMorePageSize, titleMap, assetType, journalArticleViewTemplate, searchFacets, journalArticleTemplates, dlFileEntryTemplates, sortBy, sortReverse);
     }
 
 }

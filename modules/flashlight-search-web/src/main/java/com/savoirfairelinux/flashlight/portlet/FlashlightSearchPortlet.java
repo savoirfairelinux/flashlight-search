@@ -110,6 +110,20 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final String FORM_FIELD_REDIRECT_URL = "redirect-url";
     private static final String FORM_FIELD_ASSET_TYPE = "asset-type";
     private static final String FORM_FIELD_JOURNAL_ARTICLE_VIEW_TEMPLATE = "journal-article-view-template";
+    private static final String FORM_FIELD_SORT_BY = "sort-by";
+    private static final List<String> FORM_FIELD_SORT_BY_AVAILABLE_FIELDS = Arrays.asList(
+        "ratings",
+        "createDate",
+        "modified",
+        "viewCount",
+        "articleId",
+        "publishDate",
+        "priority",
+        "title",
+        "expirationDate",
+        "displayDate"
+    );
+    private static final String FORM_FIELD_SORT_REVERSE = "sort-reverse";
 
     private static final Pattern FORM_FIELD_JOURNAL_TEMPLATE_UUID_PATTERN = Pattern.compile("^journal-article-template-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_DL_FILE_ENTRY_TYPE_TEMPLATE_UUID_PATTERN = Pattern.compile("^dl-file-entry-type-template-" + PatternConstants.UUID + "$");
@@ -613,6 +627,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         int tabLoadMorePageSize;
         String assetType;
         String journalArticleViewTemplate;
+        String sortBy;
+        boolean sortReverse;
         Map<String, String> searchFacets;
         Map<String, PortletURL> searchFacetsUrls;
         Map<String, String> journalArticleTemplates;
@@ -628,6 +644,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             assetType = tab.getAssetType();
             journalArticleViewTemplate = tab.getJournalArticleViewTemplate();
             searchFacets = tab.getSearchFacets();
+            sortBy = tab.getSortBy();
+            sortReverse = tab.isSortReverse();
 
             searchFacetsUrls = new HashMap<>(searchFacets.size());
             for(String facetClassName : searchFacets.keySet()) {
@@ -657,6 +675,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
                 journalArticleViewTemplate = StringPool.BLANK;
             }
             searchFacets = Collections.emptyMap();
+            sortBy = StringPool.BLANK;
+            sortReverse = false;
             searchFacetsUrls = Collections.emptyMap();
             journalArticleTemplates = Collections.emptyMap();
             dlFileEntryTypeTemplates = Collections.emptyMap();
@@ -695,6 +715,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("journalArticleTemplates", journalArticleTemplates);
         templateCtx.put("dlFileEntryTypeTemplates", dlFileEntryTypeTemplates);
         templateCtx.put("titleMap", titleMap);
+        templateCtx.put("sortByAvailableFields", FORM_FIELD_SORT_BY_AVAILABLE_FIELDS);
+        templateCtx.put("sortBy", sortBy);
+        templateCtx.put("sortReverse", sortReverse);
         this.renderTemplate(request, response, templateCtx, "edit-tab.ftl");
     }
 
@@ -805,6 +828,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         String[] selectedFacets = ParamUtil.getParameterValues(request, FORM_FIELD_SEARCH_FACETS, StringPool.EMPTY_ARRAY);
         String selectedAssetType = ParamUtil.get(request, FORM_FIELD_ASSET_TYPE, StringPool.BLANK);
         String selectedJournalArticleViewTemplate = ParamUtil.get(request, FORM_FIELD_JOURNAL_ARTICLE_VIEW_TEMPLATE, StringPool.BLANK);
+        String sortBy = ParamUtil.get(request, FORM_FIELD_SORT_BY, StringPool.BLANK);
+        String sortReverse = ParamUtil.get(request, FORM_FIELD_SORT_REVERSE, StringPool.FALSE);
 
         HashMap<String, String> validatedJournalArticleTemplates = new HashMap<>();
         HashMap<String, String> validatedDlFileEntryTemplates = new HashMap<>();
@@ -869,6 +894,13 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedLoadMorePageSize = FlashlightSearchConfigurationTab.DEFAULT_LOAD_MORE_PAGE_SIZE;
         }
 
+        String validatedSortBy = StringPool.BLANK;
+        if (FORM_FIELD_SORT_BY_AVAILABLE_FIELDS.contains(sortBy)) {
+            validatedSortBy = sortBy;
+        }
+
+        boolean validatedSortReverse = ("on".equals(sortReverse));
+
         List<SearchFacet> supportedFacets = this.searchService.getSupportedSearchFacets();
         HashMap<String, String> validatedSelectedFacets = new HashMap<>(selectedFacets.length);
         for (String facet : selectedFacets) {
@@ -901,9 +933,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         // Create or save the configuration tab and store it
         FlashlightSearchConfigurationTab tab;
         if (validatedTabId != null) {
-            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabId, validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates, validatedSortBy, validatedSortReverse);
         } else {
-            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates);
+            tab = new FlashlightSearchConfigurationTab(validatedTabOrder, validatedPageSize, validatedFullPageSize, validatedLoadMorePageSize, validatedTitleMap, validatedAssetType, validatedJournalArticleViewTemplate, validatedSelectedFacets, validatedJournalArticleTemplates, validatedDlFileEntryTemplates, validatedSortBy, validatedSortReverse);
         }
         this.searchService.saveConfigurationTab(tab, request.getPreferences());
 
