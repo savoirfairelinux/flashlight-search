@@ -150,6 +150,7 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
             double version = article.getVersion();
             String assetViewURL = this.getAssetViewURL(document, request, response, themeDisplay.getLayout(), configurationTab.getId(), searchContext.getKeywords());
             request.setAttribute("flashlightSearchViewURL", assetViewURL);
+            request.setAttribute("flashlightSearchDocument", document);
             PortletRequestModel portletRequestModel = new PortletRequestModel(request, response);
             JournalArticleDisplay journalContentDisplay = journalContent.getDisplay(groupId, articleId, version, template.getTemplateKey(), Constants.VIEW, searchContext.getLanguageId(), 0, portletRequestModel, themeDisplay);
             String articleContents = journalContentDisplay.getContent();
