@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.exception.CouldNotRenderTemplateException;
 import com.savoirfairelinux.flashlight.portlet.framework.exception.TemplateNotFoundException;
+import com.savoirfairelinux.flashlight.service.portlet.TemplateVariable;
 
 /**
  * This type of portlets is used when the templating engine is something other than JSPs (for example, FreeMarker or
@@ -68,13 +69,6 @@ public abstract class TemplatedPortlet extends GenericPortlet {
         } catch(TemplateException e) {
             throw new PortletException(e);
         }
-    }
-
-    /**
-     * @return An empty, writable template context
-     */
-    protected Map<String, Object> createTemplateContext() {
-        return new HashMap<String, Object>();
     }
 
     /**

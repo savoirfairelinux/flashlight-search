@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.service.impl.search.result.template;
+package com.savoirfairelinux.flashlight.service.portlet.template;
 
 import java.util.Locale;
 import java.util.Map;
@@ -13,10 +13,11 @@ import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
 
 /**
- * Template handler used to render DLFileEntry search results in Flashlight
+ * Template handler used for the portlet's view ADT
  */
 @Component(
     immediate = true,
@@ -24,14 +25,13 @@ import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKe
         "javax.portlet.name=" + FlashlightSearchPortletKeys.PORTLET_NAME
     },
     service = TemplateHandler.class)
-public class DLFileEntryTypeTemplateHandler extends BasePortletDisplayTemplateHandler {
+public class SearchTemplateHandler extends BasePortletDisplayTemplateHandler {
 
-    private static final String CLASS_NAME = DLFileEntryTypeTemplateHandler.class.getName();
     private static final String VAR_GROUP_NAME = "viewContextVariables";
-    private static final String VAR_GROUP_LABEL = "File";
+    private static final String VAR_GROUP_LABEL = "Context";
 
-    private static final String RES_BUNDLE = "content.Language";
-    private static final String LANGUAGE_KEY_TEMPLATE = "template.name";
+    private static final String LANGUAGE_BUNDLE = "content.Language";
+    private static final String LANGUAGE_KEY_TEMPLATE = "template.search";
 
     private static final String VAR_GROUP_FIELDS = "fields";
 
@@ -43,12 +43,12 @@ public class DLFileEntryTypeTemplateHandler extends BasePortletDisplayTemplateHa
 
     @Override
     public String getClassName() {
-        return CLASS_NAME;
+        return FlashlightSearchService.ADT_CLASS.getName();
     }
 
     @Override
     public String getName(Locale locale) {
-        ResourceBundle bundle = ResourceBundleUtil.getBundle(RES_BUNDLE, locale, this.getClass());
+        ResourceBundle bundle = ResourceBundleUtil.getBundle(LANGUAGE_BUNDLE, locale, this.getClass());
         return this.language.get(bundle, LANGUAGE_KEY_TEMPLATE);
     }
 
@@ -62,7 +62,7 @@ public class DLFileEntryTypeTemplateHandler extends BasePortletDisplayTemplateHa
         Map<String, TemplateVariableGroup> templateVariableGroups = super.getTemplateVariableGroups(classPK, language, locale);
         templateVariableGroups.remove(VAR_GROUP_FIELDS);
         TemplateVariableGroup mainGroup = new TemplateVariableGroup(VAR_GROUP_LABEL);
-        for(DLFileEntryTemplateVariable variable : DLFileEntryTemplateVariable.values()) {
+        for(ViewContextVariable variable : ViewContextVariable.values()) {
             mainGroup.addVariable(variable.getLabel(), variable.getType(), variable.getVariableName());
         }
         templateVariableGroups.put(VAR_GROUP_NAME, mainGroup);

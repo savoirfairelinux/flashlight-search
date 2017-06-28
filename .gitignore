@@ -1,4 +1,3 @@
-.gradle/
 build/
 bin/
 target/
@@ -6,13 +5,9 @@ target/
 .project
 .settings
 .tern-project
-site-retry.yaml
-site.retry
-.vagrant
 *.iml
 .idea
 *.orig
 rebel.xml
 rebel-remote.xml
-tools/vagrant/jrebel
 .freemarker-ide.xml

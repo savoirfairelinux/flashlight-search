@@ -1,8 +1,8 @@
 package com.savoirfairelinux.flashlight.service.search.result;
 
+import java.util.Collection;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.facet.Facet;
@@ -17,21 +17,21 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
  */
 public interface SearchResultProcessor {
 
-    public Facet getFacet(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab);
+    public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab);
 
     /**
      * Creates a search result model representing the given search result document
      *
+     * @param searchResultDocument The search result document to process
      * @param request The portlet request
      * @param response The portlet response
      * @param searchContext The search context
      * @param configurationTab The search tab in which the search is performed
-     * @param searchResultDocument The search result document to process
      * @return The search result model representing the given search result document
      *
      * @throws SearchResultProcessorException If the processor is unable to process the given document
      */
-    public SearchResult process(PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab, Document searchResultDocument) throws SearchResultProcessorException;
+    public SearchResult process(Document searchResultDocument, PortletRequest request, PortletResponse response, SearchContext searchContext, FlashlightSearchConfigurationTab configurationTab) throws SearchResultProcessorException;
 
     /**
      * @return The asset type supported by the processor

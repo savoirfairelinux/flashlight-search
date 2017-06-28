@@ -4,7 +4,7 @@
 
     <groupId>com.savoirfairelinux.liferay</groupId>
     <artifactId>flashlight</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <packaging>pom</packaging>
 
     <name>Flashlight Search project</name>
@@ -210,6 +210,7 @@
     </dependencies>
 
     <build>
+        <finalName>${project.build.finalName}</finalName>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -224,7 +225,6 @@
         </extensions>
         <pluginManagement>
             <plugins>
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -329,7 +329,7 @@
                                     </goals>
                                     <configuration>
                                         <fromFile>${project.build.directory}/${project.build.finalName}.${project.build.extension}</fromFile>
-                                        <url>file://${project.basedir}/../../tools/vagrant/deploy</url>
+                                        <url>file://${liferay.deploy.folder}</url>
                                     </configuration>
                                 </execution>
                             </executions>

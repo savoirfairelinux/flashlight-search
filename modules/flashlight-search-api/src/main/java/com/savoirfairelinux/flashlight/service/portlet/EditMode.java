@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.portlet;
+package com.savoirfairelinux.flashlight.service.portlet;
 
 /**
  * Lists the different available edit modes in the portlet
@@ -11,12 +11,16 @@ public enum EditMode {
 
     private String paramValue;
 
+    /**
+     * Creates the edit mode
+     * @param paramValue The value of the HTTP parameter
+     */
     private EditMode(String paramValue) {
         this.paramValue = paramValue;
     }
 
     /**
-     * @return The mode's textual form value
+     * @return The value of the mode's HTTP parameter
      */
     public String getParamValue() {
         return this.paramValue;
@@ -33,12 +37,15 @@ public enum EditMode {
      * @return An edit mode corresponding to the given parameter value, defaulting to GLOBAL
      */
     public static EditMode getEditMode(String paramValue) {
-        EditMode returnedMode = EditMode.GLOBAL;
+        EditMode returnedMode = GLOBAL;
         EditMode[] modes = EditMode.values();
         int modesLength = modes.length;
-        for(int i = 0; returnedMode == EditMode.GLOBAL && i < modesLength; i++) {
+        boolean foundMode = false;
+
+        for(int i = 0; !foundMode && i < modesLength; i++) {
             if(modes[i].getParamValue().equals(paramValue)) {
                 returnedMode = modes[i];
+                foundMode = true;
             }
         }
         return returnedMode;

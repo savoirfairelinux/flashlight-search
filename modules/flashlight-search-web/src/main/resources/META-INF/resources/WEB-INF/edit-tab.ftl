@@ -57,6 +57,25 @@
     </fieldset>
 
     <fieldset class="fieldset">
+        <legend><@liferay_ui["message"] key="fieldset.tab.sorting" /></legend>
+
+        <div class="form-group">
+            <label for="${ns}sort-by"><@liferay_ui["message"] key="label.tab.sort.by" /></label>
+            <select class="form-control" id="${ns}sort-by" name="${ns}sort-by">
+                <option value="" ${sortBy?has_content?then('', 'selected="selected"')}><@liferay_ui["message"] key="label.tab.sort.by.none" /></option>
+                <#list sortByAvailableFields as field>
+                    <option value="${field}" ${(field == sortBy)?then('selected="selected"', '')}><@liferay_ui["message"] key="label.tab.sort.by.${field}" /></option>
+                </#list>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="${ns}sort-reverse"><@liferay_ui["message"] key="label.tab.sort.reverse" /></label>
+            <input type="checkbox" id="${ns}sort-reverse" name="${ns}sort-reverse" ${sortReverse?then('checked="checked"', '')} />
+        </div>
+    </fieldset>
+
+    <fieldset class="fieldset">
         <legend><@liferay_ui["message"] key="fieldset.facets" /></legend>
         <div class="form-group">
             <table class="table table-bordered">
