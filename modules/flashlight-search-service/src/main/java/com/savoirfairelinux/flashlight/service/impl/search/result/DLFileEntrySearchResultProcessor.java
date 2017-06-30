@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -125,6 +126,14 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
 
             if(renderingTemplate != null) {
                 HttpServletRequest rq = this.portal.getHttpServletRequest(request);
+
+                // Remove request and response attributes and keep them for restoration
+                // (those get unsafely casted to RenderRequest & RenderResponse by portletDisplayTemplate.renderDDMTemplate)
+                Object backupRequest = rq.getAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
+                rq.removeAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
+                Object backupResponse = rq.getAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
+                rq.removeAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
+
                 HttpServletResponse rp = this.portal.getHttpServletResponse(response);
                 try {
                     // Get basic file information
@@ -148,6 +157,10 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
                     result = new SearchResult(rendering, url, title);
                 } catch (Exception e) {
                     throw new SearchResultProcessorException(e, searchResultDocument, "Error during document rendering");
+                } finally {
+                    // Restore the request and response attributes
+                    rq.setAttribute(JavaConstants.JAVAX_PORTLET_REQUEST, backupRequest);
+                    rq.setAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE, backupResponse);
                 }
             } else {
                 throw new SearchResultProcessorException(searchResultDocument, "Cannot obtain document rendering template. No template found or multiple templates with the same UUID found.");
