@@ -42,6 +42,7 @@ import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchCon
 import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorage;
 import com.savoirfairelinux.flashlight.service.impl.configuration.ConfigurationStorageV1;
+import com.savoirfairelinux.flashlight.service.impl.customizer.FlashlightSearchContextCustomizerServiceTracker;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.DLFileEntryTypeFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.displayhandler.SearchFacetDisplayHandlerServiceTracker;
@@ -98,6 +99,9 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
     @Reference
     private SearchFacetDisplayHandlerServiceTracker searchFacetDisplayHandlerServiceTracker;
+
+    @Reference
+    private FlashlightSearchContextCustomizerServiceTracker flashlightSearchContextCustomizerServiceTracker;
 
     private ConfigurationStorage storageEngine;
 
@@ -365,6 +369,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
 
         this.addConfiguredFacets(searchContext, tab);
         this.setSorting(searchContext, tab);
+
+        flashlightSearchContextCustomizerServiceTracker.applyCustomizers(request, response, config, tab, searchContext);
 
         Hits hits = searcher.search(searchContext);
         this.hitsProcessorRegistry.process(searchContext, hits);
