@@ -14,6 +14,7 @@ public class FlashlightSearchConfiguration {
 
     private String adtUUID;
     private boolean doSearchOnStartup;
+    private String doSearchOnStartupKeywords;
     private Map<String, FlashlightSearchConfigurationTab> tabs;
 
     /**
@@ -21,11 +22,13 @@ public class FlashlightSearchConfiguration {
      *
      * @param adtUUID The ADT's UUID
      * @param doSearchOnStartup True to perform a search as soon as the search page is visited
+     * @param doSearchOnStartupKeywords The keywords to send to the search if a search is triggered on startup
      * @param tabs the search groups/tabs configuration
      */
-    public FlashlightSearchConfiguration(String adtUUID, boolean doSearchOnStartup, List<FlashlightSearchConfigurationTab> tabs) {
+    public FlashlightSearchConfiguration(String adtUUID, boolean doSearchOnStartup, String doSearchOnStartupKeywords, List<FlashlightSearchConfigurationTab> tabs) {
         this.adtUUID = adtUUID;
         this.doSearchOnStartup = doSearchOnStartup;
+        this.doSearchOnStartupKeywords = doSearchOnStartupKeywords;
         this.tabs = new LinkedHashMap<>(tabs.size());
         tabs.stream()
             .sorted(Comparator.comparing(FlashlightSearchConfigurationTab::getOrder))
@@ -47,6 +50,13 @@ public class FlashlightSearchConfiguration {
      */
     public boolean doSearchOnStartup() {
         return this.doSearchOnStartup;
+    }
+
+    /**
+     * @return The keywords to send to the search if a search is triggered on startup
+     */
+    public String getDoSearchOnStartupKeywords() {
+        return this.doSearchOnStartupKeywords;
     }
 
     /**
