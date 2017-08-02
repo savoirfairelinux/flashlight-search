@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.facet.util.SearchFacetTracker;
 import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
@@ -116,8 +117,8 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
     }
 
     @Override
-    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
-        this.storageEngine.saveGlobalSettings(adtUuid, doSearchOnStartup, preferences);
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, String doSearchOnStartupKeywords, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        this.storageEngine.saveGlobalSettings(adtUuid, doSearchOnStartup, doSearchOnStartupKeywords, preferences);
     }
 
     @Override
@@ -353,10 +354,16 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         searchContext.setStart(start);
         searchContext.setEnd(end);
 
-        AssetEntriesFacet assetEntriesFacet = new AssetEntriesFacet(searchContext);
+        // Set keyword to "all" when no keywords are sent. Otherwize, Liferay might return the whole index.
+        if(Validator.isNull(searchContext.getKeywords())) {
+            searchContext.setKeywords(FlashlightSearchService.CONFIGURATION_DEFAULT_SEARCH_KEYWORDS);
+        }
+
         String[] assetEntryClassNames = new String[1];
         assetEntryClassNames[0] = selectedAssetType;
         searchContext.setEntryClassNames(assetEntryClassNames);
+
+        AssetEntriesFacet assetEntriesFacet = new AssetEntriesFacet(searchContext);
         searchContext.addFacet(assetEntriesFacet);
 
         SearchResultProcessor processor = this.searchResultProcessorServicetracker.getSearchResultProcessor(selectedAssetType);
@@ -370,7 +377,7 @@ public class FlashlightSearchServiceImpl implements FlashlightSearchService {
         this.addConfiguredFacets(searchContext, tab);
         this.setSorting(searchContext, tab);
 
-        flashlightSearchContextCustomizerServiceTracker.applyCustomizers(request, response, config, tab, searchContext);
+        this.flashlightSearchContextCustomizerServiceTracker.applyCustomizers(request, response, config, tab, searchContext);
 
         Hits hits = searcher.search(searchContext);
         this.hitsProcessorRegistry.process(searchContext, hits);
