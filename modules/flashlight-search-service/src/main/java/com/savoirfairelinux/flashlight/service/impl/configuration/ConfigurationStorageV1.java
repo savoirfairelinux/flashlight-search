@@ -10,7 +10,9 @@ import javax.portlet.PortletPreferences;
 import javax.portlet.ReadOnlyException;
 import javax.portlet.ValidatorException;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.web.facet.SearchFacet;
+import com.savoirfairelinux.flashlight.service.FlashlightSearchService;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
@@ -24,6 +26,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
     private static final String CONF_KEY_ADT_UUID = "adt-uuid";
     private static final String CONF_KEY_DO_SEARCH_ON_STARTUP = "do-search-on-startup";
+    private static final String CONF_KEY_DO_SEARCH_ON_STARTUP_KEYWORDS = "do-search-on-startup-keywords";
     private static final String CONF_KEY_TABS = "tabs";
 
     private static final String CONF_KEY_FORMAT_ORDER = "%s[order]";
@@ -64,6 +67,7 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
 
         // Perform a search on startup?
         boolean doSearchOnStartup = preferences.getValue(CONF_KEY_DO_SEARCH_ON_STARTUP, StringPool.FALSE).equals(StringPool.TRUE);
+        String doSearchOnStartupKeywords = preferences.getValue(CONF_KEY_DO_SEARCH_ON_STARTUP_KEYWORDS, FlashlightSearchService.CONFIGURATION_DEFAULT_SEARCH_KEYWORDS);
 
         // Get the tabs
         String[] tabIds = preferences.getValues(CONF_KEY_TABS, EMPTY_ARRAY);
@@ -75,13 +79,17 @@ public class ConfigurationStorageV1 implements ConfigurationStorage {
             tabs.add(this.readTabConfiguration(preferences, tabIds[i]));
         }
 
-        return new FlashlightSearchConfiguration(adtUUID, doSearchOnStartup, tabs);
+        return new FlashlightSearchConfiguration(adtUUID, doSearchOnStartup, doSearchOnStartupKeywords, tabs);
     }
 
     @Override
-    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+    public void saveGlobalSettings(String adtUuid, boolean doSearchOnStartup, String doSearchOnStartupKeywords, PortletPreferences preferences) throws ReadOnlyException, ValidatorException, IOException {
+        if(Validator.isNull(doSearchOnStartupKeywords)) {
+            doSearchOnStartupKeywords = FlashlightSearchService.CONFIGURATION_DEFAULT_SEARCH_KEYWORDS;
+        }
         preferences.setValue(CONF_KEY_ADT_UUID, adtUuid);
         preferences.setValue(CONF_KEY_DO_SEARCH_ON_STARTUP, Boolean.toString(doSearchOnStartup));
+        preferences.setValue(CONF_KEY_DO_SEARCH_ON_STARTUP_KEYWORDS, doSearchOnStartupKeywords);
         preferences.store();
     }
 

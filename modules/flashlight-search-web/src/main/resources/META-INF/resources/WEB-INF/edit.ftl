@@ -10,11 +10,16 @@
         <legend><@liferay_ui["message"] key="fieldset.behavior" /></legend>
         <div class="form-group">
             <label for="${ns}do-search-on-startup"><@liferay_ui["message"] key="label.do.search.startup" /></label>
-            <#assign startupChecked = "" />
-            <#if doSearchOnStartup>
-                <#assign startupChecked = " checked=\"checked\"" />
-            </#if>
-            <input type="checkbox" id="${ns}do-search-on-startup" name="${ns}do-search-on-startup"${startupChecked} />
+            <div class="input-group">
+                <span class="input-group-addon">
+                    <#assign startupChecked = "" />
+                    <#if doSearchOnStartup>
+                        <#assign startupChecked = " checked=\"checked\"" />
+                    </#if>
+                    <input type="checkbox" id="${ns}do-search-on-startup" name="${ns}do-search-on-startup"${startupChecked} />
+                </span>
+                <input type="text" class="form-control" id="${ns}do-search-on-startup-keywords" name="${ns}do-search-on-startup-keywords" value="${doSearchOnStartupKeywords}" />
+            </div>
         </div>
     </fieldset>
 
@@ -120,3 +125,36 @@
     </div>
 
 </form>
+
+<script type="text/javascript">
+    function bindSearchStartupKeywords(namespace) {
+        var htmlCheckbox = document.getElementById(namespace + "do-search-on-startup");
+        var htmlKeywords = document.getElementById(namespace + "do-search-on-startup-keywords");
+        toggleKeywordsEnabled(htmlCheckbox, htmlKeywords);
+        htmlCheckbox.addEventListener("change", function(ev) {
+            toggleKeywordsEnabled(htmlCheckbox, htmlKeywords);
+        });
+    }
+
+    function toggleKeywordsEnabled(htmlCheckbox, htmlKeywords) {
+        if(htmlCheckbox.checked) {
+            htmlKeywords.removeAttribute("disabled");
+        } else {
+            htmlKeywords.setAttribute("disabled", "disabled");
+        }
+    }
+
+    if(typeof Liferay !== undefined) {
+        Liferay.Portlet.ready(function(portletId, node) {
+            var choppedNs = '${ns}';
+            choppedNs = choppedNs.substring(1, choppedNs.length - 1);
+            if(portletId === choppedNs) {
+                bindSearchStartupKeywords('${ns}');
+            }
+        });
+    } else {
+        document.addEventListener('DOMContentLoaded', function(ev) {
+            bindSearchStartupKeywords('${ns}');
+        });
+    }
+</script>

@@ -101,6 +101,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String FORM_FIELD_ADT_UUID = "adt-uuid";
     private static final String FORM_FIELD_DO_SEARCH_ON_STARTUP = "do-search-on-startup";
+    private static final String FORM_FIELD_DO_SEARCH_ON_STARTUP_KEYWORDS = "do-search-on-startup-keywords";
     private static final String FORM_FIELD_TAB_ORDER = "tab-order";
     private static final String FORM_FIELD_PAGE_SIZE = "page-size";
     private static final String FORM_FIELD_FULL_PAGE_SIZE = "full-page-size";
@@ -207,9 +208,15 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         HttpServletRequest httpServletRequest = this.portal.getHttpServletRequest(request);
         SearchContext searchContext = SearchContextFactory.getInstance(httpServletRequest);
         Map<String, FlashlightSearchConfigurationTab> tabs = config.getTabs();
-        String keywords = searchContext.getKeywords();
+        boolean doSearchOnStartup = config.doSearchOnStartup();
         String currentTabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);
         boolean performedSearch = false;
+        String keywords = searchContext.getKeywords();
+
+        if(Validator.isNull(keywords) && doSearchOnStartup) {
+            keywords = config.getDoSearchOnStartupKeywords();
+            searchContext.setKeywords(keywords);
+        }
 
         if(tabs.size() == 1) {
             currentTabId = tabs.keySet().iterator().next();
@@ -220,7 +227,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
 
         SearchResultsContainer results;
-        if (!keywords.isEmpty() || config.doSearchOnStartup()) {
+        if (Validator.isNotNull(keywords)) {
             try {
                 results = this.searchService.search(request, response, currentTabId, 0, false);
                 performedSearch = true;
@@ -483,6 +490,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         FlashlightSearchConfiguration config = this.searchService.readConfiguration(request.getPreferences());
         String adtUuid = config.getAdtUUID();
         boolean doSearchOnStartup = config.doSearchOnStartup();
+        String doSearchOnStartupKeywords = config.getDoSearchOnStartupKeywords();
 
         PortletURL editGlobalUrl = response.createRenderURL();
         editGlobalUrl.setPortletMode(PortletMode.EDIT);
@@ -552,6 +560,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         templateCtx.put("saveGlobalUrl", saveGlobalUrl);
         templateCtx.put("adtUuid", adtUuid);
         templateCtx.put("doSearchOnStartup", doSearchOnStartup);
+        templateCtx.put("doSearchOnStartupKeywords", doSearchOnStartupKeywords);
         templateCtx.put("applicationDisplayTemplates", applicationDisplayTemplates);
         templateCtx.put("availableStructures", availableStructures);
         templateCtx.put("availableDlFileEntryTypeTemplates", availableDlFileEntryTypeTemplates);
@@ -795,7 +804,9 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         if (!PATTERN_UUID.matcher(adtUuid).matches()) {
             adtUuid = StringPool.BLANK;
         }
-        this.searchService.saveGlobalSettings(adtUuid, doSearchOnStartup, request.getPreferences());
+
+        String doSearchOnStartupKeywords = ParamUtil.getString(request, FORM_FIELD_DO_SEARCH_ON_STARTUP_KEYWORDS, FlashlightSearchService.CONFIGURATION_DEFAULT_SEARCH_KEYWORDS);
+        this.searchService.saveGlobalSettings(adtUuid, doSearchOnStartup, doSearchOnStartupKeywords, request.getPreferences());
 
         SessionMessages.add(request, SESSION_MESSAGE_CONFIG_SAVED);
         if (!redirectUrl.isEmpty()) {
