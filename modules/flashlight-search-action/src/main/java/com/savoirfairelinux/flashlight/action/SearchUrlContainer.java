@@ -6,8 +6,10 @@ import java.util.Map;
 import com.liferay.portal.kernel.model.Layout;
 
 /**
- * Container listing all flashlight search portlets found on the current site (same groupId + same public/private visiblity).
- * Is injected as com.savoirfairelinux.flashlight.action.SearchUrlAction#REQUEST_ATTR_FLASHLIGHT_URLS request attribute.
+ * Container listing all flashlight search URLs found on the current layout set (current site and layouts with the same
+ * public/private visiblity).
+ *
+ * Is injected as {@link SearchUrlAction#REQUEST_ATTR_FLASHLIGHT_URLS} request attribute.
  */
 public class SearchUrlContainer {
     private final Map<Layout, List<SearchUrl>> searchUrls;
@@ -17,17 +19,17 @@ public class SearchUrlContainer {
     }
 
     /**
-     * Map of all instances of flashlight search portlet, grouped by their pages.
-     * @return a map of flashlight search portlet informations, with their current page/Layout as key.
+     * Map of all instances of flashlight search portlet URLs, grouped by their pages.
+     * @return A map of flashlight search portlet URLs, with their current page/Layout as key.
      */
     public Map<Layout, List<SearchUrl>> getSearchUrls() {
         return searchUrls;
     }
 
     /**
-     * Get the list of flashlight search portlets for a specific layout.
-     * @param layoutUuid the layout to search flashlight portlet(s) for.
-     * @return the list of flashlight search portlets instances found on the page, or an empty list else.
+     * Get the list of flashlight search portlet URLs for a specific layout.
+     * @param layoutUuid The layout to search flashlight portlet URLs for.
+     * @return The list of Flashlight search portlet URLs on the given page, an empty list is none are found.
      */
     public List<SearchUrl> getSearchUrlByLayoutUuid(String layoutUuid) {
         return this.searchUrls.entrySet().stream()
