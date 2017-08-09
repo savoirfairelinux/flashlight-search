@@ -75,7 +75,7 @@ public class SearchUrlAction extends Action {
                 layout -> generateSearchUrl(request, themeDisplay, layout)
             ));
 
-        request.setAttribute(REQUEST_ATTR_FLASHLIGHT_URLS, searchUrls);
+        request.setAttribute(REQUEST_ATTR_FLASHLIGHT_URLS, new SearchUrlContainer(searchUrls));
     }
 
     /**
