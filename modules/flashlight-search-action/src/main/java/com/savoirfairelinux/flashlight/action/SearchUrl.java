@@ -7,6 +7,7 @@ import com.liferay.portal.kernel.model.Layout;
  * request parameter used to enter keywords
  */
 public class SearchUrl {
+    private static final String FORMAT_KEYWORDS_PARAM = "%skeywords";
 
     private Layout layout;
     private String url;
@@ -53,7 +54,7 @@ public class SearchUrl {
      * @return The request parameter used to enter keywords
      */
     public String getKeywordsParameter() {
-        return this.portletNamespace + "keywords";
+        return String.format(FORMAT_KEYWORDS_PARAM, this.portletNamespace);
     }
 
     /**

@@ -40,8 +40,6 @@ public class SearchUrlAction extends Action {
 
     public static final String REQUEST_ATTR_FLASHLIGHT_URLS = FlashlightSearchPortletKeys.PORTLET_NAME + "_urls";
 
-    private static final String FORMAT_KEYWORDS_PARAM = "%skeywords";
-
     private static final String PARAM_PORTLET_ID = "p_p_id";
     private static final String PARAM_PORTLET_LIFECYCLE = "p_p_lifecycle";
     private static final String PARAM_PORTLET_MODE = "p_p_mode";
