@@ -28,8 +28,6 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
 
-import static java.lang.String.format;
-
 /**
  * This action is used to insert the possible search URLs in the request attributes. This way, a search box can be
  * placed in the theme, without the need to put embedded portlets.
@@ -119,9 +117,9 @@ public class SearchUrlAction extends Action {
                     new RequestParameter(PARAM_PORTLET_COLUMN_COUNT, Integer.toString(layoutType.getNumOfColumns()))
                 };
 
-                String keywordsParam = format(FORMAT_KEYWORDS_PARAM, this.portal.getPortletNamespace(portletInstance.getPortletId()));
+                String portletNamespace = this.portal.getPortletNamespace(portletInstance.getPortletId());
 
-                return new SearchUrl(layout, portletUrl, params, keywordsParam);
+                return new SearchUrl(layout, portletUrl, params, portletNamespace);
             })
             .collect(Collectors.toList());
     }

@@ -38,4 +38,9 @@ public class SearchUrlContainer {
                 .map(Map.Entry::getValue)
             .orElse(Collections.emptyList());
     }
+
+    @Override
+    public String toString() {
+        return "SearchUrlContainer overriden toString() to pass through FTL context serialization.";
+    }
 }
