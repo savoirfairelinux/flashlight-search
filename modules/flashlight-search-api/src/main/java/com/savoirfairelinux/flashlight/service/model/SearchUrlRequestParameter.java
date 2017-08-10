@@ -1,14 +1,14 @@
-package com.savoirfairelinux.flashlight.action;
+package com.savoirfairelinux.flashlight.service.model;
 
 /**
  * Holds request parameters that must be passed in the URL to call the search portlet
  */
-public class RequestParameter {
+public class SearchUrlRequestParameter {
 
     private String name;
     private String value;
 
-    public RequestParameter(String name, String value) {
+    public SearchUrlRequestParameter(String name, String value) {
         this.name = name;
         this.value = value;
     }

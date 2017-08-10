@@ -6,11 +6,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import javax.portlet.PortletMode;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
@@ -26,6 +29,9 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.savoirfairelinux.flashlight.service.model.SearchUrl;
+import com.savoirfairelinux.flashlight.service.model.SearchUrlContainer;
+import com.savoirfairelinux.flashlight.service.model.SearchUrlRequestParameter;
 import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
 
 /**
@@ -107,12 +113,12 @@ public class SearchUrlAction extends Action {
                     LOG.error(e);
                 }
 
-                RequestParameter[] params = new RequestParameter[] {
-                    new RequestParameter(PARAM_PORTLET_ID, portletInstance.getPortletId()),
-                    new RequestParameter(PARAM_PORTLET_LIFECYCLE, LIFECYCLE_RENDER),
-                    new RequestParameter(PARAM_PORTLET_MODE, PortletMode.VIEW.toString()),
-                    new RequestParameter(PARAM_PORTLET_COLUMN_ID, columnId),
-                    new RequestParameter(PARAM_PORTLET_COLUMN_COUNT, Integer.toString(layoutType.getNumOfColumns()))
+                SearchUrlRequestParameter[] params = new SearchUrlRequestParameter[] {
+                    new SearchUrlRequestParameter(PARAM_PORTLET_ID, portletInstance.getPortletId()),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_LIFECYCLE, LIFECYCLE_RENDER),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_MODE, PortletMode.VIEW.toString()),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_COLUMN_ID, columnId),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_COLUMN_COUNT, Integer.toString(layoutType.getNumOfColumns()))
                 };
 
                 String portletNamespace = this.portal.getPortletNamespace(portletInstance.getPortletId());

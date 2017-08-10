@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.action;
+package com.savoirfairelinux.flashlight.service.model;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +14,7 @@ import com.liferay.portal.kernel.model.Layout;
 public class SearchUrlContainer {
     private final Map<Layout, List<SearchUrl>> searchUrls;
 
-    SearchUrlContainer(Map<Layout, List<SearchUrl>> searchUrls) {
+    public SearchUrlContainer(Map<Layout, List<SearchUrl>> searchUrls) {
         this.searchUrls = searchUrls;
     }
 

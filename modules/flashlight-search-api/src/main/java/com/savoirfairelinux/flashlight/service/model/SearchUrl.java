@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.action;
+package com.savoirfairelinux.flashlight.service.model;
 
 import com.liferay.portal.kernel.model.Layout;
 
@@ -11,7 +11,7 @@ public class SearchUrl {
 
     private Layout layout;
     private String url;
-    private RequestParameter[] requestParameters;
+    private SearchUrlRequestParameter[] requestParameters;
     private String portletNamespace;
 
     /**
@@ -22,7 +22,7 @@ public class SearchUrl {
      * @param requestParameters The request parameters that must be sent to call the search portlet
      * @param portletNamespace The prefix to be prepended to the parameter names
      */
-    public SearchUrl(Layout layout, String url, RequestParameter[] requestParameters, String portletNamespace) {
+    public SearchUrl(Layout layout, String url, SearchUrlRequestParameter[] requestParameters, String portletNamespace) {
         this.layout = layout;
         this.url = url;
         this.requestParameters = requestParameters;
@@ -46,7 +46,7 @@ public class SearchUrl {
     /**
      * @return The request parameters that must be sent to call the search portlet
      */
-    public RequestParameter[] getRequestParameters() {
+    public SearchUrlRequestParameter[] getRequestParameters() {
         return this.requestParameters;
     }
 
