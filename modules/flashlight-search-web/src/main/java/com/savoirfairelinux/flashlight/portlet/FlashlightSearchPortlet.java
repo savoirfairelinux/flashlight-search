@@ -74,7 +74,7 @@ import static java.lang.String.format;
 
         "com.liferay.portlet.requires-namespaced-parameters=true",
         "com.liferay.portlet.display-category=category.tools",
-        "com.liferay.portlet.instanceable=false",
+        "com.liferay.portlet.instanceable=true",
         "com.liferay.portlet.header-portlet-javascript=" + FlashlightSearchPortlet.PATH_JAVASCRIPT
     }
 )

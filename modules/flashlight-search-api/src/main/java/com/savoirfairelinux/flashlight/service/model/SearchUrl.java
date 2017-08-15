@@ -1,4 +1,4 @@
-package com.savoirfairelinux.flashlight.action;
+package com.savoirfairelinux.flashlight.service.model;
 
 import com.liferay.portal.kernel.model.Layout;
 
@@ -7,11 +7,12 @@ import com.liferay.portal.kernel.model.Layout;
  * request parameter used to enter keywords
  */
 public class SearchUrl {
+    private static final String FORMAT_KEYWORDS_PARAM = "%skeywords";
 
     private Layout layout;
     private String url;
-    private RequestParameter[] requestParameters;
-    private String keywordsParameter;
+    private SearchUrlRequestParameter[] requestParameters;
+    private String portletNamespace;
 
     /**
      * Creates the search URL container
@@ -19,13 +20,13 @@ public class SearchUrl {
      * @param layout The page on which the search portlet is
      * @param url The URL to access the search portlet's search view
      * @param requestParameters The request parameters that must be sent to call the search portlet
-     * @param keywordsParameter The request parameter used to enter keywords
+     * @param portletNamespace The prefix to be prepended to the parameter names
      */
-    public SearchUrl(Layout layout, String url, RequestParameter[] requestParameters, String keywordsParameter) {
+    public SearchUrl(Layout layout, String url, SearchUrlRequestParameter[] requestParameters, String portletNamespace) {
         this.layout = layout;
         this.url = url;
         this.requestParameters = requestParameters;
-        this.keywordsParameter = keywordsParameter;
+        this.portletNamespace = portletNamespace;
     }
 
     /**
@@ -45,7 +46,7 @@ public class SearchUrl {
     /**
      * @return The request parameters that must be sent to call the search portlet
      */
-    public RequestParameter[] getRequestParameters() {
+    public SearchUrlRequestParameter[] getRequestParameters() {
         return this.requestParameters;
     }
 
@@ -53,8 +54,13 @@ public class SearchUrl {
      * @return The request parameter used to enter keywords
      */
     public String getKeywordsParameter() {
-        return this.keywordsParameter;
+        return String.format(FORMAT_KEYWORDS_PARAM, this.portletNamespace);
     }
 
-
+    /**
+     * @return The portlet namespace, to be prepended to the parameter names
+     */
+    public String getPortletNamespace() {
+        return portletNamespace;
+    }
 }

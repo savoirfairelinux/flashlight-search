@@ -1,5 +1,19 @@
 package com.savoirfairelinux.flashlight.action;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.portlet.PortletMode;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
@@ -9,26 +23,16 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.savoirfairelinux.flashlight.service.model.SearchUrl;
+import com.savoirfairelinux.flashlight.service.model.SearchUrlContainer;
+import com.savoirfairelinux.flashlight.service.model.SearchUrlRequestParameter;
 import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-
-import javax.portlet.PortletMode;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
-import static java.lang.String.format;
 
 /**
  * This action is used to insert the possible search URLs in the request attributes. This way, a search box can be
@@ -41,8 +45,6 @@ import static java.lang.String.format;
 public class SearchUrlAction extends Action {
 
     public static final String REQUEST_ATTR_FLASHLIGHT_URLS = FlashlightSearchPortletKeys.PORTLET_NAME + "_urls";
-
-    private static final String FORMAT_KEYWORDS_PARAM = "%skeywords";
 
     private static final String PARAM_PORTLET_ID = "p_p_id";
     private static final String PARAM_PORTLET_LIFECYCLE = "p_p_lifecycle";
@@ -64,18 +66,18 @@ public class SearchUrlAction extends Action {
     public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         Layout currentLayout = themeDisplay.getLayout();
-        String keywordsParam = format(FORMAT_KEYWORDS_PARAM, this.portal.getPortletNamespace(FlashlightSearchPortletKeys.PORTLET_NAME));
+
 
         List<Layout> searchLayouts = this.getSearchLayouts(currentLayout);
-        ArrayList<SearchUrl> searchUrls = new ArrayList<>(searchLayouts.size());
-        for(Layout searchLayout : searchLayouts) {
-            SearchUrl url = this.generateSearchUrl(request, themeDisplay, searchLayout, keywordsParam);
-            if(url != null) {
-                searchUrls.add(url);
-            }
-        }
+        Map<Layout, List<SearchUrl>> searchUrls;
 
-        request.setAttribute(REQUEST_ATTR_FLASHLIGHT_URLS, searchUrls);
+        searchUrls = searchLayouts.stream()
+            .collect(Collectors.toMap(
+                Function.identity(),
+                layout -> generateSearchUrl(request, themeDisplay, layout)
+            ));
+
+        request.setAttribute(REQUEST_ATTR_FLASHLIGHT_URLS, new SearchUrlContainer(searchUrls));
     }
 
     /**
@@ -84,55 +86,46 @@ public class SearchUrlAction extends Action {
      * @param request The HTTP request
      * @param themeDisplay The theme display
      * @param layout The current page
-     * @param keywordsParam The name of the request parameter containing the search keywords
      * @return A list of search URLs to be put in the request attributes
      */
-    public SearchUrl generateSearchUrl(HttpServletRequest request, ThemeDisplay themeDisplay, Layout layout, String keywordsParam) {
+    private List<SearchUrl> generateSearchUrl(HttpServletRequest request, ThemeDisplay themeDisplay, Layout layout) {
         LayoutTypePortlet layoutType = (LayoutTypePortlet) layout.getLayoutType();
-        Portlet portletInstance = null;
+        UnicodeProperties props = layoutType.getTypeSettingsProperties();
 
-        // Find the portlet in the page
-        for(Portlet portlet : layoutType.getPortlets()) {
-            if(portlet.getPortletId().equals(FlashlightSearchPortletKeys.PORTLET_NAME)) {
-                portletInstance = portlet;
-                break;
-            }
-        }
+        return layoutType.getPortlets().stream()
+            .filter(portlet -> portlet.getPortletName().equals(FlashlightSearchPortletKeys.PORTLET_NAME))
+            .map(portletInstance -> {
 
-        SearchUrl searchUrl;
-        if(portletInstance != null) {
-            // Get information about the column from which the portlet comes from
-            UnicodeProperties props = layoutType.getTypeSettingsProperties();
-            String columnId = StringPool.BLANK;
-            for(Entry<String, String> entry : props.entrySet()) {
-                if(entry.getValue().equals(FlashlightSearchPortletKeys.PORTLET_NAME)) {
-                    columnId = entry.getKey();
-                    break;
+                String columnId = StringPool.BLANK;
+                for(Entry<String, String> entry : props.entrySet()) {
+                    if(entry.getValue().equals(portletInstance.getPortletId())) {
+                        columnId = entry.getKey();
+                        break;
+                    }
                 }
-            }
 
-            String portletUrl;
+                String portletUrl;
 
-            try {
-                portletUrl = this.portal.getLayoutFriendlyURL(layout, themeDisplay);
-            } catch (PortalException e) {
-                portletUrl = StringPool.BLANK;
-                LOG.error(e);
-            }
+                try {
+                    portletUrl = this.portal.getLayoutFriendlyURL(layout, themeDisplay);
+                } catch (PortalException e) {
+                    portletUrl = StringPool.BLANK;
+                    LOG.error(e);
+                }
 
-            RequestParameter[] params = new RequestParameter[5];
-            params[0] = new RequestParameter(PARAM_PORTLET_ID, FlashlightSearchPortletKeys.PORTLET_NAME);
-            params[1] = new RequestParameter(PARAM_PORTLET_LIFECYCLE, LIFECYCLE_RENDER);
-            params[2] = new RequestParameter(PARAM_PORTLET_MODE, PortletMode.VIEW.toString());
-            params[3] = new RequestParameter(PARAM_PORTLET_COLUMN_ID, columnId);
-            params[4] = new RequestParameter(PARAM_PORTLET_COLUMN_COUNT, Integer.toString(layoutType.getNumOfColumns()));
-            searchUrl = new SearchUrl(layout, portletUrl, params, keywordsParam);
-        } else {
-            // Somehow, the portlet is not found in the page.
-            searchUrl = null;
-        }
+                SearchUrlRequestParameter[] params = new SearchUrlRequestParameter[] {
+                    new SearchUrlRequestParameter(PARAM_PORTLET_ID, portletInstance.getPortletId()),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_LIFECYCLE, LIFECYCLE_RENDER),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_MODE, PortletMode.VIEW.toString()),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_COLUMN_ID, columnId),
+                    new SearchUrlRequestParameter(PARAM_PORTLET_COLUMN_COUNT, Integer.toString(layoutType.getNumOfColumns()))
+                };
 
-        return searchUrl;
+                String portletNamespace = this.portal.getPortletNamespace(portletInstance.getPortletId());
+
+                return new SearchUrl(layout, portletUrl, params, portletNamespace);
+            })
+            .collect(Collectors.toList());
     }
 
     /**
