@@ -9,7 +9,7 @@ import com.liferay.portal.kernel.model.Layout;
  * Container listing all flashlight search URLs found on the current layout set (current site and layouts with the same
  * public/private visiblity).
  *
- * Is injected as {@link SearchUrlAction#REQUEST_ATTR_FLASHLIGHT_URLS} request attribute.
+ * Is injected as com.savoirfairelinux.flashlight.action.SearchUrlAction#REQUEST_ATTR_FLASHLIGHT_URLS request attribute.
  */
 public class SearchUrlContainer {
     private final Map<Layout, List<SearchUrl>> searchUrls;
