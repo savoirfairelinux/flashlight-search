@@ -1,17 +1,43 @@
 package com.savoirfairelinux.flashlight.portlet;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.portlet.*;
+
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.PortletMode;
+import javax.portlet.PortletPreferences;
+import javax.portlet.PortletURL;
+import javax.portlet.ProcessAction;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
+import javax.portlet.ResourceURL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRenderer;
@@ -39,7 +65,13 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.*;
+import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.portlet.framework.TemplatedPortlet;
@@ -57,8 +89,6 @@ import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
 import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateContextVariable;
 import com.savoirfairelinux.flashlight.service.portlet.template.ViewContextVariable;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
-
-import static java.lang.String.format;
 
 @Component(
     service = Portlet.class,
@@ -140,8 +170,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
 
     private static final String STATUS_CODE_NOT_FOUND = "404";
     private static final String STATUS_CODE_INTERNAL_ERROR = "500";
-
-    private static final String CHARSET_JSON_UNICODE = "text/json;UTF-8";
 
     private static final String HTTP_HEADER_CACHE_CONTROL = "Cache-Control";
     private static final String CACHE_CONTROL_NO_CACHE = "no-cache";
@@ -382,8 +410,6 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
                 this.doLoadMore(request, response);
             break;
             default:
-                // Default to JSON response, send 404
-                response.setCharacterEncoding(CHARSET_JSON_UNICODE);
                 response.setProperty(ResourceResponse.HTTP_STATUS_CODE, STATUS_CODE_NOT_FOUND);
             break;
         }
@@ -399,7 +425,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @throws IOException If something goes wrong
      */
     public void doLoadMore(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
-        response.setContentType(CHARSET_JSON_UNICODE);
+        response.setContentType(ContentTypes.APPLICATION_JSON);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setProperty(HTTP_HEADER_CACHE_CONTROL, CACHE_CONTROL_NO_CACHE);
         response.setProperty(ResourceResponse.EXPIRATION_CACHE, ZERO);
 
