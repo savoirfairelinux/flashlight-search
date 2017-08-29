@@ -58,7 +58,7 @@ public class SearchUrl {
     }
 
     /**
-     * @return The portlet namespace, to be prepended to the parameter names
+     * @return The portlet's namespace
      */
     public String getPortletNamespace() {
         return portletNamespace;

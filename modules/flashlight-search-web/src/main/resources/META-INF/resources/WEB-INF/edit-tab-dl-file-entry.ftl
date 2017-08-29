@@ -1,5 +1,8 @@
 <fieldset class="fieldet">
     <legend><@liferay_ui["message"] key="fieldset.dlfileentry" /></legend>
+
+    <p><@liferay_ui["message"] key="fieldset.dlfileentry.description" /></p>
+
     <#list availableDlFileEntryTypeTemplates?keys as dlFileEntryType>
         <#assign templates = availableDlFileEntryTypeTemplatesUuidIndex[dlFileEntryType.uuid] />
         <#if templates?has_content>

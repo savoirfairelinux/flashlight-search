@@ -8,6 +8,7 @@
         for(var i = 0; i < buttonsLength; i++) {
             var htmlButton = document.getElementById(namespace + buttons[i]);
             if(htmlButton) {
+                htmlButton.parentNode.nextElementSibling.setAttribute('class', 'hidden');
                 htmlButton.addEventListener('click', function(ev) {
                     var sibling = this.parentNode.nextElementSibling;
                     if(sibling.getAttribute('class') === 'hidden') {

@@ -1,6 +1,7 @@
 <fieldset class="fieldet">
     <legend><@liferay_ui["message"] key="fieldset.journal.article" /></legend>
 
+    <p><@liferay_ui["message"] key="fieldset.journal.article.description" /></p>
 
     <#list availableJournalArticleStructures?keys as className>
         <#assign clStructures = availableJournalArticleStructures[className] />
@@ -28,6 +29,9 @@
 
 <fieldset class="fieldset">
     <legend><@liferay_ui["message"] key="fieldset.journal.view" /></legend>
+
+    <p><@liferay_ui["message"] key="fieldset.journal.view.description" /></p>
+
     <div class="form-group">
         <label class="control-label" for="${ns}journal-article-view-template"><@liferay_ui["message"] key="label.journal.view.adt" /></label>
         <select class="form-control" id="${ns}journal-article-view-template" name="${ns}journal-article-view-template">
