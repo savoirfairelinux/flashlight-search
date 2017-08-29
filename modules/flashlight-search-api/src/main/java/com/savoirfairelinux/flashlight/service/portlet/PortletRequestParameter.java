@@ -16,10 +16,17 @@ public enum PortletRequestParameter {
 
     private String name;
 
+    /**
+     * Creates an enum value
+     * @param name The parameter name
+     */
     private PortletRequestParameter(String name) {
         this.name = name;
     }
 
+    /**
+     * @return The parameter name
+     */
     public String getName() {
         return this.name;
     }

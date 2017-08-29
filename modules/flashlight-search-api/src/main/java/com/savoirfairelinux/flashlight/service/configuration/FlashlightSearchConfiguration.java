@@ -32,9 +32,7 @@ public class FlashlightSearchConfiguration {
         this.tabs = new LinkedHashMap<>(tabs.size());
         tabs.stream()
             .sorted(Comparator.comparing(FlashlightSearchConfigurationTab::getOrder))
-            .forEach(t -> {
-                this.tabs.put(t.getId(), t);
-            });
+            .forEach(t -> this.tabs.put(t.getId(), t));
         this.tabs = Collections.unmodifiableMap(this.tabs);
     }
 

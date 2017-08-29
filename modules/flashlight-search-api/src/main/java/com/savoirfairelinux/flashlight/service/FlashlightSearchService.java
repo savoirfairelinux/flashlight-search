@@ -19,6 +19,12 @@ import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchCon
 import com.savoirfairelinux.flashlight.service.model.SearchResultFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResultsContainer;
 
+/**
+ * <p>
+ *   This is the entry point to Flashlight's search functionalities. It is used by any piece of the Flashlight system,
+ *   like its search portlet, to perform searches.
+ * </p>
+ */
 public interface FlashlightSearchService {
 
     public static final Class<FlashlightSearchService> ADT_CLASS = FlashlightSearchService.class;

@@ -83,7 +83,6 @@ public class SearchUrlAction extends Action {
     /**
      * Returns a list of search URLs to be put in the request attributes
      *
-     * @param request The HTTP request
      * @param themeDisplay The theme display
      * @param layout The current page
      * @return A list of search URLs to be put in the request attributes

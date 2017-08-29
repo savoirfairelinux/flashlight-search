@@ -88,8 +88,23 @@ import com.savoirfairelinux.flashlight.service.portlet.PortletRequestParameter;
 import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
 import com.savoirfairelinux.flashlight.service.portlet.template.JournalArticleViewTemplateContextVariable;
 import com.savoirfairelinux.flashlight.service.portlet.template.ViewContextVariable;
+import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.util.PatternConstants;
 
+/**
+ * <p>
+ *   This search portlet makes use of Liferay's search facilities, but is configured in different ways. Searches are
+ *   performed using "tabs", each tab having its own set of search facets. When a single search is performed, each tab
+ *   triggers an indepedendent search.
+ * </p>
+ * <p>
+ *   Much of the views can also be redefined using application display templates.
+ * </p>
+ * <p>
+ *   A limited set of asset types is supported by this portlet. To have more asset types, deploy an OSGi component
+ *   implementing the {@link SearchResultProcessor} service.
+ * </p>
+ */
 @Component(
     service = Portlet.class,
     immediate = true,
@@ -122,6 +137,15 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         editViews.put(JournalArticle.class.getName(), "edit-tab-journal-article.ftl");
         editViews.put(DLFileEntry.class.getName(), "edit-tab-dl-file-entry.ftl");
         ASSET_TYPE_EDIT_VIEWS = Collections.unmodifiableMap(editViews);
+    }
+
+    private static final Map<String, String> HELP_TEMPLATES;
+    static {
+        HashMap<String, String> helpTemplates = new HashMap<>(2);
+        helpTemplates.put("fr", "help-fr.ftl");
+        helpTemplates.put("en", "help-en.ftl");
+        helpTemplates.put("", "help-en.ftl");
+        HELP_TEMPLATES = Collections.unmodifiableMap(helpTemplates);
     }
 
     private static final String ACTION_NAME_SAVE_TAB = "saveTab";
@@ -159,6 +183,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
     private static final Pattern FORM_FIELD_JOURNAL_TEMPLATE_UUID_PATTERN = Pattern.compile("^journal-article-template-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_DL_FILE_ENTRY_TYPE_TEMPLATE_UUID_PATTERN = Pattern.compile("^dl-file-entry-type-template-" + PatternConstants.UUID + "$");
     private static final Pattern FORM_FIELD_TITLE_PATTERN = Pattern.compile("^title-" + PatternConstants.LOCALE + "$");
+
+    private static final String FORM_VALUE_ON = "on";
 
     private static final Pattern PATTERN_CLASS_NAME = Pattern.compile("^" + PatternConstants.CLASS_NAME + "$");
     private static final Pattern PATTERN_UUID = Pattern.compile("^" + PatternConstants.UUID + "$");
@@ -207,13 +233,10 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @throws IOException      If something goes wrong
      */
     @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+    protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         String viewModeParam = ParamUtil.getString(request, PortletRequestParameter.VIEW_MODE.getName(), StringPool.BLANK);
         ViewMode viewMode = ViewMode.getViewMode(viewModeParam);
         switch(viewMode) {
-            case RESULTS:
-                this.doViewResults(request, response);
-            break;
             case VIEW_JOURNAL:
                 this.doViewJournal(request, response);
             break;
@@ -481,7 +504,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @throws IOException      If something goes wrong
      */
     @Override
-    public void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
+    protected void doEdit(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         // Very, very simple routing. That's all we need, folks.
         String editModeParam = ParamUtil.get(request, PortletRequestParameter.EDIT_MODE.getName(), StringPool.BLANK);
         EditMode editMode = EditMode.getEditMode(editModeParam);
@@ -814,6 +837,21 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
     }
 
+    @Override
+    protected void doHelp(RenderRequest request, RenderResponse response) throws PortletException, IOException {
+        String lang = request.getLocale().getLanguage();
+
+        String templatePath;
+        if(HELP_TEMPLATES.containsKey(lang)) {
+            templatePath = HELP_TEMPLATES.get(lang);
+        } else {
+            templatePath = HELP_TEMPLATES.get(StringPool.BLANK);
+        }
+
+        Map<String, Object> ctx = Collections.singletonMap("ns", response.getNamespace());
+        this.renderTemplate(request, response, ctx, templatePath);
+    }
+
     /**
      * Saves the global aspect of the configuration
      *
@@ -937,7 +975,7 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
             validatedSortBy = sortBy;
         }
 
-        boolean validatedSortReverse = ("on".equals(sortReverse));
+        boolean validatedSortReverse = (FORM_VALUE_ON.equals(sortReverse));
 
         List<SearchFacet> supportedFacets = this.searchService.getSupportedSearchFacets();
         HashMap<String, String> validatedSelectedFacets = new HashMap<>(selectedFacets.length);
@@ -984,6 +1022,14 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
         }
     }
 
+    /**
+     * This action saves the Liferay facet configuration for a given tab
+     *
+     * @param request The request
+     * @param response The response
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
+     */
     @ProcessAction(name = ACTION_NAME_SAVE_FACET_CONFIG)
     public void actionSaveFacetConfig(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String tabId = ParamUtil.get(request, PortletRequestParameter.TAB_ID.getName(), StringPool.BLANK);

@@ -12,11 +12,28 @@ import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
 /**
- * A search result processor transforms a search result document into a Flashlight-specific search result. It can then
- * be consumed by the view.
+ * <p>
+ *   A search result processor transforms a search result document into a Flashlight-specific search result. It is then
+ *   consumed by the view.
+ * </p>
+ * <p>
+ *   A search result processor must declare:
+ * </p>
+ * <ul>
+ *   <li>The asset type that it can transform</li>
+ *   <li>A set of facets used to isolate its assets</li>
+ * </ul>
  */
 public interface SearchResultProcessor {
 
+    /**
+     * Returns the facets used to obtain search results to be processed by this processor.
+     *
+     * @param searchContext The search context
+     * @param configuration The search portlet configuration
+     * @param tab The configuration tab in which the processor is used
+     * @return The facets used to obtain search results to be processed by this processor. It never returns null.
+     */
     public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab);
 
     /**
