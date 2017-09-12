@@ -1,7 +1,7 @@
 package com.savoirfairelinux.flashlight.service.impl.facet.displayhandler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
@@ -9,6 +9,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.savoirfairelinux.flashlight.service.facet.SearchFacetDisplayHandler;
 
@@ -23,12 +24,12 @@ public class SearchFacetDisplayHandlerServiceTracker implements ServiceTrackerCu
     private BundleContext bundleContext;
 
     private ServiceTracker<SearchFacetDisplayHandler, SearchFacetDisplayHandler> searchFacetDisplayHandlerServiceTracker;
-    private Map<String, SearchFacetDisplayHandler> displayHandlers;
+    private ConcurrentHashMap<String, SearchFacetDisplayHandler> displayHandlers;
 
     @Activate
     public void init(BundleContext ctx) {
         this.bundleContext = ctx;
-        this.displayHandlers = new HashMap<>();
+        this.displayHandlers = new ConcurrentHashMap<>();
         this.searchFacetDisplayHandlerServiceTracker = new ServiceTracker<>(ctx, SearchFacetDisplayHandler.class, this);
         this.searchFacetDisplayHandlerServiceTracker.open();
     }
