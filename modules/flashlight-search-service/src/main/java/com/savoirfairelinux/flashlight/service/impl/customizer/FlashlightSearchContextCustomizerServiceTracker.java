@@ -61,6 +61,11 @@ public class FlashlightSearchContextCustomizerServiceTracker implements ServiceT
 
     /**
      * Call all instances of FlashlightSearchContextCustomizer services, in undetermined order.
+     *
+     * @param request The portlet request
+     * @param response The portlet response
+     * @param config The search configuration
+     * @param tab The search configuration tab
      * @param searchContext the search context to customize.
      */
     public void applyCustomizers(PortletRequest request, PortletResponse response, FlashlightSearchConfiguration config, FlashlightSearchConfigurationTab tab, SearchContext searchContext) {

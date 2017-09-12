@@ -9,6 +9,12 @@ public class SearchResult {
     private String rendering;
     private String title;
 
+    /**
+     * Creates a search result
+     * @param rendering The result's templated rendering
+     * @param viewUrl The result's full content view URL or null if it is the template's job to generate the URL
+     * @param title The result's title
+     */
     public SearchResult(String rendering, String viewUrl, String title) {
         this.viewUrl = viewUrl;
         this.rendering = rendering;

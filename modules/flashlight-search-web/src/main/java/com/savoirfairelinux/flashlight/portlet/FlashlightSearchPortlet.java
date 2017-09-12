@@ -349,8 +349,8 @@ public class FlashlightSearchPortlet extends TemplatedPortlet {
      * @param request The request
      * @param response The response
      *
-     * @throws PortletException
-     * @throws IOException
+     * @throws PortletException If something goes wrong
+     * @throws IOException If something goes wrong
      */
     public void doViewJournal(RenderRequest request, RenderResponse response) throws PortletException, IOException {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
