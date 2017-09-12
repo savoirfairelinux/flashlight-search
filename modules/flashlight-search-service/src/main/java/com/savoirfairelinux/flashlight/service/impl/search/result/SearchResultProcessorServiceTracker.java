@@ -5,28 +5,66 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 
 /**
  * This service tracker is used to obtain search result processors mapped to asset types
  */
 @Component(immediate = true, service = SearchResultProcessorServiceTracker.class)
-public class SearchResultProcessorServiceTracker {
+public class SearchResultProcessorServiceTracker implements ServiceTrackerCustomizer<SearchResultProcessor, SearchResultProcessor> {
 
+    private static final Log LOG = LogFactoryUtil.getLog(SearchResultProcessorServiceTracker.class);
+
+    private BundleContext bundleContext;
     private ServiceTracker<SearchResultProcessor, SearchResultProcessor> serviceTracker;
     private ConcurrentHashMap<String, RankedSearchResultProcessor> searchResultProcessors;
 
     @Activate
     public void activate(BundleContext ctx) {
+        this.bundleContext = ctx;
         this.searchResultProcessors = new ConcurrentHashMap<>();
-        SearchResultProcessorServiceTrackerCustomizer customizer = new SearchResultProcessorServiceTrackerCustomizer(ctx, this.searchResultProcessors);
-        this.serviceTracker = new ServiceTracker<>(ctx, SearchResultProcessor.class, customizer);
+        this.serviceTracker = new ServiceTracker<>(ctx, SearchResultProcessor.class, this);
         this.serviceTracker.open();
+    }
+
+    @Override
+    public SearchResultProcessor addingService(ServiceReference<SearchResultProcessor> reference) {
+        Object serviceRankingObj = reference.getProperty(Constants.SERVICE_RANKING);
+        SearchResultProcessor service = this.bundleContext.getService(reference);
+
+        int serviceRanking;
+        if(serviceRankingObj != null && serviceRankingObj instanceof Integer && ((Integer) serviceRankingObj).compareTo(Integer.valueOf(0)) > 0) {
+            serviceRanking = (int) serviceRankingObj;
+        } else {
+            LOG.info("Invalid service ranking (not positive integer). Was given : \"" + String.valueOf(serviceRankingObj) + "\". Defaulting to rank 0.");
+            serviceRanking = 0;
+        }
+
+        String assetType = service.getAssetType();
+        RankedSearchResultProcessor mapping = this.searchResultProcessors.get(assetType);
+        if(mapping == null || mapping.getRanking() < serviceRanking) {
+            this.searchResultProcessors.put(assetType, new RankedSearchResultProcessor(serviceRanking, service));
+        }
+
+        return service;
+    }
+
+    @Override
+    public void modifiedService(ServiceReference<SearchResultProcessor> reference, SearchResultProcessor service) {}
+
+    @Override
+    public void removedService(ServiceReference<SearchResultProcessor> reference, SearchResultProcessor service) {
+        this.searchResultProcessors.remove(service.getAssetType());
     }
 
     /**
