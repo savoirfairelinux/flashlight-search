@@ -1,12 +1,19 @@
 package com.savoirfairelinux.flashlight.service.impl.search.result;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
@@ -32,14 +39,17 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.*;
+import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
 import com.savoirfairelinux.flashlight.service.impl.DocumentField;
 import com.savoirfairelinux.flashlight.service.impl.facet.ClassNameIdFacet;
 import com.savoirfairelinux.flashlight.service.impl.facet.DDMStructureFacet;
 import com.savoirfairelinux.flashlight.service.model.SearchResult;
-import com.savoirfairelinux.flashlight.service.portlet.FlashlightSearchPortletKeys;
 import com.savoirfairelinux.flashlight.service.portlet.PortletRequestParameter;
 import com.savoirfairelinux.flashlight.service.portlet.ViewMode;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
@@ -186,7 +196,8 @@ public class JournalArticleSearchResultProcessor implements SearchResultProcesso
 
         if(ASSET_TYPE.equals(className) && classPK > 0) {
             try {
-                PortletURL viewInPortletUrlObj = this.portletUrlFactory.create(request, FlashlightSearchPortletKeys.PORTLET_NAME, currentLayout, LIFECYCLE_RENDER);
+                String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+                PortletURL viewInPortletUrlObj = this.portletUrlFactory.create(request, portletId, currentLayout, LIFECYCLE_RENDER);
                 viewInPortletUrlObj.setParameter(PortletRequestParameter.VIEW_MODE.getName(), ViewMode.VIEW_JOURNAL.getParamValue());
                 viewInPortletUrlObj.setParameter(Field.ENTRY_CLASS_PK, Long.toString(classPK));
                 viewInPortletUrlObj.setParameter(PortletRequestParameter.TAB_ID.getName(), tabId);
