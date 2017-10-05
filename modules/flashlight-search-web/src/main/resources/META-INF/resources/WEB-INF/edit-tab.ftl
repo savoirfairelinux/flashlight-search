@@ -36,9 +36,10 @@
                 </#list>
             </select>
         </div>
+
         <#list availableLocales as availableLocale>
             <div class="form-group">
-                <label for="${ns}title-${availableLocale}">${availableLocale.getDisplayName(locale)}</label>
+                <label for="${ns}title-${availableLocale}"><@liferay_ui["message"] key="fieldset.tag.info.title" /> (${availableLocale.getDisplayName(locale)})</label>
                 <input class="form-control" type="text" id="${ns}title-${availableLocale}" name="${ns}title-${availableLocale}" value="${titleMap[availableLocale]!''}" />
             </div>
         </#list>

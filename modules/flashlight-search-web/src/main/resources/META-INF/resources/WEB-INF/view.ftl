@@ -57,14 +57,14 @@
                 <div class="${showFacets?then("row","")}">
                     <#if showFacets>
                         <div class="col-md-3">
-                            <#list page.getSearchFacets() as searchFacet>
-                                <#if (searchFacet.terms?has_content && searchFacet.terms?size > 0)>
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <div class="panel-title">
-                                                <strong><@liferay_ui["message"] key="facet.${searchFacet.label}" /></strong>
-                                            </div>
+                            <#list page.searchFacets as searchFacet>
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            <strong><@liferay_ui["message"] key="facet.${searchFacet.label}" /></strong>
                                         </div>
+                                    </div>
+                                    <#if (searchFacet.terms?has_content && searchFacet.terms?size > 0)>
                                         <div class="panel-body">
                                             <#assign noTermsApplied = true />
                                             <#list searchFacet.terms as term>
@@ -98,8 +98,8 @@
                                                 </#list>
                                             </ul>
                                         </div>
-                                    </div>
-                                </#if>
+                                    </#if>
+                                </div>
                             </#list>
                         </div>
                     </#if>
