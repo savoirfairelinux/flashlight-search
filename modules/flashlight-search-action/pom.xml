@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.savoirfairelinux.liferay</groupId>
+        <groupId>com.savoirfairelinux.liferay.module</groupId>
         <artifactId>flashlight</artifactId>
         <version>1.0.10-SNAPSHOT</version>
         <relativePath>../../</relativePath>
@@ -10,7 +10,7 @@
     <artifactId>flashlight-search-action</artifactId>
     <packaging>bundle</packaging>
 
-    <name>Flashlight Search portlet URL action</name>
+    <name>Flashlight Search Portlet variable injection action</name>
 
     <dependencies>
         <dependency>

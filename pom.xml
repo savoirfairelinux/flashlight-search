@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.savoirfairelinux.liferay</groupId>
+    <groupId>com.savoirfairelinux.liferay.module</groupId>
     <artifactId>flashlight</artifactId>
     <version>1.0.10-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Flashlight Search project</name>
+    <name>Flashlight Search</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -47,9 +47,9 @@
 
         <dependencies>
             <dependency>
-                <groupId>com.savoirfairelinux</groupId>
-                <artifactId>liferay-7-ee-bom</artifactId>
-                <version>sp1-0.1</version>
+                <groupId>com.savoirfairelinux.liferay.bom</groupId>
+                <artifactId>liferay-7-ee-sp1</artifactId>
+                <version>1.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -60,15 +60,6 @@
     <dependencies>
 
         <!-- Liferay -->
-
-        <!--
-        Do not uncomment unless you need to debug the sources
-        <dependency>
-            <groupId>com.liferay.portal</groupId>
-            <artifactId>com.liferay.portal.impl</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>com.liferay.portal</groupId>
@@ -99,10 +90,6 @@
             <artifactId>com.liferay.util.taglib</artifactId>
             <scope>provided</scope>
         </dependency>
-
-        <!--
-        For all Liferay API Modules, please refer to the BOM for available artifacts.
-        -->
 
         <!-- Misc Java -->
 

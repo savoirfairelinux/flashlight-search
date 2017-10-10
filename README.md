@@ -10,6 +10,14 @@ You can produce the JARs by performing the following command in the source tree:
 
 This will produce OSGi bundles in each of the modules' `target` directory. Deploy them in Liferay's `deploy` folder.
 
+If you also activate a Maven profile with a property name `liferay.deploy.folder` leading to Liferay's `deploy` folder,
+you may use the following command to compile and deploy the modules directly to your Liferay instance:
+
+`mvn -C -P local-deploy clean install`
+
+This will produce the OSGi modules, install them in your local repository and copy the artifacts to the path declared
+in your profile's `liferay.deploy.folder`.
+
 ## Using and extending Flashlight Search ##
 
 After deploying all the Flashlight modules on your Liferay instance, you will be able to access the system's
