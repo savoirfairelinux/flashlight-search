@@ -6,6 +6,8 @@
     <version>1.0.10-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Flashlight Search</name>
+    <description>An instanceable and customizable search portlet for Liferay 7</description>
+    <url>https://github.com/savoirfairelinux/flashlight-search</url>
 
     <licenses>
         <license>
@@ -68,6 +70,17 @@
             <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/savoirfairelinux/flashlight-search/issues</url>
+    </issueManagement>
+
+    <scm>
+        <url>https://github.com/savoirfairelinux/flashlight-search</url>
+        <connection>scm:git:git://github.com/savoirfairelinux/flashlight-search.git</connection>
+        <developerConnection>scm:git:ssh://github.com:savoirfairelinux/flashlight-search.git</developerConnection>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

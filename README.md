@@ -4,6 +4,15 @@ Flashlight is a set of OSGi modules aiming to provide a more personalized search
 
 ## Installing Flashlight from source ##
 
+### Installing the BOM ###
+
+The project depends on a Maven artifact that is not *yet* deployed on Maven Central.
+
+1. Download the following artifact: https://github.com/savoirfairelinux/liferay-7-boms/blob/master/sp1/pom.xml
+2. Install it using: `mvn -C clean install`
+
+### Compiling ###
+
 You can produce the JARs by performing the following command in the source tree:
 
 `mvn -C clean package`
