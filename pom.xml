@@ -21,6 +21,8 @@
         <url>https://savoirfairelinux.com</url>
     </organization>
 
+    <inceptionYear>2017</inceptionYear>
+
     <developers>
         <developer>
             <name>Nicolas Juneau</name>
