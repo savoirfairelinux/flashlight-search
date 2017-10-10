@@ -1,13 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.savoirfairelinux.liferay.module</groupId>
     <artifactId>flashlight</artifactId>
     <version>1.0.10-SNAPSHOT</version>
     <packaging>pom</packaging>
-
     <name>Flashlight Search</name>
+
+    <licenses>
+        <license>
+            <name>LGPLv3</name>
+            <url>https://www.gnu.org/licenses/lgpl.html</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Savoir-faire Linux</name>
+        <url>https://savoirfairelinux.com</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Nicolas Juneau</name>
+            <email>nicolas.juneau@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Samuel Hervé</name>
+            <email>samuel.herve@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Vincent Bolduc</name>
+            <email>vincent.bolduc@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Alexis Piéplu</name>
+            <email>alexis.pieplu@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Abderrahmane El Bardai</name>
+            <email>abderrahmane.elbardai@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Jonatan Cloutier</name>
+            <email>jonatan.cloutier@savoirfairelinux.com</email>
+            <organization>Savoir-faire Linux</organization>
+            <organizationUrl>https://savoirfairelinux.com</organizationUrl>
+        </developer>
+    </developers>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -332,14 +392,4 @@
         </profile>
     </profiles>
 
-    <distributionManagement>
-        <repository>
-            <id>nexus</id>
-            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
-        </repository>
-        <snapshotRepository>
-            <id>nexus</id>
-            <url>https://nexus.savoirfairelinux.com/repository/sfl-liferay-flashlight</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
