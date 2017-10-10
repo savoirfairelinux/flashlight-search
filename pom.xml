@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.savoirfairelinux.liferay.module</groupId>
     <artifactId>flashlight</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.11-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Flashlight Search</name>
     <description>An instanceable and customizable search portlet for Liferay 7</description>
