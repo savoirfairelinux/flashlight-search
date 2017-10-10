@@ -78,6 +78,7 @@
 
     <fieldset class="fieldset">
         <legend><@liferay_ui["message"] key="fieldset.facets" /></legend>
+        <p><@liferay_ui["message"] key="fieldset.facets.warning" /></p>
         <div class="form-group">
             <table class="table table-bordered">
                 <summary><@liferay_ui["message"] key="table.facet.conf" /></summary>
