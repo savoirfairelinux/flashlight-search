@@ -143,7 +143,7 @@ along with Flashlight Search.  If not, see <http://www.gnu.org/licenses/>.
                                         </li>
                                     </#list>
                                 </ul>
-                                <#if loadMoreUrls[tab.id]??>
+                                <#if (tabId?has_content && loadMoreUrls[tab.id]??)>
                                     <#assign hasLoadMore = true />
                                     <button class="btn btn-block btn-default" type="button" id="${ns}load-more" data-load-more-url="${loadMoreUrls[tab.id]}">
                                         <@liferay_ui["icon"]
