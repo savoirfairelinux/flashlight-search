@@ -59,7 +59,7 @@ public class SearchResultProcessorServiceTracker implements ServiceTrackerCustom
         SearchResultProcessor service = this.bundleContext.getService(reference);
 
         int serviceRanking;
-        if(serviceRankingObj != null && serviceRankingObj instanceof Integer && ((Integer) serviceRankingObj).compareTo(Integer.valueOf(0)) > 0) {
+        if(serviceRankingObj != null && serviceRankingObj instanceof Integer && ((Integer) serviceRankingObj).compareTo(Integer.valueOf(-1)) > 0) {
             serviceRanking = (int) serviceRankingObj;
         } else {
             LOG.info("Invalid service ranking (not positive integer). Was given : \"" + String.valueOf(serviceRankingObj) + "\". Defaulting to rank 0.");
