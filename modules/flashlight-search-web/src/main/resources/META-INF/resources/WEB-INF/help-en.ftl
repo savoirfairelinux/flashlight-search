@@ -37,14 +37,30 @@ along with Flashlight Search.  If not, see <http://www.gnu.org/licenses/>.
         or developer to define how a file entry is represented in the search results.
     </p>
     <p>
-        To do so, create an Application Display Template of type "DLFileEntry search result template". Once created, it
-        will show up in the search tab's configuration panel.
+        To do so, create an Application Display Template of type "Flashlight Search file entry result template". Once
+        created, it will show up in the search tab's configuration panel.
     </p>
+    <h3>Searching for DL File Entries (Documents and Medias) on old Liferay DXP versions</h3>
+    <p>
+        Until recent Liferay DXP releases, it was not possible to render Application Display Templates during the
+        resource serving phase. DL File Entry search results depend on Application Display Templates for rendering.
+        Since additional results are loaded using an XHR request, a workaround was needed to make the feature work.
+    </p>
+    <p>
+        On more recent Liferay versions, the workaround is no longer needed. In fact, the workaround will make the
+        portlet behave incorrectly. If you have a DL File Entry search tab that is unable to load additional results,
+        try toggling the workaround "on" or "off" with the following procedure:
+    </p>
+    <ol>
+        <li>As an administrator, navigate to <strong>Control Panel -&gt; Configuration -&gt; System Settings -&gt; Other</strong></li>
+        <li>Select <strong>Flashlight search service configuration</strong></li>
+        <li>Toggle <strong>Enable resource serving phase Application Display Templates workaround</strong> as needed</li>
+    </ol>
     <h3>Redefining the in-context Web content view</h3>
     <p>
         Like the Asset Publisher, Flahslight may render Web content articles directly inside the portlet if a content
         doesn't have a display page. If you wish to override that view, you may create an Application Display Template
-        of type "Journal Article view Application Display Template".
+        of type "Flashlight Search Journal Article result view".
     </p>
     <p>
         You may then, from the search tab's configuration, choose the Application Display Template to use when viewing
@@ -151,12 +167,16 @@ along with Flashlight Search.  If not, see <http://www.gnu.org/licenses/>.
     </table>
     <h3>Flashlight API Maven coordinates</h2>
     <p>
+        Flashlight Maven coordinates are not (yet) on Maven Central. But you may install the artifacts manually by
+        <a href="https://github.com/savoirfairelinux/flashlight-search">cloning</a> and installing the Maven project locally.
+    </p>
+    <p>
         Should you need to extend or override Flashlight's functionality, you may include the following dependency in
         your project:
     </p>
     <pre>&lt;groupId&gt;com.savoirfairelinux.liferay&lt;/groupId&gt;
 &lt;artifactId&gt;flashlight-search-api&lt;/artifactId&gt;
-&lt;version&gt;1.0.10&lt;/version&gt;</pre>
+&lt;version&gt;1.0.12&lt;/version&gt;</pre>
     <h2>Adding new content types</h2>
     <p>
         Any content type in Flashlight must be explicitly managed before they can be used in its search engine.

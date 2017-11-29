@@ -16,13 +16,23 @@
 
 package com.savoirfairelinux.flashlight.service.impl.search.result;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
@@ -49,6 +59,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfiguration;
 import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchConfigurationTab;
+import com.savoirfairelinux.flashlight.service.configuration.FlashlightSearchServiceConfiguration;
 import com.savoirfairelinux.flashlight.service.impl.DocumentField;
 import com.savoirfairelinux.flashlight.service.impl.facet.DLFileEntryTypeFacet;
 import com.savoirfairelinux.flashlight.service.impl.search.result.template.DLFileEntryTemplateVariable;
@@ -56,11 +67,14 @@ import com.savoirfairelinux.flashlight.service.model.SearchResult;
 import com.savoirfairelinux.flashlight.service.search.result.SearchResultProcessor;
 import com.savoirfairelinux.flashlight.service.search.result.exception.SearchResultProcessorException;
 
+import aQute.bnd.annotation.metatype.Configurable;
+
 /**
  * This processor is used to display file entries in the search results
  */
 @Component(
     service = SearchResultProcessor.class,
+    configurationPid = { FlashlightSearchServiceConfiguration.PID },
     immediate = true,
     property = {
         org.osgi.framework.Constants.SERVICE_RANKING + ":Integer=0"
@@ -69,6 +83,8 @@ import com.savoirfairelinux.flashlight.service.search.result.exception.SearchRes
 public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
 
     private static final Log LOG = LogFactoryUtil.getLog(DLFileEntrySearchResultProcessor.class);
+
+    private static final String ASSET_TYPE = DLFileEntry.class.getName();
 
     @Reference
     private DLFileEntryTypeLocalService dlFileEntryTypeService;
@@ -85,7 +101,13 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
     @Reference
     private PortletDisplayTemplate portletDisplayTemplate;
 
-    private static final String ASSET_TYPE = DLFileEntry.class.getName();
+    private volatile FlashlightSearchServiceConfiguration serviceConfig;
+
+    @Activate
+    @Modified
+    protected void activate(Map<String, Object> properties) {
+        this.serviceConfig = Configurable.createConfigurable(FlashlightSearchServiceConfiguration.class, properties);
+    }
 
     @Override
     public Collection<Facet> getFacets(SearchContext searchContext, FlashlightSearchConfiguration configuration, FlashlightSearchConfigurationTab tab) {
@@ -143,12 +165,28 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
             if(renderingTemplate != null) {
                 HttpServletRequest rq = this.portal.getHttpServletRequest(request);
 
-                // Remove request and response attributes and keep them for restoration
-                // (those get unsafely casted to RenderRequest & RenderResponse by portletDisplayTemplate.renderDDMTemplate)
-                Object backupRequest = rq.getAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
-                rq.removeAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
-                Object backupResponse = rq.getAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
-                rq.removeAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
+                boolean applyAdtHack;
+
+                try {
+                    applyAdtHack = this.serviceConfig.enableServeResourceADTWorkaround();
+                } catch(Exception e) {
+                    applyAdtHack = false;
+                }
+
+                Object backupRequest;
+                Object backupResponse;
+
+                if(applyAdtHack) {
+                    // Remove request and response attributes and keep them for restoration
+                    // (those get unsafely casted to RenderRequest & RenderResponse by portletDisplayTemplate.renderDDMTemplate)
+                    backupRequest = rq.getAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
+                    rq.removeAttribute(JavaConstants.JAVAX_PORTLET_REQUEST);
+                    backupResponse = rq.getAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
+                    rq.removeAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
+                } else {
+                    backupRequest = null;
+                    backupResponse = null;
+                }
 
                 HttpServletResponse rp = this.portal.getHttpServletResponse(response);
                 try {
@@ -174,9 +212,11 @@ public class DLFileEntrySearchResultProcessor implements SearchResultProcessor {
                 } catch (Exception e) {
                     throw new SearchResultProcessorException(e, searchResultDocument, "Error during document rendering");
                 } finally {
-                    // Restore the request and response attributes
-                    rq.setAttribute(JavaConstants.JAVAX_PORTLET_REQUEST, backupRequest);
-                    rq.setAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE, backupResponse);
+                    if(applyAdtHack && backupRequest != null && backupResponse != null) {
+                        // Restore the request and response attributes
+                        rq.setAttribute(JavaConstants.JAVAX_PORTLET_REQUEST, backupRequest);
+                        rq.setAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE, backupResponse);
+                    }
                 }
             } else {
                 throw new SearchResultProcessorException(searchResultDocument, "Cannot obtain document rendering template. No template found or multiple templates with the same UUID found.");
